@@ -607,7 +607,10 @@ class Round {
         this.poksPlaced.splice(index, 1);
 
         if (pokId === this.lastPlacedPokId) {
-            this.lastPlacedPokId = null;
+            // Set lastPlacedPokId to the new last POK in the array (undo behavior)
+            this.lastPlacedPokId = this.poksPlaced.length > 0
+                ? this.poksPlaced[this.poksPlaced.length - 1].id
+                : null;
         }
 
         return pok;
@@ -1067,6 +1070,16 @@ class GameOrchestrator {
         }));
 
         this.services.pok.removePokElement(pokId);
+
+        // Highlight the new last placed POK (undo behavior)
+        if (round.lastPlacedPokId) {
+            const lastPokElement = this.services.pok.getPokElement(round.lastPlacedPokId);
+            if (lastPokElement) {
+                this.services.pok.highlightAsLastPlaced(lastPokElement);
+            }
+        } else {
+            this.services.pok.clearLastPlacedHighlight();
+        }
 
         if (round.redPoksRemaining > 0 || round.bluePoksRemaining > 0) {
             round.currentPlayerId = pok.playerId;
