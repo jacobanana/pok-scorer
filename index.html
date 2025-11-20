@@ -142,7 +142,6 @@
             background: #e4c9a0;
             border: 3px solid #2c1810;
             position: relative;
-            padding: 20px;
             aspect-ratio: 1.5/1;
             width: 100%;
             max-width: 800px;
@@ -514,6 +513,7 @@
     <script>
         // Game configuration
         const POKS_PER_PLAYER = 5;
+        const LOW_SCORE_ZONE_THRESHOLD_PX = 10;
 
         let currentPlayer = null;
         let gameStarted = false;
@@ -590,23 +590,36 @@
             }
 
             if (currentPlayer === 'red' && redPoksRemaining === 0) {
-                alert('Red player has no poks remaining!');
+                // Red has no poks left, check if we should end the round
+                if (bluePoksRemaining === 0) {
+                    endRound();
+                }
                 return;
             }
             if (currentPlayer === 'blue' && bluePoksRemaining === 0) {
-                alert('Blue player has no poks remaining!');
+                // Blue has no poks left, check if we should end the round
+                if (redPoksRemaining === 0) {
+                    endRound();
+                }
                 return;
             }
-
-            // Default to high value (wood visible)
-            const low = parseInt(zone.dataset.low);
-            const high = parseInt(zone.dataset.high);
-            const points = high;
 
             // Get click position relative to zone
             const rect = zone.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const clickY = event.clientY - rect.top;
+
+            // Determine score based on proximity to boundaries
+            const low = parseInt(zone.dataset.low);
+            const high = parseInt(zone.dataset.high);
+
+            // Check if click is near any boundary (edge of the zone)
+            const isNearBoundary = clickX <= LOW_SCORE_ZONE_THRESHOLD_PX ||
+                                   clickX >= rect.width - LOW_SCORE_ZONE_THRESHOLD_PX ||
+                                   clickY <= LOW_SCORE_ZONE_THRESHOLD_PX ||
+                                   clickY >= rect.height - LOW_SCORE_ZONE_THRESHOLD_PX;
+
+            const points = isNearBoundary ? low : high;
 
             // Create pok element
             const pok = document.createElement('div');
@@ -630,7 +643,7 @@
                 zone: zone,
                 low: low,
                 high: high,
-                isHigh: true
+                isHigh: !isNearBoundary
             };
             pokPlacements.push(placement);
 
@@ -681,11 +694,17 @@
             }
 
             if (currentPlayer === 'red' && redPoksRemaining === 0) {
-                alert('Red player has no poks remaining!');
+                // Red has no poks left, check if we should end the round
+                if (bluePoksRemaining === 0) {
+                    endRound();
+                }
                 return;
             }
             if (currentPlayer === 'blue' && bluePoksRemaining === 0) {
-                alert('Blue player has no poks remaining!');
+                // Blue has no poks left, check if we should end the round
+                if (redPoksRemaining === 0) {
+                    endRound();
+                }
                 return;
             }
 
@@ -893,6 +912,7 @@
                 newZone = null;
                 newLow = 0;
                 newHigh = 0;
+                draggedPlacement.isHigh = true; // Doesn't matter for 0 zone, but keep consistent
 
                 const container = document.getElementById('tableContainer');
                 const rect = container.getBoundingClientRect();
@@ -909,11 +929,20 @@
                 newZone = targetZone;
                 newLow = parseInt(targetZone.dataset.low);
                 newHigh = parseInt(targetZone.dataset.high);
-                newPoints = newHigh;
 
                 const rect = targetZone.getBoundingClientRect();
                 newX = event.clientX - rect.left;
                 newY = event.clientY - rect.top;
+
+                // Check if dropped near any boundary
+                const isNearBoundary = newX <= LOW_SCORE_ZONE_THRESHOLD_PX ||
+                                       newX >= rect.width - LOW_SCORE_ZONE_THRESHOLD_PX ||
+                                       newY <= LOW_SCORE_ZONE_THRESHOLD_PX ||
+                                       newY >= rect.height - LOW_SCORE_ZONE_THRESHOLD_PX;
+
+                // Use low score if near boundary, high score otherwise
+                newPoints = isNearBoundary ? newLow : newHigh;
+                draggedPlacement.isHigh = !isNearBoundary;
 
                 // Move pok to new zone if needed
                 if (draggedPok.parentElement !== targetZone) {
@@ -934,7 +963,7 @@
             draggedPlacement.y = newY;
             draggedPlacement.low = newLow;
             draggedPlacement.high = newHigh;
-            draggedPlacement.isHigh = true;
+            // isHigh is already set in the zone-specific logic above
 
             // Add new score contribution
             if (draggedPlacement.player === 'red') {
