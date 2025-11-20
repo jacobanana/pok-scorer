@@ -613,13 +613,18 @@
             const low = parseInt(zone.dataset.low);
             const high = parseInt(zone.dataset.high);
 
-            // Check if click is near any boundary (edge of the zone)
-            const isNearBoundary = clickX <= LOW_SCORE_ZONE_THRESHOLD_PX ||
-                                   clickX >= rect.width - LOW_SCORE_ZONE_THRESHOLD_PX ||
-                                   clickY <= LOW_SCORE_ZONE_THRESHOLD_PX ||
-                                   clickY >= rect.height - LOW_SCORE_ZONE_THRESHOLD_PX;
+            let points, isNearBoundary;
 
-            const points = isNearBoundary ? low : high;
+            // For zones with the same low and high value, there's no boundary scoring
+            if (low === high) {
+                points = high;
+                isNearBoundary = false;
+            } else {
+                // Check if click is near the boundary line that separates this zone from a lower-scoring zone
+                // The boundary is on the right edge of zones on the left side (moving toward the 0 zone)
+                isNearBoundary = clickX >= rect.width - LOW_SCORE_ZONE_THRESHOLD_PX;
+                points = isNearBoundary ? low : high;
+            }
 
             // Create pok element
             const pok = document.createElement('div');
@@ -934,15 +939,19 @@
                 newX = event.clientX - rect.left;
                 newY = event.clientY - rect.top;
 
-                // Check if dropped near any boundary
-                const isNearBoundary = newX <= LOW_SCORE_ZONE_THRESHOLD_PX ||
-                                       newX >= rect.width - LOW_SCORE_ZONE_THRESHOLD_PX ||
-                                       newY <= LOW_SCORE_ZONE_THRESHOLD_PX ||
-                                       newY >= rect.height - LOW_SCORE_ZONE_THRESHOLD_PX;
+                // For zones with the same low and high value, there's no boundary scoring
+                if (newLow === newHigh) {
+                    newPoints = newHigh;
+                    draggedPlacement.isHigh = true;
+                } else {
+                    // Check if dropped near the boundary line that separates this zone from a lower-scoring zone
+                    // The boundary is on the right edge of zones on the left side (moving toward the 0 zone)
+                    const isNearBoundary = newX >= rect.width - LOW_SCORE_ZONE_THRESHOLD_PX;
 
-                // Use low score if near boundary, high score otherwise
-                newPoints = isNearBoundary ? newLow : newHigh;
-                draggedPlacement.isHigh = !isNearBoundary;
+                    // Use low score if near boundary, high score otherwise
+                    newPoints = isNearBoundary ? newLow : newHigh;
+                    draggedPlacement.isHigh = !isNearBoundary;
+                }
 
                 // Move pok to new zone if needed
                 if (draggedPok.parentElement !== targetZone) {
