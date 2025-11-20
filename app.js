@@ -325,6 +325,67 @@ class PokService {
     }
 }
 
+class PersistenceService {
+    constructor() {
+        this.storageKey = 'pok-scorer-game-state';
+    }
+
+    saveGameState(game, orchestrator) {
+        const state = {
+            isStarted: game.isStarted,
+            players: {
+                red: { totalScore: game.players.red.totalScore },
+                blue: { totalScore: game.players.blue.totalScore }
+            },
+            rounds: game.rounds.map(round => ({
+                roundNumber: round.roundNumber,
+                startingPlayerId: round.startingPlayerId,
+                currentPlayerId: round.currentPlayerId,
+                redPoksRemaining: round.redPoksRemaining,
+                bluePoksRemaining: round.bluePoksRemaining,
+                isComplete: round.isComplete,
+                lastPlacedPokId: round.lastPlacedPokId,
+                scores: {
+                    red: round.scores.red,
+                    blue: round.scores.blue,
+                    winner: round.scores.winner,
+                    pointDifference: round.scores.pointDifference
+                },
+                poksPlaced: round.poksPlaced.map(pok => ({
+                    id: pok.id,
+                    playerId: pok.playerId,
+                    points: pok.points,
+                    position: {
+                        x: pok.position.x,
+                        y: pok.position.y,
+                        xPercent: pok.position.xPercent,
+                        yPercent: pok.position.yPercent
+                    },
+                    zoneId: pok.zoneId,
+                    isHighScore: pok.isHighScore
+                }))
+            })),
+            currentRoundIndex: game.currentRoundIndex,
+            pokIdCounter: orchestrator.services.pok.pokIdCounter
+        };
+
+        localStorage.setItem(this.storageKey, JSON.stringify(state));
+    }
+
+    loadGameState() {
+        const savedState = localStorage.getItem(this.storageKey);
+        return savedState ? JSON.parse(savedState) : null;
+    }
+
+    clearGameState() {
+        localStorage.removeItem(this.storageKey);
+    }
+
+    hasGameState() {
+        return localStorage.getItem(this.storageKey) !== null;
+    }
+}
+
 class UIService {
     constructor() {
         this.domElements = null;
@@ -333,6 +394,7 @@ class UIService {
     init() {
         this.domElements = {
             startSelector: document.getElementById('gameStartSelector'),
+            continueButton: document.getElementById('continueGameButton'),
             nextPlayer: document.getElementById('nextPlayerIndicator'),
             tableContainer: document.getElementById('gameBoardContainer'),
             mainRedTotal: document.getElementById('totalScoreRed'),
@@ -438,6 +500,18 @@ class UIService {
 
     hideStartSelector() {
         this.domElements.startSelector.style.display = 'none';
+    }
+
+    showContinueButton() {
+        if (this.domElements.continueButton) {
+            this.domElements.continueButton.classList.add('show');
+        }
+    }
+
+    hideContinueButton() {
+        if (this.domElements.continueButton) {
+            this.domElements.continueButton.classList.remove('show');
+        }
     }
 
     showRoundModal(winnerText, redScore, blueScore, redTotal, blueTotal, bgClass) {
@@ -895,7 +969,8 @@ class GameOrchestrator {
             rules: new RulesEngine(),
             scoring: new ScoringService(),
             pok: new PokService(),
-            ui: new UIService()
+            ui: new UIService(),
+            persistence: new PersistenceService()
         };
 
         this.eventProcessor = new EventProcessor(
@@ -911,6 +986,108 @@ class GameOrchestrator {
     init() {
         this.services.ui.init();
         this.uiState.initDOMCache();
+        this.loadSavedGame();
+    }
+
+    loadSavedGame() {
+        const savedState = this.services.persistence.loadGameState();
+        if (!savedState || !savedState.isStarted) {
+            return;
+        }
+
+        // Show continue button on the start selector
+        this.services.ui.showContinueButton();
+    }
+
+    continueLastGame() {
+        const savedState = this.services.persistence.loadGameState();
+        if (savedState && savedState.isStarted) {
+            this.services.ui.hideContinueButton();
+            this.services.ui.hideStartSelector();
+            this.restoreGameFromState(savedState);
+        }
+    }
+
+    restoreGameFromState(savedState) {
+        // Restore game state
+        this.game.isStarted = savedState.isStarted;
+        this.game.players.red.totalScore = savedState.players.red.totalScore;
+        this.game.players.blue.totalScore = savedState.players.blue.totalScore;
+        this.game.currentRoundIndex = savedState.currentRoundIndex;
+        this.services.pok.pokIdCounter = savedState.pokIdCounter;
+
+        // Restore rounds
+        this.game.rounds = savedState.rounds.map(roundData => {
+            const round = new Round(
+                roundData.roundNumber,
+                roundData.startingPlayerId,
+                this.game.poksPerPlayer
+            );
+
+            round.currentPlayerId = roundData.currentPlayerId;
+            round.redPoksRemaining = roundData.redPoksRemaining;
+            round.bluePoksRemaining = roundData.bluePoksRemaining;
+            round.isComplete = roundData.isComplete;
+            round.lastPlacedPokId = roundData.lastPlacedPokId;
+
+            round.scores.red = roundData.scores.red;
+            round.scores.blue = roundData.scores.blue;
+            round.scores.winner = roundData.scores.winner;
+            round.scores.pointDifference = roundData.scores.pointDifference;
+
+            // Restore poks
+            round.poksPlaced = roundData.poksPlaced.map(pokData => {
+                return new Pok(
+                    pokData.id,
+                    pokData.playerId,
+                    pokData.points,
+                    pokData.position.x,
+                    pokData.position.y,
+                    pokData.zoneId,
+                    pokData.isHighScore,
+                    pokData.position.xPercent,
+                    pokData.position.yPercent
+                );
+            });
+
+            return round;
+        });
+
+        // Update UI and state machine
+        this.stateMachine.setState('PLAYER_TURN');
+        this.services.ui.hideStartSelector();
+        this.services.ui.updateScores(this.game);
+
+        const currentRound = this.game.getCurrentRound();
+        if (currentRound) {
+            this.services.ui.updateCurrentPlayer(currentRound);
+            this.restorePokElements(currentRound);
+        }
+    }
+
+    restorePokElements(round) {
+        round.poksPlaced.forEach(pok => {
+            const zoneElement = document.querySelector(`[data-zone="${pok.zoneId}"]`) ||
+                               document.getElementById(pok.zoneId);
+
+            if (zoneElement) {
+                const pokElement = this.services.pok.createPokElement(pok);
+                this.services.pok.attachPokToZone(pokElement, zoneElement);
+                this.services.pok.setPokElement(pok.id, pokElement);
+                this.setupPokHandlers(pokElement, pok.id);
+
+                // Highlight last placed pok
+                if (pok.id === round.lastPlacedPokId) {
+                    this.services.pok.highlightAsLastPlaced(pokElement);
+                }
+            }
+        });
+    }
+
+    saveGameState() {
+        if (this.game.isStarted) {
+            this.services.persistence.saveGameState(this.game, this);
+        }
     }
 
     startGame(startingPlayerId) {
@@ -928,6 +1105,7 @@ class GameOrchestrator {
         this.services.ui.hideStartSelector();
         this.services.ui.updateScores(this.game);
         this.services.ui.updateCurrentPlayer(this.game.getCurrentRound());
+        this.saveGameState();
     }
 
     placePok(zone, clickPosition) {
@@ -972,6 +1150,7 @@ class GameOrchestrator {
         this.services.pok.highlightAsLastPlaced(pokElement);
 
         this.services.ui.updateScores(this.game);
+        this.saveGameState();
 
         if (round.isRoundComplete()) {
             this.uiState.setAutoEndTimer(this.uiState.autoEndDelayMs, () => this.endRound());
@@ -1045,6 +1224,7 @@ class GameOrchestrator {
 
         // Update UI
         this.services.ui.updateScores(this.game);
+        this.saveGameState();
 
         // Check if round is complete
         if (round.isRoundComplete()) {
@@ -1105,6 +1285,7 @@ class GameOrchestrator {
             this.services.ui.updateCurrentPlayer(round);
         }
         this.services.ui.updateScores(this.game);
+        this.saveGameState();
     }
 
     endRound() {
@@ -1173,6 +1354,7 @@ class GameOrchestrator {
         this.services.ui.updateRoundsHistory(this.game);
 
         round.currentPlayerId = roundWinner;
+        this.saveGameState();
     }
 
     continueToNextRound() {
@@ -1205,6 +1387,7 @@ class GameOrchestrator {
 
         this.services.ui.updateScores(this.game);
         this.services.ui.updateCurrentPlayer(this.game.getCurrentRound());
+        this.saveGameState();
     }
 
     resetGame() {
@@ -1225,6 +1408,7 @@ class GameOrchestrator {
 
         this.services.ui.updateScores(this.game);
         this.services.ui.clearRoundsHistory();
+        this.services.persistence.clearGameState();
     }
 
     setupPokHandlers(pokElement, pokId) {
@@ -1286,5 +1470,17 @@ function handlePokDrop(event, targetZone) {
 
 function continueToNextRound() {
     orchestrator.continueToNextRound();
+}
+
+function confirmNewGame() {
+    if (orchestrator.game.isStarted) {
+        const confirmed = confirm('Are you sure you want to start a new game? Current progress will be lost.');
+        if (!confirmed) return;
+    }
+    orchestrator.resetGame();
+}
+
+function continueLastGame() {
+    orchestrator.continueLastGame();
 }
 

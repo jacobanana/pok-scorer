@@ -7,7 +7,25 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Game Start Selector: Choose First Player -->
+    <div id="gameStartSelector" class="start-selector">
+        <!-- Continue Last Game Button (shown when saved game exists) -->
+        <button id="continueGameButton" class="continue-game-top-button" onclick="continueLastGame()">
+            Continue Last Game
+        </button>
+
+        <div class="start-half red" onclick="startGame('red')">
+            RED
+        </div>
+        <div class="start-half blue" onclick="startGame('blue')">
+            BLUE
+        </div>
+    </div>
+
     <div class="container">
+        <!-- New Game Button (Top Right) -->
+        <button id="newGameButton" class="new-game-button" onclick="confirmNewGame()">New Game</button>
+
         <!-- ============================= -->
         <!-- MAIN CONTENT AREA             -->
         <!-- ============================= -->
@@ -40,16 +58,6 @@
                             <tbody id="roundsHistoryTableBody">
                             </tbody>
                         </table>
-                    </div>
-                </div>
-
-                <!-- Game Start Selector: Choose First Player -->
-                <div id="gameStartSelector" class="start-selector">
-                    <div class="start-half red" onclick="startGame('red')">
-                        RED
-                    </div>
-                    <div class="start-half blue" onclick="startGame('blue')">
-                        BLUE
                     </div>
                 </div>
 
