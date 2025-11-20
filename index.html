@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POK Score Counter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+            transition: background-color 0.3s;
+        }
+
+        body.red-turn {
+            background: #d32f2f;
+        }
+
+        body.blue-turn {
+            background: #1976d2;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+        }
+
+        .top-section {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .main-score-center {
+            text-align: center;
+            font-size: 64px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .main-score-center .red {
+            color: #d32f2f;
+        }
+
+        .main-score-center .blue {
+            color: #1976d2;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .scoreboard {
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .main-score {
+            font-size: 72px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .main-score .red {
+            color: #d32f2f;
+        }
+
+        .main-score .blue {
+            color: #1976d2;
+        }
+
+        .round-score {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .round-score .red {
+            color: #d32f2f;
+        }
+
+        .round-score .blue {
+            color: #1976d2;
+        }
+
+        .poks-remaining {
+            font-size: 16px;
+            font-style: italic;
+            color: #999;
+        }
+
+        .table-container {
+            background: #c9985a;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .outer-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            cursor: pointer;
+            z-index: 0;
+        }
+
+        .outer-zone:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .table {
+            background: #e4c9a0;
+            border: 3px solid #2c1810;
+            position: relative;
+            padding: 20px;
+            aspect-ratio: 1.5/1;
+            width: 100%;
+            max-width: 800px;
+            z-index: 1;
+        }
+
+        .table-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+        }
+
+        .side {
+            flex: 1;
+            position: relative;
+            display: flex;
+        }
+
+        .center-circle {
+            width: 200px;
+            height: 200px;
+            border: 3px solid #2c1810;
+            border-radius: 50%;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e4c9a0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .center-circle svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .column {
+            flex: 1;
+            border-right: 3px solid #2c1810;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .column.zero-column {
+            flex: 2;
+        }
+
+        .column:last-child {
+            border-right: none;
+        }
+
+        .side.right .column {
+            border-left: 3px solid #2c1810;
+            border-right: none;
+        }
+
+        .side.right .column:first-child {
+            border-left: none;
+        }
+
+        .zone {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .zone:hover {
+            background: #d4b890;
+        }
+
+        .zone-label {
+            font-size: 48px;
+            font-weight: normal;
+            color: #2c1810;
+        }
+
+        .circle-zone {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 3px solid #2c1810;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #e4c9a0;
+            transition: background-color 0.2s;
+        }
+
+        .circle-zone:hover {
+            background: #d4b890;
+        }
+
+        .circle-zone.top {
+            top: 20px;
+        }
+
+        .circle-zone.bottom {
+            bottom: 20px;
+        }
+
+        .side.left .circle-zone {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .side.right .circle-zone {
+            left: 20px;
+        }
+
+        .pok {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            z-index: 100;
+            cursor: move;
+        }
+
+        .pok.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .pok.red {
+            background: #d32f2f;
+        }
+
+        .pok.blue {
+            background: #1976d2;
+        }
+
+        button {
+            padding: 12px 24px;
+            margin: 10px 0;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #333;
+            color: white;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .start-selector {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2000;
+            display: flex;
+        }
+
+        .start-half {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            font-size: 64px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .start-half:hover {
+            opacity: 0.9;
+        }
+
+        .start-half.red {
+            background: #d32f2f;
+        }
+
+        .start-half.blue {
+            background: #1976d2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal.red-bg {
+            background: #d32f2f;
+        }
+
+        .modal.blue-bg {
+            background: #1976d2;
+        }
+
+        .modal.tie-bg {
+            background: #666;
+        }
+
+        .modal-content {
+            text-align: center;
+            color: white;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .modal-content .winner {
+            font-size: 96px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .modal-content .round-scores {
+            font-size: 48px;
+            margin: 30px 0;
+            color: white;
+        }
+
+        .modal-content .total-scores {
+            font-size: 36px;
+            margin-top: 40px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .modal-content .continue-hint {
+            font-size: 24px;
+            margin-top: 60px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-score-center">
+            <span class="red" id="mainRedTotal">0</span> - <span class="blue" id="mainBlueTotal">0</span>
+        </div>
+
+        <div class="top-section">
+            <div class="left-panel">
+                <h1>POK Score Counter</h1>
+
+                <div class="scoreboard" id="scoreboard">
+                    <div class="round-score">
+                        <span class="red" id="redRound">0</span> - <span class="blue" id="blueRound">0</span>
+                    </div>
+                    <div class="poks-remaining">
+                        <span id="redPoks">5</span> - <span id="bluePoks">5</span>
+                    </div>
+                </div>
+
+                <div id="nextPlayer" style="text-align: center; font-size: 18px; font-weight: bold; margin-top: auto; padding: 20px;"></div>
+
+                <div id="startSelector" class="start-selector">
+                    <div class="start-half red" onclick="startGame('red')">
+                        RED
+                    </div>
+                    <div class="start-half blue" onclick="startGame('blue')">
+                        BLUE
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container" id="tableContainer">
+            <div class="outer-zone" id="outerZone" onclick="placePokOuter(event)" ondrop="handlePokDrop(event, null, true)" ondragover="event.preventDefault()"></div>
+            <div class="table">
+                <div class="table-inner">
+                    <!-- Left side -->
+                    <div class="side left">
+                        <div class="column">
+                            <div class="zone" data-zone="3" data-low="2" data-high="3" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                <div class="zone-label">3</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="zone" data-zone="2" data-low="1" data-high="2" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                <div class="zone-label">2</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="zone" data-zone="1" data-low="0" data-high="1" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                <div class="zone-label">1</div>
+                            </div>
+                            <div class="circle-zone top" data-zone="4" data-low="1" data-high="4" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                <div class="zone-label">4</div>
+                            </div>
+                            <div class="circle-zone bottom" data-zone="5" data-low="1" data-high="5" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                <div class="zone-label">5</div>
+                            </div>
+                        </div>
+                        <div class="column zero-column">
+                            <div class="zone" data-zone="0" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                <div class="zone-label">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center POK logo -->
+                    <div class="center-circle">
+                        <svg viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="90" fill="none" stroke="#2c1810" stroke-width="2"/>
+                            <circle cx="100" cy="40" r="4" fill="#2c1810"/>
+                            <circle cx="130" cy="50" r="4" fill="#2c1810"/>
+                            <circle cx="155" cy="75" r="4" fill="#2c1810"/>
+                            <circle cx="160" cy="100" r="4" fill="#2c1810"/>
+                            <circle cx="155" cy="125" r="4" fill="#2c1810"/>
+                            <circle cx="130" cy="150" r="4" fill="#2c1810"/>
+                            <circle cx="100" cy="160" r="4" fill="#2c1810"/>
+                            <circle cx="70" cy="150" r="4" fill="#2c1810"/>
+                            <circle cx="45" cy="125" r="4" fill="#2c1810"/>
+                            <circle cx="40" cy="100" r="4" fill="#2c1810"/>
+                            <circle cx="45" cy="75" r="4" fill="#2c1810"/>
+                            <circle cx="70" cy="50" r="4" fill="#2c1810"/>
+                            <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="2"/>
+                            <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+        <div id="roundModal" class="modal" onclick="continueToNextRound()">
+            <div class="modal-content">
+                <div class="winner" id="modalWinner"></div>
+                <div class="round-scores" id="modalRoundScores"></div>
+                <div class="total-scores" id="modalTotalScores"></div>
+            </div>
+        </div>
+
+    <script>
+        // Game configuration
+        const POKS_PER_PLAYER = 5;
+
+        let currentPlayer = null;
+        let gameStarted = false;
+        let redPoksRemaining = POKS_PER_PLAYER;
+        let bluePoksRemaining = POKS_PER_PLAYER;
+        let redTotalScore = 0;
+        let blueTotalScore = 0;
+        let redRoundScore = 0;
+        let blueRoundScore = 0;
+        let pokPlacements = [];
+        let roundStartPlayer = null;
+        let autoEndTimeout = null;
+        let draggedPok = null;
+        let draggedPlacement = null;
+        let lastPlacedPok = null;
+
+        function startGame(startingPlayer) {
+            currentPlayer = startingPlayer;
+            roundStartPlayer = startingPlayer;
+            gameStarted = true;
+            document.getElementById('startSelector').style.display = 'none';
+            updateCurrentPlayerDisplay();
+        }
+
+        function updateCurrentPlayerDisplay() {
+            document.body.classList.remove('red-turn', 'blue-turn');
+
+            if (currentPlayer === 'red') {
+                document.body.classList.add('red-turn');
+            } else if (currentPlayer === 'blue') {
+                document.body.classList.add('blue-turn');
+            }
+
+            // Update next player display
+            const nextPlayerElement = document.getElementById('nextPlayer');
+            if (nextPlayerElement) {
+                if (currentPlayer === 'red') {
+                    nextPlayerElement.textContent = 'Next player: red';
+                    nextPlayerElement.style.color = '#d32f2f';
+                } else if (currentPlayer === 'blue') {
+                    nextPlayerElement.textContent = 'Next player: blue';
+                    nextPlayerElement.style.color = '#1976d2';
+                } else {
+                    nextPlayerElement.textContent = '';
+                }
+            }
+        }
+
+        function switchPlayer() {
+            // If one player has no poks left, the other player must play
+            if (redPoksRemaining === 0 && bluePoksRemaining > 0) {
+                currentPlayer = 'blue';
+            } else if (bluePoksRemaining === 0 && redPoksRemaining > 0) {
+                currentPlayer = 'red';
+            } else if (redPoksRemaining > 0 && bluePoksRemaining > 0) {
+                // Both players have poks remaining
+                // Player with fewer points plays next
+                if (redRoundScore < blueRoundScore) {
+                    currentPlayer = 'red';
+                } else if (blueRoundScore < redRoundScore) {
+                    currentPlayer = 'blue';
+                } else {
+                    // If tied, alternate
+                    currentPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+                }
+            }
+            updateCurrentPlayerDisplay();
+        }
+
+        function placePok(zone, event) {
+            if (!gameStarted) {
+                alert('Please select which team starts first!');
+                return;
+            }
+
+            if (currentPlayer === 'red' && redPoksRemaining === 0) {
+                alert('Red player has no poks remaining!');
+                return;
+            }
+            if (currentPlayer === 'blue' && bluePoksRemaining === 0) {
+                alert('Blue player has no poks remaining!');
+                return;
+            }
+
+            // Default to high value (wood visible)
+            const low = parseInt(zone.dataset.low);
+            const high = parseInt(zone.dataset.high);
+            const points = high;
+
+            // Get click position relative to zone
+            const rect = zone.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            // Create pok element
+            const pok = document.createElement('div');
+            pok.className = `pok ${currentPlayer}`;
+            pok.textContent = points;
+
+            // Position the pok at exact click location (center the pok on the click point)
+            pok.style.left = `${clickX}px`;
+            pok.style.top = `${clickY}px`;
+            pok.style.transform = 'translate(-50%, -50%)';
+
+            zone.appendChild(pok);
+
+            // Track placement
+            const placement = {
+                player: currentPlayer,
+                points: points,
+                element: pok,
+                x: clickX,
+                y: clickY,
+                zone: zone,
+                low: low,
+                high: high,
+                isHigh: true
+            };
+            pokPlacements.push(placement);
+
+            // Update round scores
+            if (currentPlayer === 'red') {
+                redRoundScore += points;
+                redPoksRemaining--;
+            } else {
+                blueRoundScore += points;
+                bluePoksRemaining--;
+            }
+
+            updateDisplay();
+
+            // Click to toggle between high/low, then remove
+            pok.onclick = function(e) {
+                e.stopPropagation();
+                togglePok(placement);
+            };
+
+            // Make pok draggable
+            makePokDraggable(pok, placement);
+
+            // Track this as the last placed pok
+            lastPlacedPok = placement;
+
+            // Check if round is complete (all poks placed)
+            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
+                // Clear any existing timeout
+                if (autoEndTimeout) {
+                    clearTimeout(autoEndTimeout);
+                }
+                // Give some time to adjust the last pok before auto-ending
+                autoEndTimeout = setTimeout(() => {
+                    endRound();
+                }, 1500);
+                return;
+            }
+
+            // Switch to next player after placing a pok
+            switchPlayer();
+        }
+
+        function placePokOuter(event) {
+            if (!gameStarted) {
+                alert('Please select which team starts first!');
+                return;
+            }
+
+            if (currentPlayer === 'red' && redPoksRemaining === 0) {
+                alert('Red player has no poks remaining!');
+                return;
+            }
+            if (currentPlayer === 'blue' && bluePoksRemaining === 0) {
+                alert('Blue player has no poks remaining!');
+                return;
+            }
+
+            // Outer zone always scores 0 points
+            const points = 0;
+
+            // Get click position relative to container
+            const container = document.getElementById('tableContainer');
+            const rect = container.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            // Create pok element
+            const pok = document.createElement('div');
+            pok.className = `pok ${currentPlayer}`;
+            pok.textContent = points;
+            pok.style.position = 'absolute';
+            pok.style.left = `${clickX}px`;
+            pok.style.top = `${clickY}px`;
+            pok.style.transform = 'translate(-50%, -50%)';
+
+            container.appendChild(pok);
+
+            // Track placement
+            const placement = {
+                player: currentPlayer,
+                points: points,
+                element: pok,
+                x: clickX,
+                y: clickY,
+                zone: null,
+                low: 0,
+                high: 0,
+                isHigh: true
+            };
+            pokPlacements.push(placement);
+
+            // Update round scores (0 points added)
+            if (currentPlayer === 'red') {
+                redPoksRemaining--;
+            } else {
+                bluePoksRemaining--;
+            }
+
+            updateDisplay();
+
+            // Click to remove (outer zone poks can only be removed, not toggled)
+            pok.onclick = function(e) {
+                e.stopPropagation();
+                removePok(pok);
+            };
+
+            // Make pok draggable
+            makePokDraggable(pok, placement);
+
+            // Track this as the last placed pok
+            lastPlacedPok = placement;
+
+            // Check if round is complete (all poks placed)
+            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
+                // Clear any existing timeout
+                if (autoEndTimeout) {
+                    clearTimeout(autoEndTimeout);
+                }
+                // Give 3 seconds to adjust the last pok before auto-ending
+                autoEndTimeout = setTimeout(() => {
+                    endRound();
+                }, 3000);
+                return;
+            }
+
+            // Switch to next player after placing a pok
+            switchPlayer();
+        }
+
+        function togglePok(placement) {
+            // Clear auto-end timeout since user is still adjusting
+            if (autoEndTimeout) {
+                clearTimeout(autoEndTimeout);
+                autoEndTimeout = null;
+            }
+
+            // Check if this is the last placed pok
+            const isLastPlaced = (placement === lastPlacedPok);
+
+            if (placement.low === placement.high) {
+                // Zone 0, can only remove if it's the last placed pok
+                if (isLastPlaced) {
+                    removePok(placement.element);
+                }
+                return;
+            }
+
+            if (placement.isHigh) {
+                // Switch to low value
+                const oldPoints = placement.points;
+                placement.points = placement.low;
+                placement.isHigh = false;
+                placement.element.textContent = placement.low;
+
+                // Update scores
+                if (placement.player === 'red') {
+                    redRoundScore = redRoundScore - oldPoints + placement.low;
+                } else {
+                    blueRoundScore = blueRoundScore - oldPoints + placement.low;
+                }
+                updateDisplay();
+
+                // Restart auto-end timer if all poks are still placed
+                if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
+                    autoEndTimeout = setTimeout(() => {
+                        endRound();
+                    }, 3000);
+                }
+            } else {
+                // Can only remove if it's the last placed pok
+                if (isLastPlaced) {
+                    removePok(placement.element);
+                }
+            }
+        }
+
+        function removePok(pokElement) {
+            // Clear auto-end timeout since user removed a pok
+            if (autoEndTimeout) {
+                clearTimeout(autoEndTimeout);
+                autoEndTimeout = null;
+            }
+
+            const index = pokPlacements.findIndex(p => p.element === pokElement);
+            if (index !== -1) {
+                const placement = pokPlacements[index];
+
+                // Update scores
+                if (placement.player === 'red') {
+                    redRoundScore -= placement.points;
+                    redPoksRemaining++;
+                } else {
+                    blueRoundScore -= placement.points;
+                    bluePoksRemaining++;
+                }
+
+                // Remove from array and DOM
+                pokPlacements.splice(index, 1);
+                pokElement.remove();
+
+                // Clear lastPlacedPok if this was it
+                if (placement === lastPlacedPok) {
+                    lastPlacedPok = null;
+                }
+
+                // Only switch player if we're not in the middle of the game
+                // (Don't switch during adjustment phase when poks are being removed/adjusted)
+                if (redPoksRemaining > 0 || bluePoksRemaining > 0) {
+                    currentPlayer = placement.player;
+                    updateCurrentPlayerDisplay();
+                }
+                updateDisplay();
+            }
+        }
+
+        function makePokDraggable(pokElement, placement) {
+            pokElement.draggable = true;
+
+            pokElement.addEventListener('dragstart', function(e) {
+                draggedPok = pokElement;
+                draggedPlacement = placement;
+                pokElement.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            pokElement.addEventListener('dragend', function(e) {
+                pokElement.classList.remove('dragging');
+                draggedPok = null;
+                draggedPlacement = null;
+            });
+        }
+
+        function handlePokDrop(event, targetZone, isOuterZone = false) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!draggedPok || !draggedPlacement) return;
+
+            // Clear auto-end timeout since user is adjusting
+            if (autoEndTimeout) {
+                clearTimeout(autoEndTimeout);
+                autoEndTimeout = null;
+            }
+
+            // Remove old score contribution
+            if (draggedPlacement.player === 'red') {
+                redRoundScore -= draggedPlacement.points;
+            } else {
+                blueRoundScore -= draggedPlacement.points;
+            }
+
+            // Calculate new position and score
+            let newPoints, newZone, newLow, newHigh;
+            let newX, newY;
+
+            if (isOuterZone) {
+                // Dropped in outer zone (0 points)
+                newPoints = 0;
+                newZone = null;
+                newLow = 0;
+                newHigh = 0;
+
+                const container = document.getElementById('tableContainer');
+                const rect = container.getBoundingClientRect();
+                newX = event.clientX - rect.left;
+                newY = event.clientY - rect.top;
+
+                // Move pok to container if it's not already there
+                if (draggedPok.parentElement !== container) {
+                    container.appendChild(draggedPok);
+                    draggedPok.style.position = 'absolute';
+                }
+            } else {
+                // Dropped in a scoring zone
+                newZone = targetZone;
+                newLow = parseInt(targetZone.dataset.low);
+                newHigh = parseInt(targetZone.dataset.high);
+                newPoints = newHigh;
+
+                const rect = targetZone.getBoundingClientRect();
+                newX = event.clientX - rect.left;
+                newY = event.clientY - rect.top;
+
+                // Move pok to new zone if needed
+                if (draggedPok.parentElement !== targetZone) {
+                    targetZone.appendChild(draggedPok);
+                }
+            }
+
+            // Update pok position
+            draggedPok.style.left = `${newX}px`;
+            draggedPok.style.top = `${newY}px`;
+            draggedPok.style.transform = 'translate(-50%, -50%)';
+            draggedPok.textContent = newPoints;
+
+            // Update placement data
+            draggedPlacement.points = newPoints;
+            draggedPlacement.zone = newZone;
+            draggedPlacement.x = newX;
+            draggedPlacement.y = newY;
+            draggedPlacement.low = newLow;
+            draggedPlacement.high = newHigh;
+            draggedPlacement.isHigh = true;
+
+            // Add new score contribution
+            if (draggedPlacement.player === 'red') {
+                redRoundScore += newPoints;
+            } else {
+                blueRoundScore += newPoints;
+            }
+
+            updateDisplay();
+
+            // Recalculate current player if needed
+            if (redPoksRemaining > 0 || bluePoksRemaining > 0) {
+                switchPlayer();
+            }
+
+            // Restart auto-end timer if all poks are placed
+            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
+                autoEndTimeout = setTimeout(() => {
+                    endRound();
+                }, 1500);
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('mainRedTotal').textContent = redTotalScore;
+            document.getElementById('mainBlueTotal').textContent = blueTotalScore;
+            document.getElementById('redRound').textContent = redRoundScore;
+            document.getElementById('blueRound').textContent = blueRoundScore;
+            document.getElementById('redPoks').textContent = redPoksRemaining;
+            document.getElementById('bluePoks').textContent = bluePoksRemaining;
+        }
+
+        function endRound() {
+            // Auto-end when both players have no poks left
+            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
+                // Continue to show modal
+            } else if (redPoksRemaining > 0 || bluePoksRemaining > 0) {
+                if (!confirm('Not all poks have been placed. Continue anyway?')) {
+                    return;
+                }
+            }
+
+            const difference = Math.abs(redRoundScore - blueRoundScore);
+
+            let roundWinner = null;
+            let winnerText = '';
+            let bgClass = '';
+
+            if (redRoundScore > blueRoundScore) {
+                redTotalScore += difference;
+                roundWinner = 'red';
+                winnerText = 'Red Wins!';
+                bgClass = 'red-bg';
+            } else if (blueRoundScore > redRoundScore) {
+                blueTotalScore += difference;
+                roundWinner = 'blue';
+                winnerText = 'Blue Wins!';
+                bgClass = 'blue-bg';
+            } else {
+                winnerText = 'Round Tied!';
+                bgClass = 'tie-bg';
+                // On tie, the player who didn't start the previous round starts the next one
+                roundWinner = roundStartPlayer === 'red' ? 'blue' : 'red';
+            }
+
+            updateDisplay();
+
+            // Check for game winner
+            if (redTotalScore >= 21) {
+                winnerText = 'Red Wins the Game!';
+            } else if (blueTotalScore >= 21) {
+                winnerText = 'Blue Wins the Game!';
+            }
+
+            // Show full-screen modal
+            const modal = document.getElementById('roundModal');
+            const modalWinner = document.getElementById('modalWinner');
+            const modalRoundScores = document.getElementById('modalRoundScores');
+            const modalTotalScores = document.getElementById('modalTotalScores');
+
+            modalWinner.textContent = winnerText;
+            modalRoundScores.textContent = `Round: Red ${redRoundScore} - Blue ${blueRoundScore}`;
+            modalTotalScores.textContent = `Total: Red ${redTotalScore} - Blue ${blueTotalScore}`;
+
+            // Remove old background classes
+            modal.classList.remove('red-bg', 'blue-bg', 'tie-bg');
+            // Add new background class
+            modal.classList.add(bgClass, 'show');
+
+            // Set next round starter to the winner
+            roundStartPlayer = roundWinner;
+            currentPlayer = roundWinner;
+        }
+
+        function continueToNextRound() {
+            const modal = document.getElementById('roundModal');
+            modal.classList.remove('show');
+
+            // Check if game is over
+            if (redTotalScore >= 21 || blueTotalScore >= 21) {
+                // Game is over, reset the game
+                resetGame();
+                return;
+            }
+
+            newRound();
+        }
+
+        function newRound() {
+            // Clear any pending auto-end timeout
+            if (autoEndTimeout) {
+                clearTimeout(autoEndTimeout);
+                autoEndTimeout = null;
+            }
+
+            // Clear all poks from table
+            document.querySelectorAll('.pok').forEach(pok => pok.remove());
+
+            // Reset round tracking
+            pokPlacements = [];
+            redRoundScore = 0;
+            blueRoundScore = 0;
+            redPoksRemaining = POKS_PER_PLAYER;
+            bluePoksRemaining = POKS_PER_PLAYER;
+            lastPlacedPok = null;
+
+            updateDisplay();
+            updateCurrentPlayerDisplay();
+        }
+
+        function resetGame() {
+            // Clear any pending auto-end timeout
+            if (autoEndTimeout) {
+                clearTimeout(autoEndTimeout);
+                autoEndTimeout = null;
+            }
+
+            // Clear all poks from table
+            document.querySelectorAll('.pok').forEach(pok => pok.remove());
+
+            // Reset everything
+            pokPlacements = [];
+            redRoundScore = 0;
+            blueRoundScore = 0;
+            redPoksRemaining = POKS_PER_PLAYER;
+            bluePoksRemaining = POKS_PER_PLAYER;
+            redTotalScore = 0;
+            blueTotalScore = 0;
+            gameStarted = false;
+            currentPlayer = null;
+            roundStartPlayer = null;
+            lastPlacedPok = null;
+
+            // Show start selector again
+            document.getElementById('startSelector').style.display = 'flex';
+
+            // Reset body background
+            document.body.classList.remove('red-turn', 'blue-turn');
+
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
