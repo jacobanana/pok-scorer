@@ -252,6 +252,38 @@ class PokService {
         return this.pokElements.get(pokId);
     }
 
+    calculatePositionFromEvent(zone, event) {
+        const rect = zone.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        return {
+            x,
+            y,
+            xPercent: (x / rect.width) * 100,
+            yPercent: (y / rect.height) * 100,
+            rect
+        };
+    }
+
+    makePokDraggable(pokElement, callbacks) {
+        pokElement.draggable = true;
+
+        pokElement.addEventListener('dragstart', (e) => {
+            pokElement.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            if (callbacks.onDragStart) {
+                callbacks.onDragStart();
+            }
+        });
+
+        pokElement.addEventListener('dragend', () => {
+            pokElement.classList.remove('dragging');
+            if (callbacks.onDragEnd) {
+                callbacks.onDragEnd();
+            }
+        });
+    }
+
     clearAllPokElements() {
         document.querySelectorAll('.pok').forEach(pok => pok.remove());
         this.pokElements.clear();
@@ -873,22 +905,17 @@ class GameOrchestrator {
             return;
         }
 
-        const rect = zone.getBoundingClientRect();
-        const position = {
-            x: clickPosition.clientX - rect.left,
-            y: clickPosition.clientY - rect.top
-        };
-
-        const scoreResult = this.services.scoring.calculateZoneScore(zone, position, rect);
+        const positionData = this.services.pok.calculatePositionFromEvent(zone, clickPosition);
+        const scoreResult = this.services.scoring.calculateZoneScore(zone, positionData, positionData.rect);
         const zoneId = zone.dataset.zone || zone.id;
 
         const pok = this.services.pok.createPok(
             round.currentPlayerId,
             scoreResult.points,
-            position,
+            positionData,
             zoneId,
             scoreResult.isHigh,
-            rect
+            positionData.rect
         );
 
         round.addPok(pok);
@@ -897,7 +924,7 @@ class GameOrchestrator {
             pokId: pok.id,
             playerId: pok.playerId,
             zoneId: pok.zoneId,
-            position: position,
+            position: { x: positionData.x, y: positionData.y },
             points: pok.points,
             isHighScore: pok.isHighScore,
             roundNumber: round.roundNumber,
@@ -918,6 +945,77 @@ class GameOrchestrator {
         }
 
         this.switchPlayer();
+    }
+
+    movePok(pokId, targetZone, dropEvent) {
+        const round = this.game.getCurrentRound();
+        if (!round) return;
+
+        const pok = round.getPokById(pokId);
+        const pokElement = this.services.pok.getPokElement(pokId);
+        if (!pok || !pokElement) return;
+
+        this.uiState.clearAutoEndTimer();
+
+        // Remove old score
+        round.scores.addPoints(pok.playerId, -pok.points);
+
+        // Calculate new position and score
+        const positionData = this.services.pok.calculatePositionFromEvent(targetZone, dropEvent);
+        const scoreResult = this.services.scoring.calculateZoneScore(targetZone, positionData, positionData.rect);
+        const zoneId = targetZone.dataset.zone || targetZone.id;
+
+        // Store old values for event logging
+        const oldPosition = { x: pok.position.x, y: pok.position.y };
+        const oldPoints = pok.points;
+        const oldZoneId = pok.zoneId;
+
+        // Update POK data
+        pok.updatePosition(positionData.x, positionData.y, positionData.xPercent, positionData.yPercent);
+        pok.updateScore(scoreResult.points, scoreResult.isHigh);
+        pok.updateZone(zoneId);
+
+        // Move POK element to new zone
+        if (pokElement.parentElement !== targetZone) {
+            targetZone.appendChild(pokElement);
+        }
+
+        // Update POK element visuals
+        pokElement.style.left = `${positionData.xPercent}%`;
+        pokElement.style.top = `${positionData.yPercent}%`;
+        pokElement.style.transform = 'translate(-50%, -50%)';
+        pokElement.textContent = scoreResult.points;
+
+        // Update low-score visual indicator
+        if (scoreResult.isHigh) {
+            pokElement.classList.remove('low-score');
+        } else {
+            pokElement.classList.add('low-score');
+        }
+
+        // Add new score
+        round.scores.addPoints(pok.playerId, scoreResult.points);
+
+        // Log the move event
+        this.eventProcessor.process(new GameEvent(EVENT_TYPES.POK_MOVED, {
+            pokId: pok.id,
+            playerId: pok.playerId,
+            fromZone: oldZoneId,
+            toZone: zoneId,
+            oldPosition: oldPosition,
+            newPosition: { x: position.x, y: position.y },
+            oldPoints: oldPoints,
+            newPoints: scoreResult.points,
+            roundNumber: round.roundNumber
+        }));
+
+        // Update UI
+        this.services.ui.updateScores(this.game);
+
+        // Check if round is complete
+        if (round.isRoundComplete()) {
+            this.uiState.setAutoEndTimer(this.uiState.autoEndDelayMs, () => this.endRound());
+        }
     }
 
     switchPlayer() {
@@ -1094,21 +1192,13 @@ class GameOrchestrator {
             }
         };
 
-        this.makePokDraggable(pokElement, pokId);
-    }
-
-    makePokDraggable(pokElement, pokId) {
-        pokElement.draggable = true;
-
-        pokElement.addEventListener('dragstart', (e) => {
-            this.uiState.draggedPokId = pokId;
-            pokElement.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        });
-
-        pokElement.addEventListener('dragend', (e) => {
-            pokElement.classList.remove('dragging');
-            this.uiState.draggedPokId = null;
+        this.services.pok.makePokDraggable(pokElement, {
+            onDragStart: () => {
+                this.uiState.draggedPokId = pokId;
+            },
+            onDragEnd: () => {
+                this.uiState.draggedPokId = null;
+            }
         });
     }
 }
@@ -1147,85 +1237,7 @@ function handlePokDrop(event, targetZone) {
 
     if (!orchestrator.uiState.draggedPokId) return;
 
-    const round = orchestrator.game.getCurrentRound();
-    if (!round) return;
-
-    const pok = round.getPokById(orchestrator.uiState.draggedPokId);
-    const pokElement = orchestrator.services.pok.getPokElement(orchestrator.uiState.draggedPokId);
-    if (!pok || !pokElement) return;
-
-    orchestrator.uiState.clearAutoEndTimer();
-
-    // Remove old score
-    round.scores.addPoints(pok.playerId, -pok.points);
-
-    // Calculate new position and score
-    const rect = targetZone.getBoundingClientRect();
-    const position = {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
-    };
-
-    const scoreResult = orchestrator.services.scoring.calculateZoneScore(targetZone, position, rect);
-    const newPoints = scoreResult.points;
-    const newIsHigh = scoreResult.isHigh;
-    const newX = position.x;
-    const newY = position.y;
-    const newXPercent = (newX / rect.width) * 100;
-    const newYPercent = (newY / rect.height) * 100;
-    const newZoneId = targetZone.dataset.zone || targetZone.id;
-
-    // Move POK element to new zone
-    if (pokElement.parentElement !== targetZone) {
-        targetZone.appendChild(pokElement);
-    }
-
-    // Store old values for event logging
-    const oldPosition = { x: pok.position.x, y: pok.position.y };
-    const oldPoints = pok.points;
-    const oldZoneId = pok.zoneId;
-
-    // Update POK data
-    pok.updatePosition(newX, newY, newXPercent, newYPercent);
-    pok.updateScore(newPoints, newIsHigh);
-    pok.updateZone(newZoneId);
-
-    // Log the move event
-    orchestrator.eventProcessor.process(new GameEvent(EVENT_TYPES.POK_MOVED, {
-        pokId: pok.id,
-        playerId: pok.playerId,
-        fromZone: oldZoneId,
-        toZone: newZoneId,
-        oldPosition: oldPosition,
-        newPosition: { x: newX, y: newY },
-        oldPoints: oldPoints,
-        newPoints: newPoints,
-        roundNumber: round.roundNumber
-    }));
-
-    // Update POK element visual position and score
-    pokElement.style.left = `${newXPercent}%`;
-    pokElement.style.top = `${newYPercent}%`;
-    pokElement.style.transform = 'translate(-50%, -50%)';
-    pokElement.textContent = newPoints;
-
-    // Update low-score visual indicator
-    if (newIsHigh) {
-        pokElement.classList.remove('low-score');
-    } else {
-        pokElement.classList.add('low-score');
-    }
-
-    // Add new score
-    round.scores.addPoints(pok.playerId, newPoints);
-
-    // Update UI
-    orchestrator.services.ui.updateScores(orchestrator.game);
-
-    // Check if round is complete
-    if (round.isRoundComplete()) {
-        orchestrator.uiState.setAutoEndTimer(orchestrator.uiState.autoEndDelayMs, () => orchestrator.endRound());
-    }
+    orchestrator.movePok(orchestrator.uiState.draggedPokId, targetZone, event);
 }
 
 function continueToNextRound() {

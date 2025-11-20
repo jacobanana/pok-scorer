@@ -202,7 +202,7 @@ body.blue-turn {
     position: relative;
     /* Enable pointer events on container */
     pointer-events: auto;
-    width: 70%;
+    width: 75%;
     margin: auto;
 }
 
@@ -245,7 +245,7 @@ body.blue-turn {
     border: 3px solid #2c1810;
     position: relative;
     aspect-ratio: 1.5/1;
-    width: 100%;
+    width: 92%;
     max-width: 800px;
     z-index: 1;
 }
