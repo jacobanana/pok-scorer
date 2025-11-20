@@ -8,16 +8,26 @@
 </head>
 <body>
     <div class="container">
+        <!-- ============================= -->
+        <!-- MAIN CONTENT AREA             -->
+        <!-- ============================= -->
         <div class="top-section">
+
+            <!-- ============================= -->
+            <!-- LEFT PANEL: Scores & History  -->
+            <!-- ============================= -->
             <div class="left-panel">
+
+                <!-- Overall Game Score Display -->
                 <div class="main-score-center">
-                    <span class="red" id="mainRedTotal">0</span> - <span class="blue" id="mainBlueTotal">0</span>
+                    <span class="red" id="totalScoreRed">0</span> - <span class="blue" id="totalScoreBlue">0</span>
                 </div>
 
+                <!-- Rounds History Table -->
                 <div class="rounds-history">
                     <h1>Rounds History</h1>
                     <div class="history-table-container">
-                        <table id="historyTable">
+                        <table id="roundsHistoryTable">
                             <thead>
                                 <tr>
                                     <th>#</th>
@@ -27,13 +37,14 @@
                                     <th>Diff</th>
                                 </tr>
                             </thead>
-                            <tbody id="historyTableBody">
+                            <tbody id="roundsHistoryTableBody">
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div id="startSelector" class="start-selector">
+                <!-- Game Start Selector: Choose First Player -->
+                <div id="gameStartSelector" class="start-selector">
                     <div class="start-half red" onclick="startGame('red')">
                         RED
                     </div>
@@ -43,92 +54,133 @@
                 </div>
             </div>
 
+            <!-- ============================= -->
+            <!-- RIGHT PANEL: Game Board       -->
+            <!-- ============================= -->
             <div class="right-panel">
-            <div class="table-container" id="tableContainer">
-            <div class="outer-zone" id="outerZone" onclick="placePokOuter(event)" ondrop="handlePokDrop(event, null, true)" ondragover="event.preventDefault()">
-                <div id="nextPlayer" class="next-player-indicator"></div>
-            </div>
-            <div class="table">
-                <div class="table-inner">
-                    <!-- Left side -->
-                    <div class="side left">
-                        <div class="column">
-                            <div class="zone" data-zone="3" data-low="2" data-high="3" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
-                                <div class="zone-label">3</div>
+                <div class="table-container" id="gameBoardContainer">
+
+                    <!-- Outer Zone: Area outside the main scoring zones -->
+                    <div class="outer-zone" id="outerPlayArea" onclick="placePokOuter(event)" ondrop="handlePokDrop(event, null, true)" ondragover="event.preventDefault()">
+                        <!-- Next Player Turn Indicator -->
+                        <div id="nextPlayerIndicator" class="next-player-indicator"></div>
+                    </div>
+
+                    <!-- Main Game Table -->
+                    <div class="table">
+                        <div class="table-inner">
+
+                            <!-- ============================= -->
+                            <!-- LEFT SIDE: Scoring Zones      -->
+                            <!-- ============================= -->
+                            <div class="side left">
+                                <!-- Zone 3: Highest scoring rectangle zone -->
+                                <div class="column">
+                                    <div class="zone" data-zone="3" data-low="2" data-high="3" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                        <div class="zone-label">3</div>
+                                    </div>
+                                </div>
+
+                                <!-- Zone 2: Middle scoring rectangle zone -->
+                                <div class="column">
+                                    <div class="zone" data-zone="2" data-low="1" data-high="2" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                        <div class="zone-label">2</div>
+                                    </div>
+                                </div>
+
+                                <!-- Zone 1: Inner rectangle zone + Circle zones 4 & 5 -->
+                                <div class="column">
+                                    <div class="zone" data-zone="1" data-low="0" data-high="1" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                        <div class="zone-label">1</div>
+                                    </div>
+
+                                    <!-- Zone 4: Top circle zone -->
+                                    <div class="circle-zone top" data-zone="4" data-low="1" data-high="4" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                        <div class="zone-label">4</div>
+                                    </div>
+
+                                    <!-- Zone 5: Bottom circle zone -->
+                                    <div class="circle-zone bottom" data-zone="5" data-low="1" data-high="5" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                        <div class="zone-label">5</div>
+                                    </div>
+                                </div>
+
+                                <!-- Zero Zone: Center column with no points -->
+                                <div class="column zero-column">
+                                    <div class="zone" data-zone="0" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="column">
-                            <div class="zone" data-zone="2" data-low="1" data-high="2" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
-                                <div class="zone-label">2</div>
-                            </div>
-                        </div>
-                        <div class="column">
-                            <div class="zone" data-zone="1" data-low="0" data-high="1" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
-                                <div class="zone-label">1</div>
-                            </div>
-                            <div class="circle-zone top" data-zone="4" data-low="1" data-high="4" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
-                                <div class="zone-label">4</div>
-                            </div>
-                            <div class="circle-zone bottom" data-zone="5" data-low="1" data-high="5" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
-                                <div class="zone-label">5</div>
-                            </div>
-                        </div>
-                        <div class="column zero-column">
-                            <div class="zone" data-zone="0" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+
+                            <!-- ============================= -->
+                            <!-- CENTER: POK Logo              -->
+                            <!-- ============================= -->
+                            <div class="center-circle">
+                                <svg viewBox="0 0 200 200">
+                                    <!-- Outer circle border -->
+                                    <circle cx="100" cy="100" r="90" fill="none" stroke="#2c1810" stroke-width="2"/>
+
+                                    <!-- 12 dots around the circle (clock positions) -->
+                                    <circle cx="100" cy="40" r="4" fill="#2c1810"/>
+                                    <circle cx="130" cy="50" r="4" fill="#2c1810"/>
+                                    <circle cx="155" cy="75" r="4" fill="#2c1810"/>
+                                    <circle cx="160" cy="100" r="4" fill="#2c1810"/>
+                                    <circle cx="155" cy="125" r="4" fill="#2c1810"/>
+                                    <circle cx="130" cy="150" r="4" fill="#2c1810"/>
+                                    <circle cx="100" cy="160" r="4" fill="#2c1810"/>
+                                    <circle cx="70" cy="150" r="4" fill="#2c1810"/>
+                                    <circle cx="45" cy="125" r="4" fill="#2c1810"/>
+                                    <circle cx="40" cy="100" r="4" fill="#2c1810"/>
+                                    <circle cx="45" cy="75" r="4" fill="#2c1810"/>
+                                    <circle cx="70" cy="50" r="4" fill="#2c1810"/>
+
+                                    <!-- Center crosshair -->
+                                    <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="2"/>
+                                    <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="2"/>
+                                </svg>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Center POK logo -->
-                    <div class="center-circle">
-                        <svg viewBox="0 0 200 200">
-                            <circle cx="100" cy="100" r="90" fill="none" stroke="#2c1810" stroke-width="2"/>
-                            <circle cx="100" cy="40" r="4" fill="#2c1810"/>
-                            <circle cx="130" cy="50" r="4" fill="#2c1810"/>
-                            <circle cx="155" cy="75" r="4" fill="#2c1810"/>
-                            <circle cx="160" cy="100" r="4" fill="#2c1810"/>
-                            <circle cx="155" cy="125" r="4" fill="#2c1810"/>
-                            <circle cx="130" cy="150" r="4" fill="#2c1810"/>
-                            <circle cx="100" cy="160" r="4" fill="#2c1810"/>
-                            <circle cx="70" cy="150" r="4" fill="#2c1810"/>
-                            <circle cx="45" cy="125" r="4" fill="#2c1810"/>
-                            <circle cx="40" cy="100" r="4" fill="#2c1810"/>
-                            <circle cx="45" cy="75" r="4" fill="#2c1810"/>
-                            <circle cx="70" cy="50" r="4" fill="#2c1810"/>
-                            <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="2"/>
-                            <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="2"/>
-                        </svg>
+                <!-- ============================= -->
+                <!-- CURRENT ROUND SCORE DISPLAY   -->
+                <!-- ============================= -->
+                <div class="current-round-score" id="currentRoundScoreDisplay">
+                    <!-- Score circles showing current round points -->
+                    <div class="score-row">
+                        <div class="score-circle red-circle">
+                            <span id="currentRoundScoreRed">0</span>
+                        </div>
+                        <div class="score-difference" id="currentRoundScoreDifference">0</div>
+                        <div class="score-circle blue-circle">
+                            <span id="currentRoundScoreBlue">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Remaining POKs counter -->
+                    <div class="poks-remaining-info">
+                        <span id="remainingPoksRed">5</span> - <span id="remainingPoksBlue">5</span>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="current-round-score" id="currentRoundScore">
-            <div class="score-row">
-                <div class="score-circle red-circle">
-                    <span id="redRound">0</span>
-                </div>
-                <div class="score-difference" id="scoreDifference">0</div>
-                <div class="score-circle blue-circle">
-                    <span id="blueRound">0</span>
-                </div>
-            </div>
-            <div class="poks-remaining-info">
-                <span id="redPoksInfo">5</span> - <span id="bluePoksInfo">5</span>
-            </div>
-        </div>
-        </div>
         </div>
     </div>
 
-        <div id="roundModal" class="modal" onclick="continueToNextRound()">
-            <div class="modal-content">
-                <div class="winner" id="modalWinner"></div>
-                <div class="round-scores" id="modalRoundScores"></div>
-                <div class="total-scores" id="modalTotalScores"></div>
-            </div>
+    <!-- ============================= -->
+    <!-- ROUND END MODAL               -->
+    <!-- ============================= -->
+    <div id="roundEndModal" class="modal" onclick="continueToNextRound()">
+        <div class="modal-content">
+            <div class="winner" id="roundEndModalWinner"></div>
+            <div class="round-scores" id="roundEndModalRoundScores"></div>
+            <div class="total-scores" id="roundEndModalTotalScores"></div>
         </div>
+    </div>
 
+    <!-- ============================= -->
+    <!-- JAVASCRIPT                    -->
+    <!-- ============================= -->
     <script src="app.js"></script>
 </body>
 </html>

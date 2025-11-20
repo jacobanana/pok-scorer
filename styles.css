@@ -1,3 +1,7 @@
+/* ============================================ */
+/* GLOBAL RESET & BASE STYLES                   */
+/* ============================================ */
+
 * {
     margin: 0;
     padding: 0;
@@ -15,6 +19,10 @@ body {
     transition: background-color 0.3s;
 }
 
+/* ============================================ */
+/* PLAYER TURN BODY BACKGROUNDS                 */
+/* ============================================ */
+
 body.red-turn {
     background: #d32f2f;
 }
@@ -22,6 +30,10 @@ body.red-turn {
 body.blue-turn {
     background: #1976d2;
 }
+
+/* ============================================ */
+/* MAIN CONTAINER & LAYOUT                      */
+/* ============================================ */
 
 .container {
     max-width: 100%;
@@ -42,13 +54,17 @@ body.blue-turn {
     flex: 1;
 }
 
-.right-panel {
+/* ============================================ */
+/* LEFT PANEL: Scores & History                */
+/* ============================================ */
+
+.left-panel {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    justify-content: center;
+    gap: 10px;
 }
 
+/* Overall Game Score Display */
 .main-score-center {
     text-align: center;
     font-size: 64px;
@@ -63,104 +79,7 @@ body.blue-turn {
     color: #1976d2;
 }
 
-.left-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-h1 {
-    text-align: center;
-    font-size: 20px;
-    margin-bottom: 5px;
-}
-
-h2 {
-    text-align: center;
-    font-size: 16px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.scoreboard {
-    text-align: center;
-    padding: 20px;
-    border-radius: 8px;
-    background: #fafafa;
-}
-
-.main-score {
-    font-size: 72px;
-    font-weight: bold;
-    margin-bottom: 15px;
-}
-
-.main-score .red {
-    color: #d32f2f;
-}
-
-.main-score .blue {
-    color: #1976d2;
-}
-
-.current-round-score {
-    text-align: center;
-    padding: 15px 20px;
-    border-radius: 12px;
-    transition: background-color 0.3s;
-    max-width: 800px;
-    width: 100%;
-    margin: 0 auto;
-}
-
-.current-round-score .score-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 8px;
-    position: relative;
-}
-
-.score-circle {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    font-weight: bold;
-    color: white;
-}
-
-.score-circle.red-circle {
-    background-color: #d32f2f;
-}
-
-.score-circle.blue-circle {
-    background-color: #1976d2;
-}
-
-.score-difference {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
-    background-color: #999;
-}
-
-.poks-remaining-info {
-    font-size: 28px;
-    color: #999;
-    font-weight: normal;
-}
-
+/* Rounds History Section */
 .rounds-history {
     background: #fafafa;
     border-radius: 8px;
@@ -176,20 +95,21 @@ h2 {
     flex: 1;
 }
 
-#historyTable {
+/* Rounds History Table */
+#roundsHistoryTable {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
 }
 
-#historyTable thead {
+#roundsHistoryTable thead {
     position: sticky;
     top: 0;
     background: #fafafa;
     z-index: 1;
 }
 
-#historyTable th {
+#roundsHistoryTable th {
     padding: 8px 4px;
     text-align: center;
     font-weight: bold;
@@ -197,66 +117,80 @@ h2 {
     color: #666;
 }
 
-#historyTable td {
+#roundsHistoryTable td {
     padding: 6px 4px;
     text-align: center;
     border-bottom: 1px solid #eee;
 }
 
-#historyTable tbody tr:hover {
+#roundsHistoryTable tbody tr:hover {
     background: #f5f5f5;
 }
 
-#historyTable .round-row-red {
+/* Round Row Color Coding */
+#roundsHistoryTable .round-row-red {
     background-color: rgba(211, 47, 47, 0.08);
 }
 
-#historyTable .round-row-red:hover {
+#roundsHistoryTable .round-row-red:hover {
     background-color: rgba(211, 47, 47, 0.15);
 }
 
-#historyTable .round-row-blue {
+#roundsHistoryTable .round-row-blue {
     background-color: rgba(25, 118, 210, 0.08);
 }
 
-#historyTable .round-row-blue:hover {
+#roundsHistoryTable .round-row-blue:hover {
     background-color: rgba(25, 118, 210, 0.15);
 }
 
-#historyTable .round-row-current {
+#roundsHistoryTable .round-row-current {
     background-color: rgba(255, 193, 7, 0.1);
     font-style: italic;
 }
 
-#historyTable .round-row-current:hover {
+#roundsHistoryTable .round-row-current:hover {
     background-color: rgba(255, 193, 7, 0.2);
 }
 
-#historyTable .round-number {
+/* Table Cell Styling */
+#roundsHistoryTable .round-number {
     font-weight: bold;
     color: #666;
 }
 
-#historyTable .winner-red {
+#roundsHistoryTable .winner-red {
     color: #d32f2f;
     font-weight: bold;
 }
 
-#historyTable .winner-blue {
+#roundsHistoryTable .winner-blue {
     color: #1976d2;
     font-weight: bold;
 }
 
-#historyTable .winner-tie {
+#roundsHistoryTable .winner-tie {
     color: #666;
     font-style: italic;
 }
 
-#historyTable .winner-current {
+#roundsHistoryTable .winner-current {
     color: #999;
     font-style: italic;
 }
 
+/* ============================================ */
+/* RIGHT PANEL: Game Board                     */
+/* ============================================ */
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* Game Board Container */
 .table-container {
     background: #c9985a;
     padding: 20px;
@@ -268,6 +202,7 @@ h2 {
     position: relative;
 }
 
+/* Outer Play Area (outside scoring zones) */
 .outer-zone {
     position: absolute;
     top: 0;
@@ -282,6 +217,7 @@ h2 {
     background: rgba(0, 0, 0, 0.05);
 }
 
+/* Next Player Turn Indicator */
 .next-player-indicator {
     position: absolute;
     top: 20px;
@@ -298,6 +234,11 @@ h2 {
     white-space: nowrap;
 }
 
+/* ============================================ */
+/* GAME TABLE & ZONES                          */
+/* ============================================ */
+
+/* Main Game Table */
 .table {
     background: #e4c9a0;
     border: 3px solid #2c1810;
@@ -315,12 +256,14 @@ h2 {
     display: flex;
 }
 
+/* Table Sides (Left/Right) */
 .side {
     flex: 1;
     position: relative;
     display: flex;
 }
 
+/* Center POK Logo Circle */
 .center-circle {
     width: 20%;
     max-width: 160px;
@@ -344,6 +287,7 @@ h2 {
     height: 100%;
 }
 
+/* Scoring Zone Columns */
 .column {
     flex: 1;
     border-right: 3px solid #2c1810;
@@ -369,6 +313,7 @@ h2 {
     border-left: none;
 }
 
+/* Scoring Zones (Rectangle zones 0-3) */
 .zone {
     flex: 1;
     display: flex;
@@ -389,6 +334,7 @@ h2 {
     color: #2c1810;
 }
 
+/* Circle Scoring Zones (zones 4 & 5) */
 .circle-zone {
     position: absolute;
     width: 40%;
@@ -429,6 +375,10 @@ h2 {
     left: 10%;
 }
 
+/* ============================================ */
+/* POK PIECES (Game Tokens)                    */
+/* ============================================ */
+
 .pok {
     position: absolute;
     width: 30px;
@@ -450,14 +400,17 @@ h2 {
     cursor: grabbing;
 }
 
+/* Red Player POK */
 .pok.red {
     background: #d32f2f;
 }
 
+/* Blue Player POK */
 .pok.blue {
     background: #1976d2;
 }
 
+/* Low Score POK (Half-filled gradient) */
 .pok.low-score.red {
     background: linear-gradient(135deg, #d32f2f 50%, #888 50%);
 }
@@ -466,26 +419,74 @@ h2 {
     background: linear-gradient(135deg, #1976d2 50%, #888 50%);
 }
 
-button {
-    padding: 12px 24px;
-    margin: 10px 0;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-    border-radius: 4px;
-    background: #333;
-    color: white;
-    transition: background 0.2s;
+/* ============================================ */
+/* CURRENT ROUND SCORE DISPLAY                 */
+/* ============================================ */
+
+.current-round-score {
+    text-align: center;
+    padding: 15px 20px;
+    border-radius: 12px;
+    transition: background-color 0.3s;
+    max-width: 800px;
     width: 100%;
+    margin: 0 auto;
 }
 
-button:hover {
-    background: #555;
+.current-round-score .score-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 8px;
+    position: relative;
 }
 
-button:active {
-    transform: scale(0.98);
+/* Score Circle (Shows current round points per player) */
+.score-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: bold;
+    color: white;
 }
+
+.score-circle.red-circle {
+    background-color: #d32f2f;
+}
+
+.score-circle.blue-circle {
+    background-color: #1976d2;
+}
+
+/* Score Difference Indicator */
+.score-difference {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: #999;
+}
+
+/* Remaining POKs Counter */
+.poks-remaining-info {
+    font-size: 28px;
+    color: #999;
+    font-weight: normal;
+}
+
+/* ============================================ */
+/* GAME START SELECTOR                         */
+/* ============================================ */
 
 .start-selector {
     position: fixed;
@@ -522,6 +523,10 @@ button:active {
     background: #1976d2;
 }
 
+/* ============================================ */
+/* ROUND END MODAL                             */
+/* ============================================ */
+
 .modal {
     display: none;
     position: fixed;
@@ -540,6 +545,7 @@ button:active {
     display: flex;
 }
 
+/* Modal Background Colors */
 .modal.red-bg {
     background: #d32f2f;
 }
@@ -552,6 +558,7 @@ button:active {
     background: #666;
 }
 
+/* Modal Content */
 .modal-content {
     text-align: center;
     color: white;
@@ -582,4 +589,72 @@ button:active {
     font-size: 24px;
     margin-top: 60px;
     color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================ */
+/* TYPOGRAPHY                                  */
+/* ============================================ */
+
+h1 {
+    text-align: center;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+h2 {
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* ============================================ */
+/* BUTTONS                                     */
+/* ============================================ */
+
+button {
+    padding: 12px 24px;
+    margin: 10px 0;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    background: #333;
+    color: white;
+    transition: background 0.2s;
+    width: 100%;
+}
+
+button:hover {
+    background: #555;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* ============================================ */
+/* LEGACY/UNUSED STYLES                        */
+/* (Kept for backwards compatibility)          */
+/* ============================================ */
+
+.scoreboard {
+    text-align: center;
+    padding: 20px;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.main-score {
+    font-size: 72px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.main-score .red {
+    color: #d32f2f;
+}
+
+.main-score .blue {
+    color: #1976d2;
 }
