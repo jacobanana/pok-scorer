@@ -192,12 +192,31 @@ class ScoringService {
             return { points: high, isHigh: true };
         }
 
-        const isNearBoundary = clickPosition.x >= zoneRect.width - this.boundaryThreshold;
+        const isCircularZone = zone.classList.contains('circle-zone');
+        const isNearBoundary = isCircularZone
+            ? this.isNearCircularBoundary(clickPosition, zoneRect)
+            : this.isNearRectangularBoundary(clickPosition, zoneRect);
 
         return {
             points: isNearBoundary ? low : high,
             isHigh: !isNearBoundary
         };
+    }
+
+    isNearCircularBoundary(clickPosition, zoneRect) {
+        const centerX = zoneRect.width / 2;
+        const centerY = zoneRect.height / 2;
+        const radius = zoneRect.width / 2;
+
+        const dx = clickPosition.x - centerX;
+        const dy = clickPosition.y - centerY;
+        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+
+        return distanceFromCenter >= radius - this.boundaryThreshold;
+    }
+
+    isNearRectangularBoundary(clickPosition, zoneRect) {
+        return clickPosition.x >= zoneRect.width - this.boundaryThreshold;
     }
 }
 
