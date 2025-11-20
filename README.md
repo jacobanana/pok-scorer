@@ -20,35 +20,40 @@ POK is a tabletop game where two players (Red and Blue) take turns tossing disc-
 - **Winning score:** 21 points
 
 ### Scoring Zones
-The table has several scoring zones:
-- **Zone 3:** 3 points (or 2 near boundary)
-- **Zone 2:** 2 points (or 1 near boundary)
-- **Zone 1:** 1 point (or 0 near boundary)
-- **Zone 0:** 0 points (center left area)
-- **Circle 4:** 4 points (top circle)
-- **Circle 5:** 5 points (bottom circle)
-- **Outer Zone:** 0 points (off the table)
+The table has several scoring zones, each worth a different number of points:
+- **Zone 1:** Worth 1 point
+- **Zone 2:** Worth 2 points
+- **Zone 3:** Worth 3 points
+- **Circle 4:** Worth 4 points
+- **Circle 5:** Worth 5 points
+- **Anywhere else:** No point
 
-**Boundary Scoring:** Most zones have a "high" and "low" score depending on where the pok lands. Poks placed near the boundary line toward the 0 zone score the lower value (shown with a diagonal stripe pattern).
+**What if my pok is on a boundary line?** If your pok is touching two zones at the same time, it scores the points of the lower-scoring zone. The areas near boundaries (shown with a diagonal stripe pattern) help you see where you might get the lower score - these are the spots closer to Zone 0.
 
 ### How to Play
 
-1. **Choose Starting Player:** At game start, select which team goes first (Red or Blue)
+**What are poks?** A pok is a marble with a plastic ring around it - this design helps it slide smoothly across the table.
+
+1. **Setup:**
+   - Players stand at one end of the table
+   - Each player has 5 poks for the round
+   - Decide who goes first (Red or Blue)
 
 2. **Taking Turns:**
-   - Players alternate placing their poks on the table
-   - The player with fewer points always plays next
+   - Players alternate sliding their poks down the table, aiming for the scoring zones on the other side
+   - Think of it like table curling - you slide the pok with enough force to reach the scoring zones
+   - The player with fewer total game points always plays next
    - If tied, players alternate turns
    - If one player runs out of poks, the other player continues until all poks are placed
 
-3. **Placing Poks:**
-   - Click or tap anywhere on the table to place a pok
-   - The score depends on which zone you hit
-   - Your last-placed pok can be removed by clicking it
-   - You can drag poks to adjust their position before the round ends
+3. **Sliding Technique:**
+   - Slide your pok from your end of the table toward the scoring zones
+   - You can use your pok to knock opponent's poks into lower-scoring zones or off the table
+   - Strategy matters - sometimes blocking is better than scoring!
 
 4. **End of Round:**
-   - The round ends automatically when all 10 poks are placed
+   - The round ends when all 10 poks have been played
+   - Count up each player's score based on where their poks landed
    - The player with the higher round score wins
    - **Points awarded:** The difference between the two round scores
    - If tied, no points are awarded
@@ -58,7 +63,7 @@ The table has several scoring zones:
    - In case of a tie, the player who didn't start the previous round goes first
 
 6. **Winning the Game:**
-   - First player to reach 21 points wins the game
+   - First player to reach 21 total points wins the game!
 
 ### Using the Score Counter
 
