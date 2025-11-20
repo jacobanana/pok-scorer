@@ -69,6 +69,13 @@ h1 {
     margin-bottom: 5px;
 }
 
+h2 {
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
 .scoreboard {
     text-align: center;
     padding: 30px 20px;
@@ -108,6 +115,72 @@ h1 {
     font-size: 16px;
     font-style: italic;
     color: #999;
+}
+
+.rounds-history {
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 15px;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.history-table-container {
+    overflow-y: auto;
+    flex: 1;
+}
+
+#historyTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+#historyTable thead {
+    position: sticky;
+    top: 0;
+    background: #fafafa;
+    z-index: 1;
+}
+
+#historyTable th {
+    padding: 8px 4px;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 2px solid #ddd;
+    color: #666;
+}
+
+#historyTable td {
+    padding: 6px 4px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+#historyTable tbody tr:hover {
+    background: #f5f5f5;
+}
+
+#historyTable .round-number {
+    font-weight: bold;
+    color: #666;
+}
+
+#historyTable .winner-red {
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+#historyTable .winner-blue {
+    color: #1976d2;
+    font-weight: bold;
+}
+
+#historyTable .winner-tie {
+    color: #666;
+    font-style: italic;
 }
 
 .table-container {

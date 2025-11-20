@@ -282,7 +282,8 @@
                     roundModal: document.getElementById('roundModal'),
                     modalWinner: document.getElementById('modalWinner'),
                     modalRoundScores: document.getElementById('modalRoundScores'),
-                    modalTotalScores: document.getElementById('modalTotalScores')
+                    modalTotalScores: document.getElementById('modalTotalScores'),
+                    historyTableBody: document.getElementById('historyTableBody')
                 };
             }
 
@@ -348,6 +349,56 @@
 
             hideRoundModal() {
                 this.domElements.roundModal.classList.remove('show');
+            }
+
+            updateRoundsHistory(game) {
+                if (!this.domElements.historyTableBody) return;
+
+                this.domElements.historyTableBody.innerHTML = '';
+
+                game.rounds.forEach((round, index) => {
+                    if (!round.isComplete) return;
+
+                    const row = document.createElement('tr');
+
+                    const roundNum = document.createElement('td');
+                    roundNum.textContent = index + 1;
+                    roundNum.className = 'round-number';
+
+                    const redScore = document.createElement('td');
+                    redScore.textContent = round.scores.red;
+
+                    const blueScore = document.createElement('td');
+                    blueScore.textContent = round.scores.blue;
+
+                    const winner = document.createElement('td');
+                    if (round.scores.winner === PLAYER_ID.RED) {
+                        winner.textContent = 'Red';
+                        winner.className = 'winner-red';
+                    } else if (round.scores.winner === PLAYER_ID.BLUE) {
+                        winner.textContent = 'Blue';
+                        winner.className = 'winner-blue';
+                    } else {
+                        winner.textContent = 'Tie';
+                        winner.className = 'winner-tie';
+                    }
+
+                    const diff = document.createElement('td');
+                    diff.textContent = round.scores.pointDifference;
+
+                    row.appendChild(roundNum);
+                    row.appendChild(redScore);
+                    row.appendChild(blueScore);
+                    row.appendChild(winner);
+                    row.appendChild(diff);
+
+                    this.domElements.historyTableBody.appendChild(row);
+                });
+            }
+
+            clearRoundsHistory() {
+                if (!this.domElements.historyTableBody) return;
+                this.domElements.historyTableBody.innerHTML = '';
             }
         }
 
@@ -932,6 +983,8 @@
                     bgClass
                 );
 
+                this.services.ui.updateRoundsHistory(this.game);
+
                 round.currentPlayerId = roundWinner;
             }
 
@@ -984,6 +1037,7 @@
                 document.body.classList.remove(PLAYER_CLASS[PLAYER_ID.RED], PLAYER_CLASS[PLAYER_ID.BLUE]);
 
                 this.services.ui.updateScores(this.game);
+                this.services.ui.clearRoundsHistory();
             }
 
             setupPokHandlers(pokElement, pokId) {
