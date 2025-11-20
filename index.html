@@ -9,6 +9,10 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         body {
@@ -290,6 +294,14 @@
 
         .pok.blue {
             background: #1976d2;
+        }
+
+        .pok.low-score.red {
+            background: linear-gradient(135deg, #d32f2f 50%, #888 50%);
+        }
+
+        .pok.low-score.blue {
+            background: linear-gradient(135deg, #1976d2 50%, #888 50%);
         }
 
         button {
@@ -693,9 +705,12 @@
             }
         }
 
-        function createPokElement(player, points, x, y) {
+        function createPokElement(player, points, x, y, isHigh = true) {
             const pok = document.createElement('div');
             pok.className = `pok ${player}`;
+            if (!isHigh) {
+                pok.classList.add('low-score');
+            }
             pok.textContent = points;
             pok.style.left = `${x}px`;
             pok.style.top = `${y}px`;
@@ -704,13 +719,12 @@
         }
 
         function setupPokHandlers(pok, placement, isOuterZone = false) {
-            // Click to toggle between high/low, then remove
+            // Click to remove if it's the last placed pok
             pok.onclick = function(e) {
                 e.stopPropagation();
-                if (isOuterZone) {
+                // Check if this is the last placed pok
+                if (placement === lastPlacedPok) {
                     removePok(pok);
-                } else {
-                    togglePok(placement);
                 }
             };
 
@@ -779,7 +793,7 @@
             const { points, isHigh } = calculateZoneScore(low, high, clickX, rect.width);
 
             // Create and position pok element
-            const pok = createPokElement(currentPlayer, points, clickX, clickY);
+            const pok = createPokElement(currentPlayer, points, clickX, clickY, isHigh);
             zone.appendChild(pok);
 
             // Track placement
@@ -850,43 +864,6 @@
             switchPlayer();
         }
 
-        function togglePok(placement) {
-            // Clear auto-end timeout since user is still adjusting
-            clearAutoEndTimer();
-
-            // Check if this is the last placed pok
-            const isLastPlaced = (placement === lastPlacedPok);
-
-            if (placement.low === placement.high) {
-                // Zone 0, can only remove if it's the last placed pok
-                if (isLastPlaced) {
-                    removePok(placement.element);
-                }
-                return;
-            }
-
-            if (placement.isHigh) {
-                // Switch to low value
-                const oldPoints = placement.points;
-                placement.points = placement.low;
-                placement.isHigh = false;
-                placement.element.textContent = placement.low;
-
-                // Update scores
-                updatePlayerScore(placement.player, -oldPoints + placement.low);
-                updateDisplay();
-
-                // Restart auto-end timer if all poks are still placed
-                if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
-                    setAutoEndTimer(AUTO_END_DELAY_OUTER_MS);
-                }
-            } else {
-                // Can only remove if it's the last placed pok
-                if (isLastPlaced) {
-                    removePok(placement.element);
-                }
-            }
-        }
 
         function removePok(pokElement) {
             // Clear auto-end timeout since user removed a pok
@@ -987,6 +964,13 @@
             draggedPok.style.top = `${dropData.y}px`;
             draggedPok.style.transform = 'translate(-50%, -50%)';
             draggedPok.textContent = dropData.points;
+
+            // Update low-score class
+            if (dropData.isHigh) {
+                draggedPok.classList.remove('low-score');
+            } else {
+                draggedPok.classList.add('low-score');
+            }
 
             // Update placement data
             draggedPlacement.points = dropData.points;
