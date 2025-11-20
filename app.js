@@ -862,6 +862,7 @@
                 }));
 
                 this.services.ui.hideStartSelector();
+                this.services.ui.updateScores(this.game);
                 this.services.ui.updateCurrentPlayer(this.game.getCurrentRound());
             }
 
