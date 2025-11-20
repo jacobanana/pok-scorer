@@ -14,16 +14,9 @@
 
         <div class="top-section">
             <div class="left-panel">
-                <h1>POK Score Counter</h1>
-
-                <div class="scoreboard" id="scoreboard">
-                    <div class="poks-remaining">
-                        <span id="redPoks">5</span> - <span id="bluePoks">5</span>
-                    </div>
-                </div>
 
                 <div class="rounds-history">
-                    <h2>Rounds History</h2>
+                    <h1>Rounds History</h1>
                     <div class="history-table-container">
                         <table id="historyTable">
                             <thead>
@@ -112,7 +105,18 @@
         </div>
 
         <div class="current-round-score" id="currentRoundScore">
-            <span class="red" id="redRound">0</span> - <span class="blue" id="blueRound">0</span>
+            <div class="score-row">
+                <div class="score-circle red-circle">
+                    <span id="redRound">0</span>
+                </div>
+                <div class="score-difference" id="scoreDifference">0</div>
+                <div class="score-circle blue-circle">
+                    <span id="blueRound">0</span>
+                </div>
+            </div>
+            <div class="poks-remaining-info">
+                <span id="redPoksInfo">5</span> - <span id="bluePoksInfo">5</span>
+            </div>
         </div>
         </div>
         </div>

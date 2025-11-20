@@ -277,14 +277,15 @@
                     mainBlueTotal: document.getElementById('mainBlueTotal'),
                     redRound: document.getElementById('redRound'),
                     blueRound: document.getElementById('blueRound'),
-                    redPoks: document.getElementById('redPoks'),
-                    bluePoks: document.getElementById('bluePoks'),
                     roundModal: document.getElementById('roundModal'),
                     modalWinner: document.getElementById('modalWinner'),
                     modalRoundScores: document.getElementById('modalRoundScores'),
                     modalTotalScores: document.getElementById('modalTotalScores'),
                     historyTableBody: document.getElementById('historyTableBody'),
-                    currentRoundScore: document.getElementById('currentRoundScore')
+                    currentRoundScore: document.getElementById('currentRoundScore'),
+                    scoreDifference: document.getElementById('scoreDifference'),
+                    redPoksInfo: document.getElementById('redPoksInfo'),
+                    bluePoksInfo: document.getElementById('bluePoksInfo')
                 };
             }
 
@@ -297,10 +298,17 @@
                 if (round) {
                     this.domElements.redRound.textContent = round.scores.red;
                     this.domElements.blueRound.textContent = round.scores.blue;
-                    this.domElements.redPoks.textContent = round.redPoksRemaining;
-                    this.domElements.bluePoks.textContent = round.bluePoksRemaining;
 
-                    // Update current round score background based on leader
+                    // Update poks remaining info
+                    if (this.domElements.redPoksInfo) {
+                        this.domElements.redPoksInfo.textContent = round.redPoksRemaining;
+                    }
+                    if (this.domElements.bluePoksInfo) {
+                        this.domElements.bluePoksInfo.textContent = round.bluePoksRemaining;
+                    }
+
+                    // Update current round score background and difference based on leader
+                    const diff = Math.abs(round.scores.red - round.scores.blue);
                     if (this.domElements.currentRoundScore) {
                         if (round.scores.red > round.scores.blue) {
                             this.domElements.currentRoundScore.style.backgroundColor = 'rgba(211, 47, 47, 0.15)';
@@ -310,16 +318,32 @@
                             this.domElements.currentRoundScore.style.backgroundColor = '#fafafa';
                         }
                     }
+
+                    // Update difference display
+                    if (this.domElements.scoreDifference) {
+                        this.domElements.scoreDifference.textContent = diff > 0 ? '+' + diff : '0';
+                    }
                 } else {
                     this.domElements.redRound.textContent = 0;
                     this.domElements.blueRound.textContent = 0;
-                    this.domElements.redPoks.textContent = game.poksPerPlayer;
-                    this.domElements.bluePoks.textContent = game.poksPerPlayer;
+
+                    if (this.domElements.redPoksInfo) {
+                        this.domElements.redPoksInfo.textContent = game.poksPerPlayer;
+                    }
+                    if (this.domElements.bluePoksInfo) {
+                        this.domElements.bluePoksInfo.textContent = game.poksPerPlayer;
+                    }
 
                     if (this.domElements.currentRoundScore) {
                         this.domElements.currentRoundScore.style.backgroundColor = '#fafafa';
                     }
+                    if (this.domElements.scoreDifference) {
+                        this.domElements.scoreDifference.textContent = '0';
+                    }
                 }
+
+                // Update rounds history to show current round
+                this.updateRoundsHistory(game);
             }
 
             updateCurrentPlayer(round) {
@@ -373,8 +397,6 @@
                 this.domElements.historyTableBody.innerHTML = '';
 
                 game.rounds.forEach((round, index) => {
-                    if (!round.isComplete) return;
-
                     const row = document.createElement('tr');
 
                     const roundNum = document.createElement('td');
@@ -388,19 +410,30 @@
                     blueScore.textContent = round.scores.blue;
 
                     const winner = document.createElement('td');
-                    if (round.scores.winner === PLAYER_ID.RED) {
-                        winner.textContent = 'Red';
-                        winner.className = 'winner-red';
-                    } else if (round.scores.winner === PLAYER_ID.BLUE) {
-                        winner.textContent = 'Blue';
-                        winner.className = 'winner-blue';
-                    } else {
-                        winner.textContent = 'Tie';
-                        winner.className = 'winner-tie';
-                    }
-
                     const diff = document.createElement('td');
-                    diff.textContent = round.scores.pointDifference;
+
+                    if (round.isComplete) {
+                        // Completed round - show winner and diff
+                        if (round.scores.winner === PLAYER_ID.RED) {
+                            winner.textContent = 'Red';
+                            winner.className = 'winner-red';
+                            row.className = 'round-row-red';
+                        } else if (round.scores.winner === PLAYER_ID.BLUE) {
+                            winner.textContent = 'Blue';
+                            winner.className = 'winner-blue';
+                            row.className = 'round-row-blue';
+                        } else {
+                            winner.textContent = 'Tie';
+                            winner.className = 'winner-tie';
+                        }
+                        diff.textContent = round.scores.pointDifference;
+                    } else {
+                        // Current round - show in progress
+                        winner.textContent = 'In progress';
+                        winner.className = 'winner-current';
+                        diff.textContent = '-';
+                        row.className = 'round-row-current';
+                    }
 
                     row.appendChild(roundNum);
                     row.appendChild(redScore);
@@ -639,8 +672,6 @@
                     mainBlueTotal: null,
                     redRound: null,
                     blueRound: null,
-                    redPoks: null,
-                    bluePoks: null,
                     roundModal: null,
                     modalWinner: null,
                     modalRoundScores: null,
@@ -658,8 +689,6 @@
                 dom.mainBlueTotal = document.getElementById('mainBlueTotal');
                 dom.redRound = document.getElementById('redRound');
                 dom.blueRound = document.getElementById('blueRound');
-                dom.redPoks = document.getElementById('redPoks');
-                dom.bluePoks = document.getElementById('bluePoks');
                 dom.roundModal = document.getElementById('roundModal');
                 dom.modalWinner = document.getElementById('modalWinner');
                 dom.modalRoundScores = document.getElementById('modalRoundScores');
