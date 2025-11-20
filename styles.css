@@ -135,6 +135,22 @@ h1 {
     background: rgba(0, 0, 0, 0.05);
 }
 
+.next-player-indicator {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    z-index: 10;
+    pointer-events: none;
+    text-align: center;
+    white-space: nowrap;
+}
+
 .table {
     background: #e4c9a0;
     border: 3px solid #2c1810;

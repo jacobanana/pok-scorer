@@ -25,8 +25,6 @@
                     </div>
                 </div>
 
-                <div id="nextPlayer" style="text-align: center; font-size: 18px; font-weight: bold; margin-top: auto; padding: 20px;"></div>
-
                 <div id="startSelector" class="start-selector">
                     <div class="start-half red" onclick="startGame('red')">
                         RED
@@ -38,7 +36,9 @@
             </div>
 
             <div class="table-container" id="tableContainer">
-            <div class="outer-zone" id="outerZone" onclick="placePokOuter(event)" ondrop="handlePokDrop(event, null, true)" ondragover="event.preventDefault()"></div>
+            <div class="outer-zone" id="outerZone" onclick="placePokOuter(event)" ondrop="handlePokDrop(event, null, true)" ondragover="event.preventDefault()">
+                <div id="nextPlayer" class="next-player-indicator"></div>
+            </div>
             <div class="table">
                 <div class="table-inner">
                     <!-- Left side -->

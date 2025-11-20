@@ -320,11 +320,11 @@
 
                 if (this.domElements.nextPlayer) {
                     if (currentPlayerId === PLAYER_ID.RED) {
-                        this.domElements.nextPlayer.textContent = 'Next player: red';
-                        this.domElements.nextPlayer.style.color = PLAYER_COLOR[PLAYER_ID.RED];
+                        this.domElements.nextPlayer.textContent = 'Next player: RED';
+                        this.domElements.nextPlayer.style.backgroundColor = PLAYER_COLOR[PLAYER_ID.RED];
                     } else if (currentPlayerId === PLAYER_ID.BLUE) {
-                        this.domElements.nextPlayer.textContent = 'Next player: blue';
-                        this.domElements.nextPlayer.style.color = PLAYER_COLOR[PLAYER_ID.BLUE];
+                        this.domElements.nextPlayer.textContent = 'Next player: BLUE';
+                        this.domElements.nextPlayer.style.backgroundColor = PLAYER_COLOR[PLAYER_ID.BLUE];
                     }
                 }
             }
