@@ -159,12 +159,13 @@ h1 {
 }
 
 .center-circle {
-    width: 200px;
-    height: 200px;
+    width: 20%;
+    max-width: 160px;
+    aspect-ratio: 1;
     border: 3px solid #2c1810;
     border-radius: 50%;
     position: absolute;
-    right: 20px;
+    right: 2.5%;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
@@ -227,8 +228,9 @@ h1 {
 
 .circle-zone {
     position: absolute;
-    width: 80px;
-    height: 80px;
+    width: 40%;
+    min-width: 40px;
+    aspect-ratio: 1/1;
     border: 3px solid #2c1810;
     border-radius: 50%;
     display: flex;
@@ -239,16 +241,20 @@ h1 {
     transition: background-color 0.2s;
 }
 
+.circle-zone .zone-label {
+    font-size: clamp(12px, 3vw, 20px);
+}
+
 .circle-zone:hover {
     background: #d4b890;
 }
 
 .circle-zone.top {
-    top: 20px;
+    top: 10%;
 }
 
 .circle-zone.bottom {
-    bottom: 20px;
+    bottom: 10%;
 }
 
 .side.left .circle-zone {
@@ -257,7 +263,7 @@ h1 {
 }
 
 .side.right .circle-zone {
-    left: 20px;
+    left: 10%;
 }
 
 .pok {
