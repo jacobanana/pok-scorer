@@ -1,0 +1,64 @@
+<svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer zone (brown background) -->
+  <rect x="0" y="0" width="1200" height="400" fill="#c9985a"/>
+
+  <!-- Main table -->
+  <rect x="80" y="50" width="1040" height="300" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
+
+  <!-- Zone dividers on left side -->
+  <line x1="240" y1="50" x2="240" y2="350" stroke="#2c1810" stroke-width="3"/>
+  <line x1="320" y1="50" x2="320" y2="350" stroke="#2c1810" stroke-width="3"/>
+  <line x1="400" y1="50" x2="400" y2="350" stroke="#2c1810" stroke-width="3"/>
+
+  <!-- Zone dividers on right side -->
+  <line x1="800" y1="50" x2="800" y2="350" stroke="#2c1810" stroke-width="3"/>
+  <line x1="880" y1="50" x2="880" y2="350" stroke="#2c1810" stroke-width="3"/>
+  <line x1="960" y1="50" x2="960" y2="350" stroke="#2c1810" stroke-width="3"/>
+
+  <!-- Zone labels - left side (rotated 90 degrees counterclockwise) -->
+  <text x="180" y="210" font-size="48" fill="#2c1810" text-anchor="middle" font-family="Arial" transform="rotate(-90 180 210)">3</text>
+  <text x="300" y="210" font-size="48" fill="#2c1810" text-anchor="middle" font-family="Arial" transform="rotate(-90 300 210)">2</text>
+  <text x="380" y="210" font-size="48" fill="#2c1810" text-anchor="middle" font-family="Arial" transform="rotate(-90 380 210)">1</text>
+
+  <!-- Zone labels - right side (rotated 90 degrees clockwise) -->
+  <text x="820" y="210" font-size="48" fill="#2c1810" text-anchor="middle" font-family="Arial" transform="rotate(90 820 210)">1</text>
+  <text x="900" y="210" font-size="48" fill="#2c1810" text-anchor="middle" font-family="Arial" transform="rotate(90 900 210)">2</text>
+  <text x="1020" y="210" font-size="48" fill="#2c1810" text-anchor="middle" font-family="Arial" transform="rotate(90 1020 210)">3</text>
+
+  <!-- Left side circles -->
+  <circle cx="360" cy="110" r="30" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
+  <text x="360" y="110" font-size="28" fill="#2c1810" text-anchor="middle" dominant-baseline="middle" font-family="Arial" transform="rotate(-90 360 110)">4</text>
+
+  <circle cx="360" cy="290" r="30" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
+  <text x="360" y="290" font-size="28" fill="#2c1810" text-anchor="middle" dominant-baseline="middle" font-family="Arial" transform="rotate(-90 360 290)">5</text>
+
+  <!-- Right side circles -->
+  <circle cx="840" cy="110" r="30" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
+  <text x="840" y="110" font-size="28" fill="#2c1810" text-anchor="middle" dominant-baseline="middle" font-family="Arial" transform="rotate(90 840 110)">5</text>
+
+  <circle cx="840" cy="290" r="30" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
+  <text x="840" y="290" font-size="28" fill="#2c1810" text-anchor="middle" dominant-baseline="middle" font-family="Arial" transform="rotate(90 840 290)">4</text>
+
+  <!-- Center POK logo -->
+  <circle cx="600" cy="200" r="90" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
+
+  <!-- 12 dots around the circle (positioned at radius 75) -->
+  <circle cx="600" cy="125" r="4" fill="#2c1810"/>
+  <circle cx="635" cy="137.5" r="4" fill="#2c1810"/>
+  <circle cx="661" cy="162.5" r="4" fill="#2c1810"/>
+  <circle cx="675" cy="200" r="4" fill="#2c1810"/>
+  <circle cx="661" cy="237.5" r="4" fill="#2c1810"/>
+  <circle cx="635" cy="262.5" r="4" fill="#2c1810"/>
+  <circle cx="600" cy="275" r="4" fill="#2c1810"/>
+  <circle cx="565" cy="262.5" r="4" fill="#2c1810"/>
+  <circle cx="539" cy="237.5" r="4" fill="#2c1810"/>
+  <circle cx="525" cy="200" r="4" fill="#2c1810"/>
+  <circle cx="539" cy="162.5" r="4" fill="#2c1810"/>
+  <circle cx="565" cy="137.5" r="4" fill="#2c1810"/>
+
+  <!-- POK letters in center -->
+  <text x="570" y="210" font-size="32" fill="#2c1810" text-anchor="middle" font-family="Arial">P</text>
+  <text x="600" y="210" font-size="32" fill="#2c1810" text-anchor="middle" font-family="Arial">O</text>
+  <text x="630" y="210" font-size="32" fill="#2c1810" text-anchor="middle" font-family="Arial">K</text>
+
+</svg>
