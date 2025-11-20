@@ -52,6 +52,9 @@
                         BLUE
                     </div>
                 </div>
+
+                <!-- Next Player Turn Indicator -->
+                <div id="nextPlayerIndicator" class="next-player-indicator"></div>
             </div>
 
             <!-- ============================= -->
@@ -60,10 +63,8 @@
             <div class="right-panel">
                 <div class="table-container" id="gameBoardContainer">
 
-                    <!-- Outer Zone: Area outside the main scoring zones -->
-                    <div class="outer-zone" id="outerPlayArea" onclick="placePokOuter(event)" ondrop="handlePokDrop(event, null, true)" ondragover="event.preventDefault()">
-                        <!-- Next Player Turn Indicator -->
-                        <div id="nextPlayerIndicator" class="next-player-indicator"></div>
+                    <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
+                    <div class="outer-zone zone" id="outerPlayAreaLeft" data-zone="outer" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
                     </div>
 
                     <!-- Main Game Table -->
@@ -141,6 +142,11 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
+                    <div class="outer-zone zone" id="outerPlayAreaRight" data-zone="outer" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                    </div>
+
                 </div>
 
                 <!-- ============================= -->

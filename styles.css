@@ -194,12 +194,16 @@ body.blue-turn {
 .table-container {
     background: #c9985a;
     padding: 20px;
-    border-radius: 4px;
+    border-radius: 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
+    /* Enable pointer events on container */
+    pointer-events: auto;
+    width: 70%;
+    margin: auto;
 }
 
 /* Outer Play Area (outside scoring zones) */
@@ -209,6 +213,8 @@ body.blue-turn {
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100%;
+    height: 100%;
     cursor: pointer;
     z-index: 0;
 }
@@ -219,16 +225,11 @@ body.blue-turn {
 
 /* Next Player Turn Indicator */
 .next-player-indicator {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
     padding: 12px 24px;
     border-radius: 12px;
     font-size: 18px;
     font-weight: bold;
     color: white;
-    z-index: 10;
     pointer-events: none;
     text-align: center;
     white-space: nowrap;
@@ -277,7 +278,6 @@ body.blue-turn {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #e4c9a0;
     pointer-events: none;
     z-index: 1;
 }

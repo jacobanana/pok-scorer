@@ -661,7 +661,6 @@ class UIState {
     constructor() {
         this.lowScoreZoneThresholdPx = 10;
         this.autoEndDelayMs = 1500;
-        this.autoEndDelayOuterMs = 3000;
         this.draggedPokId = null;
         this.autoEndTimeout = null;
         this.domElements = {
@@ -1142,60 +1141,7 @@ function placePok(zone, event) {
     orchestrator.placePok(zone, event);
 }
 
-function placePokOuter(event) {
-    const round = orchestrator.game.getCurrentRound();
-    if (!round) return;
-
-    if (!orchestrator.services.rules.canPlacePok(round, round.currentPlayerId)) {
-        return;
-    }
-
-    const rect = orchestrator.services.ui.domElements.tableContainer.getBoundingClientRect();
-    const position = {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
-    };
-
-    const pok = orchestrator.services.pok.createPok(
-        round.currentPlayerId,
-        0,
-        position,
-        null,
-        true,
-        rect
-    );
-
-    round.addPok(pok);
-
-    orchestrator.eventProcessor.process(new GameEvent(EVENT_TYPES.POK_PLACED, {
-        pokId: pok.id,
-        playerId: pok.playerId,
-        zoneId: 'outer',
-        position: position,
-        points: 0,
-        isHighScore: true,
-        roundNumber: round.roundNumber,
-        redPoksRemaining: round.redPoksRemaining,
-        bluePoksRemaining: round.bluePoksRemaining
-    }));
-
-    const pokElement = orchestrator.services.pok.createPokElement(pok);
-    pokElement.style.position = 'absolute';
-    orchestrator.services.ui.domElements.tableContainer.appendChild(pokElement);
-    orchestrator.services.pok.setPokElement(pok.id, pokElement);
-    orchestrator.setupPokHandlers(pokElement, pok.id);
-
-    orchestrator.services.ui.updateScores(orchestrator.game);
-
-    if (round.isRoundComplete()) {
-        orchestrator.uiState.setAutoEndTimer(orchestrator.uiState.autoEndDelayOuterMs, () => orchestrator.endRound());
-        return;
-    }
-
-    orchestrator.switchPlayer();
-}
-
-function handlePokDrop(event, targetZone, isOuterZone = false) {
+function handlePokDrop(event, targetZone) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -1210,55 +1156,41 @@ function handlePokDrop(event, targetZone, isOuterZone = false) {
 
     orchestrator.uiState.clearAutoEndTimer();
 
+    // Remove old score
     round.scores.addPoints(pok.playerId, -pok.points);
 
-    let newPoints, newX, newY, newZoneId, newIsHigh;
+    // Calculate new position and score
+    const rect = targetZone.getBoundingClientRect();
+    const position = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+    };
 
-    let newXPercent, newYPercent;
+    const scoreResult = orchestrator.services.scoring.calculateZoneScore(targetZone, position, rect);
+    const newPoints = scoreResult.points;
+    const newIsHigh = scoreResult.isHigh;
+    const newX = position.x;
+    const newY = position.y;
+    const newXPercent = (newX / rect.width) * 100;
+    const newYPercent = (newY / rect.height) * 100;
+    const newZoneId = targetZone.dataset.zone || targetZone.id;
 
-    if (isOuterZone) {
-        const rect = orchestrator.services.ui.domElements.tableContainer.getBoundingClientRect();
-        newPoints = 0;
-        newX = event.clientX - rect.left;
-        newY = event.clientY - rect.top;
-        newXPercent = (newX / rect.width) * 100;
-        newYPercent = (newY / rect.height) * 100;
-        newZoneId = null;
-        newIsHigh = true;
-
-        if (pokElement.parentElement !== orchestrator.services.ui.domElements.tableContainer) {
-            orchestrator.services.ui.domElements.tableContainer.appendChild(pokElement);
-            pokElement.style.position = 'absolute';
-        }
-    } else {
-        const rect = targetZone.getBoundingClientRect();
-        const position = {
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top
-        };
-
-        const scoreResult = orchestrator.services.scoring.calculateZoneScore(targetZone, position, rect);
-        newPoints = scoreResult.points;
-        newIsHigh = scoreResult.isHigh;
-        newX = position.x;
-        newY = position.y;
-        newXPercent = (newX / rect.width) * 100;
-        newYPercent = (newY / rect.height) * 100;
-        newZoneId = targetZone.dataset.zone || targetZone.id;
-
-        if (pokElement.parentElement !== targetZone) {
-            targetZone.appendChild(pokElement);
-        }
+    // Move POK element to new zone
+    if (pokElement.parentElement !== targetZone) {
+        targetZone.appendChild(pokElement);
     }
 
+    // Store old values for event logging
     const oldPosition = { x: pok.position.x, y: pok.position.y };
     const oldPoints = pok.points;
     const oldZoneId = pok.zoneId;
 
+    // Update POK data
     pok.updatePosition(newX, newY, newXPercent, newYPercent);
     pok.updateScore(newPoints, newIsHigh);
     pok.updateZone(newZoneId);
 
+    // Log the move event
     orchestrator.eventProcessor.process(new GameEvent(EVENT_TYPES.POK_MOVED, {
         pokId: pok.id,
         playerId: pok.playerId,
@@ -1271,21 +1203,26 @@ function handlePokDrop(event, targetZone, isOuterZone = false) {
         roundNumber: round.roundNumber
     }));
 
+    // Update POK element visual position and score
     pokElement.style.left = `${newXPercent}%`;
     pokElement.style.top = `${newYPercent}%`;
     pokElement.style.transform = 'translate(-50%, -50%)';
     pokElement.textContent = newPoints;
 
+    // Update low-score visual indicator
     if (newIsHigh) {
         pokElement.classList.remove('low-score');
     } else {
         pokElement.classList.add('low-score');
     }
 
+    // Add new score
     round.scores.addPoints(pok.playerId, newPoints);
 
+    // Update UI
     orchestrator.services.ui.updateScores(orchestrator.game);
 
+    // Check if round is complete
     if (round.isRoundComplete()) {
         orchestrator.uiState.setAutoEndTimer(orchestrator.uiState.autoEndDelayMs, () => orchestrator.endRound());
     }
