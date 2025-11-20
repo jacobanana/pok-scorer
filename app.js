@@ -211,9 +211,11 @@
                 return `pok-${this.pokIdCounter++}`;
             }
 
-            createPok(playerId, points, position, zoneId, isHighScore) {
+            createPok(playerId, points, position, zoneId, isHighScore, zoneRect) {
                 const pokId = this.generatePokId();
-                const pok = new Pok(pokId, playerId, points, position.x, position.y, zoneId, isHighScore);
+                const xPercent = zoneRect ? (position.x / zoneRect.width) * 100 : 50;
+                const yPercent = zoneRect ? (position.y / zoneRect.height) * 100 : 50;
+                const pok = new Pok(pokId, playerId, points, position.x, position.y, zoneId, isHighScore, xPercent, yPercent);
                 return pok;
             }
 
@@ -224,8 +226,8 @@
                     el.classList.add('low-score');
                 }
                 el.textContent = pok.points;
-                el.style.left = `${pok.position.x}px`;
-                el.style.top = `${pok.position.y}px`;
+                el.style.left = `${pok.position.xPercent}%`;
+                el.style.top = `${pok.position.yPercent}%`;
                 el.style.transform = 'translate(-50%, -50%)';
                 return el;
             }
@@ -369,18 +371,25 @@
         }
 
         class Pok {
-            constructor(id, playerId, points, x, y, zoneId, isHighScore) {
+            constructor(id, playerId, points, x, y, zoneId, isHighScore, xPercent, yPercent) {
                 this.id = id;
                 this.playerId = playerId;
                 this.points = points;
-                this.position = { x, y };
+                this.position = {
+                    x,
+                    y,
+                    xPercent: xPercent !== undefined ? xPercent : 50,
+                    yPercent: yPercent !== undefined ? yPercent : 50
+                };
                 this.zoneId = zoneId;
                 this.isHighScore = isHighScore;
             }
 
-            updatePosition(x, y) {
+            updatePosition(x, y, xPercent, yPercent) {
                 this.position.x = x;
                 this.position.y = y;
+                if (xPercent !== undefined) this.position.xPercent = xPercent;
+                if (yPercent !== undefined) this.position.yPercent = yPercent;
             }
 
             updateScore(points, isHighScore) {
@@ -782,7 +791,8 @@
                     scoreResult.points,
                     position,
                     zoneId,
-                    scoreResult.isHigh
+                    scoreResult.isHigh,
+                    rect
                 );
 
                 round.addPok(pok);
@@ -1051,7 +1061,8 @@
                 0,
                 position,
                 null,
-                true
+                true,
+                rect
             );
 
             round.addPok(pok);
@@ -1103,11 +1114,15 @@
 
             let newPoints, newX, newY, newZoneId, newIsHigh;
 
+            let newXPercent, newYPercent;
+
             if (isOuterZone) {
                 const rect = orchestrator.services.ui.domElements.tableContainer.getBoundingClientRect();
                 newPoints = 0;
                 newX = event.clientX - rect.left;
                 newY = event.clientY - rect.top;
+                newXPercent = (newX / rect.width) * 100;
+                newYPercent = (newY / rect.height) * 100;
                 newZoneId = null;
                 newIsHigh = true;
 
@@ -1127,6 +1142,8 @@
                 newIsHigh = scoreResult.isHigh;
                 newX = position.x;
                 newY = position.y;
+                newXPercent = (newX / rect.width) * 100;
+                newYPercent = (newY / rect.height) * 100;
                 newZoneId = targetZone.dataset.zone || targetZone.id;
 
                 if (pokElement.parentElement !== targetZone) {
@@ -1138,7 +1155,7 @@
             const oldPoints = pok.points;
             const oldZoneId = pok.zoneId;
 
-            pok.updatePosition(newX, newY);
+            pok.updatePosition(newX, newY, newXPercent, newYPercent);
             pok.updateScore(newPoints, newIsHigh);
             pok.updateZone(newZoneId);
 
@@ -1154,8 +1171,8 @@
                 roundNumber: round.roundNumber
             }));
 
-            pokElement.style.left = `${newX}px`;
-            pokElement.style.top = `${newY}px`;
+            pokElement.style.left = `${newXPercent}%`;
+            pokElement.style.top = `${newYPercent}%`;
             pokElement.style.transform = 'translate(-50%, -50%)';
             pokElement.textContent = newPoints;
 
