@@ -523,157 +523,374 @@
         </div>
 
     <script>
-        // Game configuration
-        const POKS_PER_PLAYER = 5;
-        const LOW_SCORE_ZONE_THRESHOLD_PX = 10;
-
-        // Constants for players
-        const PLAYER = {
+        // ============================================
+        // Constants
+        // ============================================
+        const PLAYER_ID = {
             RED: 'red',
             BLUE: 'blue'
         };
 
         const PLAYER_COLOR = {
-            [PLAYER.RED]: '#d32f2f',
-            [PLAYER.BLUE]: '#1976d2'
+            [PLAYER_ID.RED]: '#d32f2f',
+            [PLAYER_ID.BLUE]: '#1976d2'
         };
 
         const PLAYER_CLASS = {
-            [PLAYER.RED]: 'red-turn',
-            [PLAYER.BLUE]: 'blue-turn'
+            [PLAYER_ID.RED]: 'red-turn',
+            [PLAYER_ID.BLUE]: 'blue-turn'
         };
 
-        // Timeout values
-        const AUTO_END_DELAY_MS = 1500;
-        const AUTO_END_DELAY_OUTER_MS = 3000;
+        // ============================================
+        // Classes
+        // ============================================
 
-        // Game settings
-        const WINNING_SCORE = 21;
+        class Player {
+            constructor(id) {
+                this.id = id;
+                this.totalScore = 0;
+            }
 
-        let currentPlayer = null;
-        let gameStarted = false;
-        let redPoksRemaining = POKS_PER_PLAYER;
-        let bluePoksRemaining = POKS_PER_PLAYER;
-        let redTotalScore = 0;
-        let blueTotalScore = 0;
-        let redRoundScore = 0;
-        let blueRoundScore = 0;
-        let pokPlacements = [];
-        let roundStartPlayer = null;
-        let autoEndTimeout = null;
-        let draggedPok = null;
-        let draggedPlacement = null;
-        let lastPlacedPok = null;
+            addScore(points) {
+                this.totalScore += points;
+            }
 
-        // Cache DOM elements for better performance
-        const domElements = {
-            startSelector: null,
-            nextPlayer: null,
-            tableContainer: null,
-            mainRedTotal: null,
-            mainBlueTotal: null,
-            redRound: null,
-            blueRound: null,
-            redPoks: null,
-            bluePoks: null,
-            roundModal: null,
-            modalWinner: null,
-            modalRoundScores: null,
-            modalTotalScores: null
-        };
-
-        // Initialize DOM element cache
-        function initDOMCache() {
-            domElements.startSelector = document.getElementById('startSelector');
-            domElements.nextPlayer = document.getElementById('nextPlayer');
-            domElements.tableContainer = document.getElementById('tableContainer');
-            domElements.mainRedTotal = document.getElementById('mainRedTotal');
-            domElements.mainBlueTotal = document.getElementById('mainBlueTotal');
-            domElements.redRound = document.getElementById('redRound');
-            domElements.blueRound = document.getElementById('blueRound');
-            domElements.redPoks = document.getElementById('redPoks');
-            domElements.bluePoks = document.getElementById('bluePoks');
-            domElements.roundModal = document.getElementById('roundModal');
-            domElements.modalWinner = document.getElementById('modalWinner');
-            domElements.modalRoundScores = document.getElementById('modalRoundScores');
-            domElements.modalTotalScores = document.getElementById('modalTotalScores');
+            resetScore() {
+                this.totalScore = 0;
+            }
         }
 
-        // Initialize cache when DOM is ready
+        class Pok {
+            constructor(id, playerId, points, x, y, zoneId, isHighScore) {
+                this.id = id;
+                this.playerId = playerId;
+                this.points = points;
+                this.position = { x, y };
+                this.zoneId = zoneId;
+                this.isHighScore = isHighScore;
+            }
+
+            updatePosition(x, y) {
+                this.position.x = x;
+                this.position.y = y;
+            }
+
+            updateScore(points, isHighScore) {
+                this.points = points;
+                this.isHighScore = isHighScore;
+            }
+
+            updateZone(zoneId) {
+                this.zoneId = zoneId;
+            }
+        }
+
+        class RoundScore {
+            constructor(red = 0, blue = 0) {
+                this.red = red;
+                this.blue = blue;
+                this.winner = 'tie';
+                this.pointDifference = 0;
+                this.updateWinner();
+            }
+
+            updateWinner() {
+                const diff = Math.abs(this.red - this.blue);
+                this.pointDifference = diff;
+
+                if (this.red > this.blue) {
+                    this.winner = 'red';
+                } else if (this.blue > this.red) {
+                    this.winner = 'blue';
+                } else {
+                    this.winner = 'tie';
+                }
+            }
+
+            addPoints(playerId, points) {
+                if (playerId === PLAYER_ID.RED) {
+                    this.red += points;
+                } else if (playerId === PLAYER_ID.BLUE) {
+                    this.blue += points;
+                }
+                this.updateWinner();
+            }
+        }
+
+        class Round {
+            constructor(roundNumber, startingPlayerId, poksPerPlayer) {
+                this.roundNumber = roundNumber;
+                this.startingPlayerId = startingPlayerId;
+                this.currentPlayerId = startingPlayerId;
+                this.poksPlaced = [];
+                this.redPoksRemaining = poksPerPlayer;
+                this.bluePoksRemaining = poksPerPlayer;
+                this.scores = new RoundScore(0, 0);
+                this.isComplete = false;
+                this.lastPlacedPokId = null;
+            }
+
+            addPok(pok) {
+                this.poksPlaced.push(pok);
+                this.scores.addPoints(pok.playerId, pok.points);
+                this.decrementPoksRemaining(pok.playerId);
+                this.lastPlacedPokId = pok.id;
+            }
+
+            removePok(pokId) {
+                const index = this.poksPlaced.findIndex(p => p.id === pokId);
+                if (index === -1) return null;
+
+                const pok = this.poksPlaced[index];
+                this.scores.addPoints(pok.playerId, -pok.points);
+                this.incrementPoksRemaining(pok.playerId);
+                this.poksPlaced.splice(index, 1);
+
+                if (pokId === this.lastPlacedPokId) {
+                    this.lastPlacedPokId = null;
+                }
+
+                return pok;
+            }
+
+            getPokById(pokId) {
+                return this.poksPlaced.find(p => p.id === pokId);
+            }
+
+            decrementPoksRemaining(playerId) {
+                if (playerId === PLAYER_ID.RED) {
+                    this.redPoksRemaining--;
+                } else if (playerId === PLAYER_ID.BLUE) {
+                    this.bluePoksRemaining--;
+                }
+            }
+
+            incrementPoksRemaining(playerId) {
+                if (playerId === PLAYER_ID.RED) {
+                    this.redPoksRemaining++;
+                } else if (playerId === PLAYER_ID.BLUE) {
+                    this.bluePoksRemaining++;
+                }
+            }
+
+            isRoundComplete() {
+                return this.redPoksRemaining === 0 && this.bluePoksRemaining === 0;
+            }
+
+            switchPlayer() {
+                if (this.redPoksRemaining === 0 && this.bluePoksRemaining > 0) {
+                    this.currentPlayerId = PLAYER_ID.BLUE;
+                } else if (this.bluePoksRemaining === 0 && this.redPoksRemaining > 0) {
+                    this.currentPlayerId = PLAYER_ID.RED;
+                } else if (this.redPoksRemaining > 0 && this.bluePoksRemaining > 0) {
+                    if (this.scores.red < this.scores.blue) {
+                        this.currentPlayerId = PLAYER_ID.RED;
+                    } else if (this.scores.blue < this.scores.red) {
+                        this.currentPlayerId = PLAYER_ID.BLUE;
+                    } else {
+                        this.currentPlayerId = this.currentPlayerId === PLAYER_ID.RED ? PLAYER_ID.BLUE : PLAYER_ID.RED;
+                    }
+                }
+            }
+        }
+
+        class Game {
+            constructor() {
+                this.isStarted = false;
+                this.winningScore = 21;
+                this.poksPerPlayer = 5;
+                this.players = {
+                    red: new Player(PLAYER_ID.RED),
+                    blue: new Player(PLAYER_ID.BLUE)
+                };
+                this.rounds = [];
+                this.currentRoundIndex = -1;
+            }
+
+            startNewGame(startingPlayerId) {
+                this.isStarted = true;
+                const round = new Round(0, startingPlayerId, this.poksPerPlayer);
+                this.rounds.push(round);
+                this.currentRoundIndex = 0;
+            }
+
+            getCurrentRound() {
+                if (this.currentRoundIndex === -1) return null;
+                return this.rounds[this.currentRoundIndex];
+            }
+
+            startNewRound(startingPlayerId) {
+                const newRoundNumber = this.rounds.length;
+                const round = new Round(newRoundNumber, startingPlayerId, this.poksPerPlayer);
+                this.rounds.push(round);
+                this.currentRoundIndex = newRoundNumber;
+            }
+
+            reset() {
+                this.isStarted = false;
+                this.players.red.resetScore();
+                this.players.blue.resetScore();
+                this.rounds = [];
+                this.currentRoundIndex = -1;
+            }
+
+            hasWinner() {
+                return this.players.red.totalScore >= this.winningScore ||
+                       this.players.blue.totalScore >= this.winningScore;
+            }
+        }
+
+        class UIState {
+            constructor() {
+                this.lowScoreZoneThresholdPx = 10;
+                this.autoEndDelayMs = 1500;
+                this.autoEndDelayOuterMs = 3000;
+                this.draggedPokId = null;
+                this.autoEndTimeout = null;
+                this.domElements = {
+                    startSelector: null,
+                    nextPlayer: null,
+                    tableContainer: null,
+                    mainRedTotal: null,
+                    mainBlueTotal: null,
+                    redRound: null,
+                    blueRound: null,
+                    redPoks: null,
+                    bluePoks: null,
+                    roundModal: null,
+                    modalWinner: null,
+                    modalRoundScores: null,
+                    modalTotalScores: null
+                };
+                this.pokElements = new Map();
+            }
+
+            initDOMCache() {
+                const dom = this.domElements;
+                dom.startSelector = document.getElementById('startSelector');
+                dom.nextPlayer = document.getElementById('nextPlayer');
+                dom.tableContainer = document.getElementById('tableContainer');
+                dom.mainRedTotal = document.getElementById('mainRedTotal');
+                dom.mainBlueTotal = document.getElementById('mainBlueTotal');
+                dom.redRound = document.getElementById('redRound');
+                dom.blueRound = document.getElementById('blueRound');
+                dom.redPoks = document.getElementById('redPoks');
+                dom.bluePoks = document.getElementById('bluePoks');
+                dom.roundModal = document.getElementById('roundModal');
+                dom.modalWinner = document.getElementById('modalWinner');
+                dom.modalRoundScores = document.getElementById('modalRoundScores');
+                dom.modalTotalScores = document.getElementById('modalTotalScores');
+            }
+
+            clearAutoEndTimer() {
+                if (this.autoEndTimeout) {
+                    clearTimeout(this.autoEndTimeout);
+                    this.autoEndTimeout = null;
+                }
+            }
+
+            setAutoEndTimer(delay, callback) {
+                this.clearAutoEndTimer();
+                this.autoEndTimeout = setTimeout(callback, delay);
+            }
+
+            clearPokElements() {
+                this.pokElements.clear();
+            }
+
+            getPokElement(pokId) {
+                return this.pokElements.get(pokId);
+            }
+
+            setPokElement(pokId, element) {
+                this.pokElements.set(pokId, element);
+            }
+
+            deletePokElement(pokId) {
+                this.pokElements.delete(pokId);
+            }
+        }
+
+        // ============================================
+        // Global State
+        // ============================================
+
+        let game = new Game();
+        let uiState = new UIState();
+
+        // ============================================
+        // Initialization
+        // ============================================
+
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initDOMCache);
+            document.addEventListener('DOMContentLoaded', () => uiState.initDOMCache());
         } else {
-            initDOMCache();
+            uiState.initDOMCache();
         }
 
-        function startGame(startingPlayer) {
-            currentPlayer = startingPlayer;
-            roundStartPlayer = startingPlayer;
-            gameStarted = true;
-            domElements.startSelector.style.display = 'none';
+        // ============================================
+        // Game State Functions
+        // ============================================
+
+        function startGame(startingPlayerId) {
+            game.startNewGame(startingPlayerId);
+            uiState.domElements.startSelector.style.display = 'none';
             updateCurrentPlayerDisplay();
         }
 
         function updateCurrentPlayerDisplay() {
-            document.body.classList.remove(PLAYER_CLASS[PLAYER.RED], PLAYER_CLASS[PLAYER.BLUE]);
+            const round = game.getCurrentRound();
+            if (!round) return;
 
-            if (currentPlayer === PLAYER.RED) {
-                document.body.classList.add(PLAYER_CLASS[PLAYER.RED]);
-            } else if (currentPlayer === PLAYER.BLUE) {
-                document.body.classList.add(PLAYER_CLASS[PLAYER.BLUE]);
+            const currentPlayerId = round.currentPlayerId;
+
+            document.body.classList.remove(PLAYER_CLASS[PLAYER_ID.RED], PLAYER_CLASS[PLAYER_ID.BLUE]);
+
+            if (currentPlayerId === PLAYER_ID.RED) {
+                document.body.classList.add(PLAYER_CLASS[PLAYER_ID.RED]);
+            } else if (currentPlayerId === PLAYER_ID.BLUE) {
+                document.body.classList.add(PLAYER_CLASS[PLAYER_ID.BLUE]);
             }
 
-            // Update next player display
-            if (domElements.nextPlayer) {
-                if (currentPlayer === PLAYER.RED) {
-                    domElements.nextPlayer.textContent = 'Next player: red';
-                    domElements.nextPlayer.style.color = PLAYER_COLOR[PLAYER.RED];
-                } else if (currentPlayer === PLAYER.BLUE) {
-                    domElements.nextPlayer.textContent = 'Next player: blue';
-                    domElements.nextPlayer.style.color = PLAYER_COLOR[PLAYER.BLUE];
+            const nextPlayerEl = uiState.domElements.nextPlayer;
+            if (nextPlayerEl) {
+                if (currentPlayerId === PLAYER_ID.RED) {
+                    nextPlayerEl.textContent = 'Next player: red';
+                    nextPlayerEl.style.color = PLAYER_COLOR[PLAYER_ID.RED];
+                } else if (currentPlayerId === PLAYER_ID.BLUE) {
+                    nextPlayerEl.textContent = 'Next player: blue';
+                    nextPlayerEl.style.color = PLAYER_COLOR[PLAYER_ID.BLUE];
                 } else {
-                    domElements.nextPlayer.textContent = '';
+                    nextPlayerEl.textContent = '';
                 }
             }
         }
 
         function switchPlayer() {
-            // If one player has no poks left, the other player must play
-            if (redPoksRemaining === 0 && bluePoksRemaining > 0) {
-                currentPlayer = PLAYER.BLUE;
-            } else if (bluePoksRemaining === 0 && redPoksRemaining > 0) {
-                currentPlayer = PLAYER.RED;
-            } else if (redPoksRemaining > 0 && bluePoksRemaining > 0) {
-                // Both players have poks remaining
-                // Player with fewer points plays next
-                if (redRoundScore < blueRoundScore) {
-                    currentPlayer = PLAYER.RED;
-                } else if (blueRoundScore < redRoundScore) {
-                    currentPlayer = PLAYER.BLUE;
-                } else {
-                    // If tied, alternate
-                    currentPlayer = currentPlayer === PLAYER.RED ? PLAYER.BLUE : PLAYER.RED;
-                }
-            }
+            const round = game.getCurrentRound();
+            if (!round) return;
+
+            round.switchPlayer();
             updateCurrentPlayerDisplay();
         }
 
         function canPlacePok() {
-            if (!gameStarted) {
+            if (!game.isStarted) {
                 alert('Please select which team starts first!');
                 return false;
             }
 
-            if (currentPlayer === PLAYER.RED && redPoksRemaining === 0) {
-                // Red has no poks left, check if we should end the round
-                if (bluePoksRemaining === 0) {
+            const round = game.getCurrentRound();
+            if (!round) return false;
+
+            if (round.currentPlayerId === PLAYER_ID.RED && round.redPoksRemaining === 0) {
+                if (round.bluePoksRemaining === 0) {
                     endRound();
                 }
                 return false;
             }
-            if (currentPlayer === PLAYER.BLUE && bluePoksRemaining === 0) {
-                // Blue has no poks left, check if we should end the round
-                if (redPoksRemaining === 0) {
+            if (round.currentPlayerId === PLAYER_ID.BLUE && round.bluePoksRemaining === 0) {
+                if (round.redPoksRemaining === 0) {
                     endRound();
                 }
                 return false;
@@ -681,100 +898,72 @@
             return true;
         }
 
-        function updatePlayerScore(player, points) {
-            if (player === PLAYER.RED) {
-                redRoundScore += points;
-            } else {
-                blueRoundScore += points;
-            }
+        // ============================================
+        // Pok Management Functions
+        // ============================================
+
+        let pokIdCounter = 0;
+        function generatePokId() {
+            return `pok-${pokIdCounter++}`;
         }
 
-        function decrementPlayerPoks(player) {
-            if (player === PLAYER.RED) {
-                redPoksRemaining--;
-            } else {
-                bluePoksRemaining--;
-            }
-        }
-
-        function incrementPlayerPoks(player) {
-            if (player === PLAYER.RED) {
-                redPoksRemaining++;
-            } else {
-                bluePoksRemaining++;
-            }
-        }
-
-        function createPokElement(player, points, x, y, isHigh = true) {
-            const pok = document.createElement('div');
-            pok.className = `pok ${player}`;
+        function createPokElement(playerId, points, x, y, isHigh = true) {
+            const pokEl = document.createElement('div');
+            pokEl.className = `pok ${playerId}`;
             if (!isHigh) {
-                pok.classList.add('low-score');
+                pokEl.classList.add('low-score');
             }
-            pok.textContent = points;
-            pok.style.left = `${x}px`;
-            pok.style.top = `${y}px`;
-            pok.style.transform = 'translate(-50%, -50%)';
-            return pok;
+            pokEl.textContent = points;
+            pokEl.style.left = `${x}px`;
+            pokEl.style.top = `${y}px`;
+            pokEl.style.transform = 'translate(-50%, -50%)';
+            return pokEl;
         }
 
-        function setupPokHandlers(pok, placement, isOuterZone = false) {
-            // Click to remove if it's the last placed pok
-            pok.onclick = function(e) {
+        function setupPokHandlers(pokElement, pokId) {
+            pokElement.onclick = function(e) {
                 e.stopPropagation();
-                // Check if this is the last placed pok
-                if (placement === lastPlacedPok) {
-                    removePok(pok);
+                const round = game.getCurrentRound();
+                if (round && pokId === round.lastPlacedPokId) {
+                    removePok(pokId);
                 }
             };
 
-            // Make pok draggable
-            makePokDraggable(pok, placement);
+            makePokDraggable(pokElement, pokId);
         }
 
-        function trackPlacement(placement) {
-            pokPlacements.push(placement);
-            updatePlayerScore(placement.player, placement.points);
-            decrementPlayerPoks(placement.player);
-            updateDisplay();
-            lastPlacedPok = placement;
+        function addPokToRound(playerId, points, x, y, zoneId, isHighScore) {
+            const round = game.getCurrentRound();
+            if (!round) return null;
+
+            const pokId = generatePokId();
+            const pok = new Pok(pokId, playerId, points, x, y, zoneId, isHighScore);
+
+            round.addPok(pok);
+
+            return pok;
         }
 
         function checkAndHandleRoundComplete(delay) {
-            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
-                // Give some time to adjust the last pok before auto-ending
-                setAutoEndTimer(delay);
+            const round = game.getCurrentRound();
+            if (!round) return false;
+
+            if (round.isRoundComplete()) {
+                uiState.setAutoEndTimer(delay, endRound);
                 return true;
             }
             return false;
         }
 
         function calculateZoneScore(low, high, clickX, rectWidth) {
-            // For zones with the same low and high value, there's no boundary scoring
             if (low === high) {
                 return { points: high, isHigh: true };
             }
 
-            // Check if click is near the boundary line that separates this zone from a lower-scoring zone
-            // The boundary is on the right edge of zones on the left side (moving toward the 0 zone)
-            const isNearBoundary = clickX >= rectWidth - LOW_SCORE_ZONE_THRESHOLD_PX;
+            const isNearBoundary = clickX >= rectWidth - uiState.lowScoreZoneThresholdPx;
             const points = isNearBoundary ? low : high;
 
             return { points, isHigh: !isNearBoundary };
-        }
-
-        function clearAutoEndTimer() {
-            if (autoEndTimeout) {
-                clearTimeout(autoEndTimeout);
-                autoEndTimeout = null;
-            }
-        }
-
-        function setAutoEndTimer(delay) {
-            clearAutoEndTimer();
-            autoEndTimeout = setTimeout(() => {
-                endRound();
-            }, delay);
         }
 
         function placePok(zone, event) {
@@ -782,42 +971,34 @@
                 return;
             }
 
-            // Get click position relative to zone
+            const round = game.getCurrentRound();
+            if (!round) return;
+
             const rect = zone.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const clickY = event.clientY - rect.top;
 
-            // Determine score based on proximity to boundaries
             const low = parseInt(zone.dataset.low);
             const high = parseInt(zone.dataset.high);
             const { points, isHigh } = calculateZoneScore(low, high, clickX, rect.width);
 
-            // Create and position pok element
-            const pok = createPokElement(currentPlayer, points, clickX, clickY, isHigh);
-            zone.appendChild(pok);
+            const zoneId = zone.dataset.zone || zone.id;
 
-            // Track placement
-            const placement = {
-                player: currentPlayer,
-                points: points,
-                element: pok,
-                x: clickX,
-                y: clickY,
-                zone: zone,
-                low: low,
-                high: high,
-                isHigh: isHigh
-            };
+            const pok = addPokToRound(round.currentPlayerId, points, clickX, clickY, zoneId, isHigh);
+            if (!pok) return;
 
-            trackPlacement(placement);
-            setupPokHandlers(pok, placement);
+            const pokElement = createPokElement(round.currentPlayerId, points, clickX, clickY, isHigh);
+            zone.appendChild(pokElement);
 
-            // Check if round is complete (all poks placed)
-            if (checkAndHandleRoundComplete(AUTO_END_DELAY_MS)) {
+            uiState.setPokElement(pok.id, pokElement);
+            setupPokHandlers(pokElement, pok.id);
+
+            updateDisplay();
+
+            if (checkAndHandleRoundComplete(uiState.autoEndDelayMs)) {
                 return;
             }
 
-            // Switch to next player after placing a pok
             switchPlayer();
         }
 
@@ -826,270 +1007,231 @@
                 return;
             }
 
-            // Outer zone always scores 0 points
+            const round = game.getCurrentRound();
+            if (!round) return;
+
             const points = 0;
 
-            // Get click position relative to container
-            const rect = domElements.tableContainer.getBoundingClientRect();
+            const rect = uiState.domElements.tableContainer.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const clickY = event.clientY - rect.top;
 
-            // Create pok element
-            const pok = createPokElement(currentPlayer, points, clickX, clickY);
-            pok.style.position = 'absolute';
-            domElements.tableContainer.appendChild(pok);
+            const pok = addPokToRound(round.currentPlayerId, points, clickX, clickY, null, true);
+            if (!pok) return;
 
-            // Track placement
-            const placement = {
-                player: currentPlayer,
-                points: points,
-                element: pok,
-                x: clickX,
-                y: clickY,
-                zone: null,
-                low: 0,
-                high: 0,
-                isHigh: true
-            };
+            const pokElement = createPokElement(round.currentPlayerId, points, clickX, clickY);
+            pokElement.style.position = 'absolute';
+            uiState.domElements.tableContainer.appendChild(pokElement);
 
-            trackPlacement(placement);
-            setupPokHandlers(pok, placement, true);
+            uiState.setPokElement(pok.id, pokElement);
+            setupPokHandlers(pokElement, pok.id);
 
-            // Check if round is complete (all poks placed)
-            if (checkAndHandleRoundComplete(AUTO_END_DELAY_OUTER_MS)) {
+            updateDisplay();
+
+            if (checkAndHandleRoundComplete(uiState.autoEndDelayOuterMs)) {
                 return;
             }
 
-            // Switch to next player after placing a pok
             switchPlayer();
         }
 
 
-        function removePok(pokElement) {
-            // Clear auto-end timeout since user removed a pok
-            clearAutoEndTimer();
+        function removePok(pokId) {
+            uiState.clearAutoEndTimer();
 
-            const index = pokPlacements.findIndex(p => p.element === pokElement);
-            if (index !== -1) {
-                const placement = pokPlacements[index];
+            const round = game.getCurrentRound();
+            if (!round) return;
 
-                // Update scores
-                updatePlayerScore(placement.player, -placement.points);
-                incrementPlayerPoks(placement.player);
+            const pok = round.removePok(pokId);
+            if (!pok) return;
 
-                // Remove from array and DOM
-                pokPlacements.splice(index, 1);
+            const pokElement = uiState.getPokElement(pokId);
+            if (pokElement) {
                 pokElement.remove();
-
-                // Clear lastPlacedPok if this was it
-                if (placement === lastPlacedPok) {
-                    lastPlacedPok = null;
-                }
-
-                // Only switch player if we're not in the middle of the game
-                // (Don't switch during adjustment phase when poks are being removed/adjusted)
-                if (redPoksRemaining > 0 || bluePoksRemaining > 0) {
-                    currentPlayer = placement.player;
-                    updateCurrentPlayerDisplay();
-                }
-                updateDisplay();
+                uiState.deletePokElement(pokId);
             }
+
+            if (round.redPoksRemaining > 0 || round.bluePoksRemaining > 0) {
+                round.currentPlayerId = pok.playerId;
+                updateCurrentPlayerDisplay();
+            }
+            updateDisplay();
         }
 
-        function makePokDraggable(pokElement, placement) {
+        function makePokDraggable(pokElement, pokId) {
             pokElement.draggable = true;
 
             pokElement.addEventListener('dragstart', function(e) {
-                draggedPok = pokElement;
-                draggedPlacement = placement;
+                uiState.draggedPokId = pokId;
                 pokElement.classList.add('dragging');
                 e.dataTransfer.effectAllowed = 'move';
             });
 
             pokElement.addEventListener('dragend', function(e) {
                 pokElement.classList.remove('dragging');
-                draggedPok = null;
-                draggedPlacement = null;
+                uiState.draggedPokId = null;
             });
-        }
-
-        function calculateOuterZoneDropData(event) {
-            const rect = domElements.tableContainer.getBoundingClientRect();
-            return {
-                points: 0,
-                zone: null,
-                low: 0,
-                high: 0,
-                isHigh: true,
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top
-            };
-        }
-
-        function calculateScoringZoneDropData(event, targetZone) {
-            const low = parseInt(targetZone.dataset.low);
-            const high = parseInt(targetZone.dataset.high);
-            const rect = targetZone.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            const scoreResult = calculateZoneScore(low, high, x, rect.width);
-
-            return {
-                points: scoreResult.points,
-                zone: targetZone,
-                low: low,
-                high: high,
-                isHigh: scoreResult.isHigh,
-                x: x,
-                y: y
-            };
-        }
-
-        function applyDropPlacement(dropData, isOuterZone) {
-            // Move pok to new parent if needed
-            if (isOuterZone) {
-                if (draggedPok.parentElement !== domElements.tableContainer) {
-                    domElements.tableContainer.appendChild(draggedPok);
-                    draggedPok.style.position = 'absolute';
-                }
-            } else {
-                if (draggedPok.parentElement !== dropData.zone) {
-                    dropData.zone.appendChild(draggedPok);
-                }
-            }
-
-            // Update pok position and display
-            draggedPok.style.left = `${dropData.x}px`;
-            draggedPok.style.top = `${dropData.y}px`;
-            draggedPok.style.transform = 'translate(-50%, -50%)';
-            draggedPok.textContent = dropData.points;
-
-            // Update low-score class
-            if (dropData.isHigh) {
-                draggedPok.classList.remove('low-score');
-            } else {
-                draggedPok.classList.add('low-score');
-            }
-
-            // Update placement data
-            draggedPlacement.points = dropData.points;
-            draggedPlacement.zone = dropData.zone;
-            draggedPlacement.x = dropData.x;
-            draggedPlacement.y = dropData.y;
-            draggedPlacement.low = dropData.low;
-            draggedPlacement.high = dropData.high;
-            draggedPlacement.isHigh = dropData.isHigh;
         }
 
         function handlePokDrop(event, targetZone, isOuterZone = false) {
             event.preventDefault();
             event.stopPropagation();
 
-            if (!draggedPok || !draggedPlacement) return;
+            if (!uiState.draggedPokId) return;
 
-            // Clear auto-end timeout since user is adjusting
-            clearAutoEndTimer();
+            const round = game.getCurrentRound();
+            if (!round) return;
 
-            // Remove old score contribution
-            updatePlayerScore(draggedPlacement.player, -draggedPlacement.points);
+            const pok = round.getPokById(uiState.draggedPokId);
+            const pokElement = uiState.getPokElement(uiState.draggedPokId);
+            if (!pok || !pokElement) return;
 
-            // Calculate new position and score based on drop location
-            const dropData = isOuterZone
-                ? calculateOuterZoneDropData(event)
-                : calculateScoringZoneDropData(event, targetZone);
+            uiState.clearAutoEndTimer();
 
-            // Apply the new placement
-            applyDropPlacement(dropData, isOuterZone);
+            round.scores.addPoints(pok.playerId, -pok.points);
 
-            // Add new score contribution
-            updatePlayerScore(draggedPlacement.player, dropData.points);
+            let newPoints, newX, newY, newZoneId, newIsHigh;
+
+            if (isOuterZone) {
+                const rect = uiState.domElements.tableContainer.getBoundingClientRect();
+                newPoints = 0;
+                newX = event.clientX - rect.left;
+                newY = event.clientY - rect.top;
+                newZoneId = null;
+                newIsHigh = true;
+
+                if (pokElement.parentElement !== uiState.domElements.tableContainer) {
+                    uiState.domElements.tableContainer.appendChild(pokElement);
+                    pokElement.style.position = 'absolute';
+                }
+            } else {
+                const low = parseInt(targetZone.dataset.low);
+                const high = parseInt(targetZone.dataset.high);
+                const rect = targetZone.getBoundingClientRect();
+                newX = event.clientX - rect.left;
+                newY = event.clientY - rect.top;
+
+                const scoreResult = calculateZoneScore(low, high, newX, rect.width);
+                newPoints = scoreResult.points;
+                newIsHigh = scoreResult.isHigh;
+                newZoneId = targetZone.dataset.zone || targetZone.id;
+
+                if (pokElement.parentElement !== targetZone) {
+                    targetZone.appendChild(pokElement);
+                }
+            }
+
+            pok.updatePosition(newX, newY);
+            pok.updateScore(newPoints, newIsHigh);
+            pok.updateZone(newZoneId);
+
+            pokElement.style.left = `${newX}px`;
+            pokElement.style.top = `${newY}px`;
+            pokElement.style.transform = 'translate(-50%, -50%)';
+            pokElement.textContent = newPoints;
+
+            if (newIsHigh) {
+                pokElement.classList.remove('low-score');
+            } else {
+                pokElement.classList.add('low-score');
+            }
+
+            round.scores.addPoints(pok.playerId, newPoints);
 
             updateDisplay();
 
-            // Recalculate current player if needed
-            if (redPoksRemaining > 0 || bluePoksRemaining > 0) {
+            if (round.redPoksRemaining > 0 || round.bluePoksRemaining > 0) {
                 switchPlayer();
             }
 
-            // Restart auto-end timer if all poks are placed
-            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
-                setAutoEndTimer(AUTO_END_DELAY_MS);
+            if (round.isRoundComplete()) {
+                uiState.setAutoEndTimer(uiState.autoEndDelayMs, endRound);
             }
         }
 
         function updateDisplay() {
-            domElements.mainRedTotal.textContent = redTotalScore;
-            domElements.mainBlueTotal.textContent = blueTotalScore;
-            domElements.redRound.textContent = redRoundScore;
-            domElements.blueRound.textContent = blueRoundScore;
-            domElements.redPoks.textContent = redPoksRemaining;
-            domElements.bluePoks.textContent = bluePoksRemaining;
+            const round = game.getCurrentRound();
+            const dom = uiState.domElements;
+
+            dom.mainRedTotal.textContent = game.players.red.totalScore;
+            dom.mainBlueTotal.textContent = game.players.blue.totalScore;
+
+            if (round) {
+                dom.redRound.textContent = round.scores.red;
+                dom.blueRound.textContent = round.scores.blue;
+                dom.redPoks.textContent = round.redPoksRemaining;
+                dom.bluePoks.textContent = round.bluePoksRemaining;
+            } else {
+                dom.redRound.textContent = 0;
+                dom.blueRound.textContent = 0;
+                dom.redPoks.textContent = game.poksPerPlayer;
+                dom.bluePoks.textContent = game.poksPerPlayer;
+            }
         }
 
         function endRound() {
-            // Auto-end when both players have no poks left
-            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
+            const round = game.getCurrentRound();
+            if (!round) return;
+
+            if (round.isRoundComplete()) {
                 // Continue to show modal
-            } else if (redPoksRemaining > 0 || bluePoksRemaining > 0) {
+            } else if (round.redPoksRemaining > 0 || round.bluePoksRemaining > 0) {
                 if (!confirm('Not all poks have been placed. Continue anyway?')) {
                     return;
                 }
             }
 
-            const difference = Math.abs(redRoundScore - blueRoundScore);
+            round.isComplete = true;
+
+            const redScore = round.scores.red;
+            const blueScore = round.scores.blue;
+            const difference = round.scores.pointDifference;
 
             let roundWinner = null;
             let winnerText = '';
             let bgClass = '';
 
-            if (redRoundScore > blueRoundScore) {
-                redTotalScore += difference;
+            if (redScore > blueScore) {
+                game.players.red.addScore(difference);
                 roundWinner = 'red';
                 winnerText = 'Red Wins!';
                 bgClass = 'red-bg';
-            } else if (blueRoundScore > redRoundScore) {
-                blueTotalScore += difference;
+            } else if (blueScore > redScore) {
+                game.players.blue.addScore(difference);
                 roundWinner = 'blue';
                 winnerText = 'Blue Wins!';
                 bgClass = 'blue-bg';
             } else {
                 winnerText = 'Round Tied!';
                 bgClass = 'tie-bg';
-                // On tie, the player who didn't start the previous round starts the next one
-                roundWinner = roundStartPlayer === 'red' ? 'blue' : 'red';
+                roundWinner = round.startingPlayerId === 'red' ? 'blue' : 'red';
             }
 
             updateDisplay();
 
-            // Check for game winner
-            if (redTotalScore >= WINNING_SCORE) {
-                winnerText = 'Red Wins the Game!';
-            } else if (blueTotalScore >= WINNING_SCORE) {
-                winnerText = 'Blue Wins the Game!';
+            if (game.hasWinner()) {
+                if (game.players.red.totalScore >= game.winningScore) {
+                    winnerText = 'Red Wins the Game!';
+                } else {
+                    winnerText = 'Blue Wins the Game!';
+                }
             }
 
-            // Show full-screen modal
-            domElements.modalWinner.textContent = winnerText;
-            domElements.modalRoundScores.textContent = `Round: Red ${redRoundScore} - Blue ${blueRoundScore}`;
-            domElements.modalTotalScores.textContent = `Total: Red ${redTotalScore} - Blue ${blueTotalScore}`;
+            const dom = uiState.domElements;
+            dom.modalWinner.textContent = winnerText;
+            dom.modalRoundScores.textContent = `Round: Red ${redScore} - Blue ${blueScore}`;
+            dom.modalTotalScores.textContent = `Total: Red ${game.players.red.totalScore} - Blue ${game.players.blue.totalScore}`;
 
-            // Remove old background classes
-            domElements.roundModal.classList.remove('red-bg', 'blue-bg', 'tie-bg');
-            // Add new background class
-            domElements.roundModal.classList.add(bgClass, 'show');
+            dom.roundModal.classList.remove('red-bg', 'blue-bg', 'tie-bg');
+            dom.roundModal.classList.add(bgClass, 'show');
 
-            // Set next round starter to the winner
-            roundStartPlayer = roundWinner;
-            currentPlayer = roundWinner;
+            round.currentPlayerId = roundWinner;
         }
 
         function continueToNextRound() {
-            domElements.roundModal.classList.remove('show');
+            uiState.domElements.roundModal.classList.remove('show');
 
-            // Check if game is over
-            if (redTotalScore >= WINNING_SCORE || blueTotalScore >= WINNING_SCORE) {
-                // Game is over, reset the game
+            if (game.hasWinner()) {
                 resetGame();
                 return;
             }
@@ -1098,49 +1240,34 @@
         }
 
         function newRound() {
-            // Clear any pending auto-end timeout
-            clearAutoEndTimer();
+            uiState.clearAutoEndTimer();
 
-            // Clear all poks from table
+            const prevRound = game.getCurrentRound();
+            if (!prevRound) return;
+
+            const nextStarter = prevRound.currentPlayerId;
+
             document.querySelectorAll('.pok').forEach(pok => pok.remove());
+            uiState.clearPokElements();
 
-            // Reset round tracking
-            pokPlacements = [];
-            redRoundScore = 0;
-            blueRoundScore = 0;
-            redPoksRemaining = POKS_PER_PLAYER;
-            bluePoksRemaining = POKS_PER_PLAYER;
-            lastPlacedPok = null;
+            game.startNewRound(nextStarter);
 
             updateDisplay();
             updateCurrentPlayerDisplay();
         }
 
         function resetGame() {
-            // Clear any pending auto-end timeout
-            clearAutoEndTimer();
+            uiState.clearAutoEndTimer();
 
-            // Clear all poks from table
             document.querySelectorAll('.pok').forEach(pok => pok.remove());
+            uiState.clearPokElements();
 
-            // Reset everything
-            pokPlacements = [];
-            redRoundScore = 0;
-            blueRoundScore = 0;
-            redPoksRemaining = POKS_PER_PLAYER;
-            bluePoksRemaining = POKS_PER_PLAYER;
-            redTotalScore = 0;
-            blueTotalScore = 0;
-            gameStarted = false;
-            currentPlayer = null;
-            roundStartPlayer = null;
-            lastPlacedPok = null;
+            game.reset();
+            pokIdCounter = 0;
 
-            // Show start selector again
-            domElements.startSelector.style.display = 'flex';
+            uiState.domElements.startSelector.style.display = 'flex';
 
-            // Reset body background
-            document.body.classList.remove(PLAYER_CLASS[PLAYER.RED], PLAYER_CLASS[PLAYER.BLUE]);
+            document.body.classList.remove(PLAYER_CLASS[PLAYER_ID.RED], PLAYER_CLASS[PLAYER_ID.BLUE]);
 
             updateDisplay();
         }
