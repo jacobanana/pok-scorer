@@ -283,7 +283,8 @@
                     modalWinner: document.getElementById('modalWinner'),
                     modalRoundScores: document.getElementById('modalRoundScores'),
                     modalTotalScores: document.getElementById('modalTotalScores'),
-                    historyTableBody: document.getElementById('historyTableBody')
+                    historyTableBody: document.getElementById('historyTableBody'),
+                    currentRoundScore: document.getElementById('currentRoundScore')
                 };
             }
 
@@ -298,11 +299,26 @@
                     this.domElements.blueRound.textContent = round.scores.blue;
                     this.domElements.redPoks.textContent = round.redPoksRemaining;
                     this.domElements.bluePoks.textContent = round.bluePoksRemaining;
+
+                    // Update current round score background based on leader
+                    if (this.domElements.currentRoundScore) {
+                        if (round.scores.red > round.scores.blue) {
+                            this.domElements.currentRoundScore.style.backgroundColor = 'rgba(211, 47, 47, 0.15)';
+                        } else if (round.scores.blue > round.scores.red) {
+                            this.domElements.currentRoundScore.style.backgroundColor = 'rgba(25, 118, 210, 0.15)';
+                        } else {
+                            this.domElements.currentRoundScore.style.backgroundColor = '#fafafa';
+                        }
+                    }
                 } else {
                     this.domElements.redRound.textContent = 0;
                     this.domElements.blueRound.textContent = 0;
                     this.domElements.redPoks.textContent = game.poksPerPlayer;
                     this.domElements.bluePoks.textContent = game.poksPerPlayer;
+
+                    if (this.domElements.currentRoundScore) {
+                        this.domElements.currentRoundScore.style.backgroundColor = '#fafafa';
+                    }
                 }
             }
 

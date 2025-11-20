@@ -42,6 +42,12 @@ body.blue-turn {
     flex: 1;
 }
 
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 .main-score-center {
     text-align: center;
     font-size: 64px;
@@ -78,7 +84,7 @@ h2 {
 
 .scoreboard {
     text-align: center;
-    padding: 30px 20px;
+    padding: 20px;
     border-radius: 8px;
     background: #fafafa;
 }
@@ -97,24 +103,27 @@ h2 {
     color: #1976d2;
 }
 
-.round-score {
-    font-size: 36px;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-
-.round-score .red {
-    color: #d32f2f;
-}
-
-.round-score .blue {
-    color: #1976d2;
-}
-
 .poks-remaining {
     font-size: 16px;
     font-style: italic;
     color: #999;
+}
+
+.current-round-score {
+    text-align: center;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 42px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.current-round-score .red {
+    color: #d32f2f;
+}
+
+.current-round-score .blue {
+    color: #1976d2;
 }
 
 .rounds-history {

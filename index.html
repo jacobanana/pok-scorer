@@ -17,9 +17,6 @@
                 <h1>POK Score Counter</h1>
 
                 <div class="scoreboard" id="scoreboard">
-                    <div class="round-score">
-                        <span class="red" id="redRound">0</span> - <span class="blue" id="blueRound">0</span>
-                    </div>
                     <div class="poks-remaining">
                         <span id="redPoks">5</span> - <span id="bluePoks">5</span>
                     </div>
@@ -54,6 +51,7 @@
                 </div>
             </div>
 
+            <div class="right-panel">
             <div class="table-container" id="tableContainer">
             <div class="outer-zone" id="outerZone" onclick="placePokOuter(event)" ondrop="handlePokDrop(event, null, true)" ondragover="event.preventDefault()">
                 <div id="nextPlayer" class="next-player-indicator"></div>
@@ -111,6 +109,11 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="current-round-score" id="currentRoundScore">
+            <span class="red" id="redRound">0</span> - <span class="blue" id="blueRound">0</span>
+        </div>
         </div>
         </div>
     </div>
