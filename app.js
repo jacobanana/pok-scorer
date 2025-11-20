@@ -992,6 +992,7 @@ class GameOrchestrator {
     loadSavedGame() {
         const savedState = this.services.persistence.loadGameState();
         if (!savedState || !savedState.isStarted) {
+            this.services.ui.hideContinueButton();
             return;
         }
 
@@ -1060,8 +1061,31 @@ class GameOrchestrator {
 
         const currentRound = this.game.getCurrentRound();
         if (currentRound) {
-            this.services.ui.updateCurrentPlayer(currentRound);
-            this.restorePokElements(currentRound);
+            // Check if the current round is complete - if so, start a new round
+            if (currentRound.isComplete) {
+                // Check if game should end
+                if (this.services.rules.shouldEndGame(this.game)) {
+                    this.resetGame();
+                    return;
+                }
+
+                // Clear the board and start a new round
+                const nextStarter = this.services.rules.getRoundStarter(currentRound);
+                this.services.pok.clearAllPokElements();
+                this.game.startNewRound(nextStarter);
+
+                const newRound = this.game.getCurrentRound();
+                this.services.ui.updateCurrentPlayer(newRound);
+                this.services.ui.updateScores(this.game);
+                this.saveGameState();
+            } else {
+                // Round is in progress, restore POKs and player state
+                // Recalculate the next player using the rules engine
+                const nextPlayer = this.services.rules.getNextPlayer(currentRound);
+                currentRound.currentPlayerId = nextPlayer;
+                this.services.ui.updateCurrentPlayer(currentRound);
+                this.restorePokElements(currentRound);
+            }
         }
     }
 
@@ -1091,6 +1115,9 @@ class GameOrchestrator {
     }
 
     startGame(startingPlayerId) {
+        // Clear any previous saved game state when starting a new game
+        this.services.persistence.clearGameState();
+
         this.game.startNewGame(startingPlayerId);
 
         this.eventProcessor.process(new GameEvent(EVENT_TYPES.GAME_STARTED, {
@@ -1103,6 +1130,7 @@ class GameOrchestrator {
         }));
 
         this.services.ui.hideStartSelector();
+        this.services.ui.hideContinueButton();
         this.services.ui.updateScores(this.game);
         this.services.ui.updateCurrentPlayer(this.game.getCurrentRound());
         this.saveGameState();
@@ -1404,11 +1432,19 @@ class GameOrchestrator {
         this.eventLog.printSummary();
 
         this.services.ui.showStartSelector();
+
+        // Show continue button if there's a saved game to restore
+        if (this.services.persistence.hasGameState()) {
+            this.services.ui.showContinueButton();
+        }
+
         document.body.classList.remove(PLAYER_CLASS[PLAYER_ID.RED], PLAYER_CLASS[PLAYER_ID.BLUE]);
 
         this.services.ui.updateScores(this.game);
         this.services.ui.clearRoundsHistory();
-        this.services.persistence.clearGameState();
+
+        // Don't clear saved state here - keep it so user can restore if they change their mind
+        // It will be cleared when they start a new game
     }
 
     setupPokHandlers(pokElement, pokId) {
@@ -1473,10 +1509,6 @@ function continueToNextRound() {
 }
 
 function confirmNewGame() {
-    if (orchestrator.game.isStarted) {
-        const confirmed = confirm('Are you sure you want to start a new game? Current progress will be lost.');
-        if (!confirmed) return;
-    }
     orchestrator.resetGame();
 }
 

@@ -518,21 +518,22 @@ body.blue-turn {
 
 .continue-game-top-button {
     position: absolute;
-    top: 40px;
+    top: 10%;
     left: 50%;
-    transform: translateX(-50%);
-    padding: 20px 50px;
-    font-size: 24px;
+    width: 30%;
+    transform: translate(-50%, -50%);
+    padding: 30px 60px;
+    font-size: 32px;
     font-weight: bold;
     background: #4caf50;
     color: white;
-    border: none;
-    border-radius: 12px;
+    border-radius: 16px;
     cursor: pointer;
     z-index: 2001;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     transition: all 0.2s;
     display: none;
+    white-space: nowrap;
 }
 
 .continue-game-top-button.show {
@@ -541,7 +542,8 @@ body.blue-turn {
 
 .continue-game-top-button:hover {
     background: #45a049;
-    transform: translateX(-50%) scale(1.05);
+    transform: translate(-50%, -50%) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
 }
 
 .start-half {
@@ -695,7 +697,7 @@ button:active {
 }
 
 .new-game-button:hover {
-    background: #b71c1c;
+    background: #429444;
 }
 
 /* ============================================ */
