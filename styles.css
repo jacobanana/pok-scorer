@@ -419,6 +419,22 @@ body.blue-turn {
     background: linear-gradient(135deg, #1976d2 50%, #888 50%);
 }
 
+/* Last Placed POK - Animated Dashed Border */
+.pok.last-placed {
+    border: 3px solid #333;
+    animation: pok-breathe 1.3s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+@keyframes pok-breathe {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.15);
+    }
+}
+
 /* ============================================ */
 /* CURRENT ROUND SCORE DISPLAY                 */
 /* ============================================ */

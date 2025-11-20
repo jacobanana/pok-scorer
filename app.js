@@ -284,6 +284,17 @@ class PokService {
         });
     }
 
+    clearLastPlacedHighlight() {
+        document.querySelectorAll('.pok.last-placed').forEach(pok => {
+            pok.classList.remove('last-placed');
+        });
+    }
+
+    highlightAsLastPlaced(pokElement) {
+        this.clearLastPlacedHighlight();
+        pokElement.classList.add('last-placed');
+    }
+
     clearAllPokElements() {
         document.querySelectorAll('.pok').forEach(pok => pok.remove());
         this.pokElements.clear();
@@ -936,6 +947,7 @@ class GameOrchestrator {
         this.services.pok.attachPokToZone(pokElement, zone);
         this.services.pok.setPokElement(pok.id, pokElement);
         this.setupPokHandlers(pokElement, pok.id);
+        this.services.pok.highlightAsLastPlaced(pokElement);
 
         this.services.ui.updateScores(this.game);
 
