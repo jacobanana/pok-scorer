@@ -515,6 +515,29 @@
         const POKS_PER_PLAYER = 5;
         const LOW_SCORE_ZONE_THRESHOLD_PX = 10;
 
+        // Constants for players
+        const PLAYER = {
+            RED: 'red',
+            BLUE: 'blue'
+        };
+
+        const PLAYER_COLOR = {
+            [PLAYER.RED]: '#d32f2f',
+            [PLAYER.BLUE]: '#1976d2'
+        };
+
+        const PLAYER_CLASS = {
+            [PLAYER.RED]: 'red-turn',
+            [PLAYER.BLUE]: 'blue-turn'
+        };
+
+        // Timeout values
+        const AUTO_END_DELAY_MS = 1500;
+        const AUTO_END_DELAY_OUTER_MS = 3000;
+
+        // Game settings
+        const WINNING_SCORE = 21;
+
         let currentPlayer = null;
         let gameStarted = false;
         let redPoksRemaining = POKS_PER_PLAYER;
@@ -539,23 +562,23 @@
         }
 
         function updateCurrentPlayerDisplay() {
-            document.body.classList.remove('red-turn', 'blue-turn');
+            document.body.classList.remove(PLAYER_CLASS[PLAYER.RED], PLAYER_CLASS[PLAYER.BLUE]);
 
-            if (currentPlayer === 'red') {
-                document.body.classList.add('red-turn');
-            } else if (currentPlayer === 'blue') {
-                document.body.classList.add('blue-turn');
+            if (currentPlayer === PLAYER.RED) {
+                document.body.classList.add(PLAYER_CLASS[PLAYER.RED]);
+            } else if (currentPlayer === PLAYER.BLUE) {
+                document.body.classList.add(PLAYER_CLASS[PLAYER.BLUE]);
             }
 
             // Update next player display
             const nextPlayerElement = document.getElementById('nextPlayer');
             if (nextPlayerElement) {
-                if (currentPlayer === 'red') {
+                if (currentPlayer === PLAYER.RED) {
                     nextPlayerElement.textContent = 'Next player: red';
-                    nextPlayerElement.style.color = '#d32f2f';
-                } else if (currentPlayer === 'blue') {
+                    nextPlayerElement.style.color = PLAYER_COLOR[PLAYER.RED];
+                } else if (currentPlayer === PLAYER.BLUE) {
                     nextPlayerElement.textContent = 'Next player: blue';
-                    nextPlayerElement.style.color = '#1976d2';
+                    nextPlayerElement.style.color = PLAYER_COLOR[PLAYER.BLUE];
                 } else {
                     nextPlayerElement.textContent = '';
                 }
@@ -565,42 +588,121 @@
         function switchPlayer() {
             // If one player has no poks left, the other player must play
             if (redPoksRemaining === 0 && bluePoksRemaining > 0) {
-                currentPlayer = 'blue';
+                currentPlayer = PLAYER.BLUE;
             } else if (bluePoksRemaining === 0 && redPoksRemaining > 0) {
-                currentPlayer = 'red';
+                currentPlayer = PLAYER.RED;
             } else if (redPoksRemaining > 0 && bluePoksRemaining > 0) {
                 // Both players have poks remaining
                 // Player with fewer points plays next
                 if (redRoundScore < blueRoundScore) {
-                    currentPlayer = 'red';
+                    currentPlayer = PLAYER.RED;
                 } else if (blueRoundScore < redRoundScore) {
-                    currentPlayer = 'blue';
+                    currentPlayer = PLAYER.BLUE;
                 } else {
                     // If tied, alternate
-                    currentPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+                    currentPlayer = currentPlayer === PLAYER.RED ? PLAYER.BLUE : PLAYER.RED;
                 }
             }
             updateCurrentPlayerDisplay();
         }
 
-        function placePok(zone, event) {
+        function canPlacePok() {
             if (!gameStarted) {
                 alert('Please select which team starts first!');
-                return;
+                return false;
             }
 
-            if (currentPlayer === 'red' && redPoksRemaining === 0) {
+            if (currentPlayer === PLAYER.RED && redPoksRemaining === 0) {
                 // Red has no poks left, check if we should end the round
                 if (bluePoksRemaining === 0) {
                     endRound();
                 }
-                return;
+                return false;
             }
-            if (currentPlayer === 'blue' && bluePoksRemaining === 0) {
+            if (currentPlayer === PLAYER.BLUE && bluePoksRemaining === 0) {
                 // Blue has no poks left, check if we should end the round
                 if (redPoksRemaining === 0) {
                     endRound();
                 }
+                return false;
+            }
+            return true;
+        }
+
+        function updatePlayerScore(player, points) {
+            if (player === PLAYER.RED) {
+                redRoundScore += points;
+            } else {
+                blueRoundScore += points;
+            }
+        }
+
+        function decrementPlayerPoks(player) {
+            if (player === PLAYER.RED) {
+                redPoksRemaining--;
+            } else {
+                bluePoksRemaining--;
+            }
+        }
+
+        function incrementPlayerPoks(player) {
+            if (player === PLAYER.RED) {
+                redPoksRemaining++;
+            } else {
+                bluePoksRemaining++;
+            }
+        }
+
+        function createPokElement(player, points, x, y) {
+            const pok = document.createElement('div');
+            pok.className = `pok ${player}`;
+            pok.textContent = points;
+            pok.style.left = `${x}px`;
+            pok.style.top = `${y}px`;
+            pok.style.transform = 'translate(-50%, -50%)';
+            return pok;
+        }
+
+        function setupPokHandlers(pok, placement, isOuterZone = false) {
+            // Click to toggle between high/low, then remove
+            pok.onclick = function(e) {
+                e.stopPropagation();
+                if (isOuterZone) {
+                    removePok(pok);
+                } else {
+                    togglePok(placement);
+                }
+            };
+
+            // Make pok draggable
+            makePokDraggable(pok, placement);
+        }
+
+        function trackPlacement(placement) {
+            pokPlacements.push(placement);
+            updatePlayerScore(placement.player, placement.points);
+            decrementPlayerPoks(placement.player);
+            updateDisplay();
+            lastPlacedPok = placement;
+        }
+
+        function checkAndHandleRoundComplete(delay) {
+            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
+                // Clear any existing timeout
+                if (autoEndTimeout) {
+                    clearTimeout(autoEndTimeout);
+                }
+                // Give some time to adjust the last pok before auto-ending
+                autoEndTimeout = setTimeout(() => {
+                    endRound();
+                }, delay);
+                return true;
+            }
+            return false;
+        }
+
+        function placePok(zone, event) {
+            if (!canPlacePok()) {
                 return;
             }
 
@@ -626,16 +728,8 @@
                 points = isNearBoundary ? low : high;
             }
 
-            // Create pok element
-            const pok = document.createElement('div');
-            pok.className = `pok ${currentPlayer}`;
-            pok.textContent = points;
-
-            // Position the pok at exact click location (center the pok on the click point)
-            pok.style.left = `${clickX}px`;
-            pok.style.top = `${clickY}px`;
-            pok.style.transform = 'translate(-50%, -50%)';
-
+            // Create and position pok element
+            const pok = createPokElement(currentPlayer, points, clickX, clickY);
             zone.appendChild(pok);
 
             // Track placement
@@ -650,41 +744,12 @@
                 high: high,
                 isHigh: !isNearBoundary
             };
-            pokPlacements.push(placement);
 
-            // Update round scores
-            if (currentPlayer === 'red') {
-                redRoundScore += points;
-                redPoksRemaining--;
-            } else {
-                blueRoundScore += points;
-                bluePoksRemaining--;
-            }
-
-            updateDisplay();
-
-            // Click to toggle between high/low, then remove
-            pok.onclick = function(e) {
-                e.stopPropagation();
-                togglePok(placement);
-            };
-
-            // Make pok draggable
-            makePokDraggable(pok, placement);
-
-            // Track this as the last placed pok
-            lastPlacedPok = placement;
+            trackPlacement(placement);
+            setupPokHandlers(pok, placement);
 
             // Check if round is complete (all poks placed)
-            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
-                // Clear any existing timeout
-                if (autoEndTimeout) {
-                    clearTimeout(autoEndTimeout);
-                }
-                // Give some time to adjust the last pok before auto-ending
-                autoEndTimeout = setTimeout(() => {
-                    endRound();
-                }, 1500);
+            if (checkAndHandleRoundComplete(AUTO_END_DELAY_MS)) {
                 return;
             }
 
@@ -693,23 +758,7 @@
         }
 
         function placePokOuter(event) {
-            if (!gameStarted) {
-                alert('Please select which team starts first!');
-                return;
-            }
-
-            if (currentPlayer === 'red' && redPoksRemaining === 0) {
-                // Red has no poks left, check if we should end the round
-                if (bluePoksRemaining === 0) {
-                    endRound();
-                }
-                return;
-            }
-            if (currentPlayer === 'blue' && bluePoksRemaining === 0) {
-                // Blue has no poks left, check if we should end the round
-                if (redPoksRemaining === 0) {
-                    endRound();
-                }
+            if (!canPlacePok()) {
                 return;
             }
 
@@ -723,14 +772,8 @@
             const clickY = event.clientY - rect.top;
 
             // Create pok element
-            const pok = document.createElement('div');
-            pok.className = `pok ${currentPlayer}`;
-            pok.textContent = points;
+            const pok = createPokElement(currentPlayer, points, clickX, clickY);
             pok.style.position = 'absolute';
-            pok.style.left = `${clickX}px`;
-            pok.style.top = `${clickY}px`;
-            pok.style.transform = 'translate(-50%, -50%)';
-
             container.appendChild(pok);
 
             // Track placement
@@ -745,39 +788,12 @@
                 high: 0,
                 isHigh: true
             };
-            pokPlacements.push(placement);
 
-            // Update round scores (0 points added)
-            if (currentPlayer === 'red') {
-                redPoksRemaining--;
-            } else {
-                bluePoksRemaining--;
-            }
-
-            updateDisplay();
-
-            // Click to remove (outer zone poks can only be removed, not toggled)
-            pok.onclick = function(e) {
-                e.stopPropagation();
-                removePok(pok);
-            };
-
-            // Make pok draggable
-            makePokDraggable(pok, placement);
-
-            // Track this as the last placed pok
-            lastPlacedPok = placement;
+            trackPlacement(placement);
+            setupPokHandlers(pok, placement, true);
 
             // Check if round is complete (all poks placed)
-            if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
-                // Clear any existing timeout
-                if (autoEndTimeout) {
-                    clearTimeout(autoEndTimeout);
-                }
-                // Give 3 seconds to adjust the last pok before auto-ending
-                autoEndTimeout = setTimeout(() => {
-                    endRound();
-                }, 3000);
+            if (checkAndHandleRoundComplete(AUTO_END_DELAY_OUTER_MS)) {
                 return;
             }
 
@@ -811,18 +827,14 @@
                 placement.element.textContent = placement.low;
 
                 // Update scores
-                if (placement.player === 'red') {
-                    redRoundScore = redRoundScore - oldPoints + placement.low;
-                } else {
-                    blueRoundScore = blueRoundScore - oldPoints + placement.low;
-                }
+                updatePlayerScore(placement.player, -oldPoints + placement.low);
                 updateDisplay();
 
                 // Restart auto-end timer if all poks are still placed
                 if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
                     autoEndTimeout = setTimeout(() => {
                         endRound();
-                    }, 3000);
+                    }, AUTO_END_DELAY_OUTER_MS);
                 }
             } else {
                 // Can only remove if it's the last placed pok
@@ -844,13 +856,8 @@
                 const placement = pokPlacements[index];
 
                 // Update scores
-                if (placement.player === 'red') {
-                    redRoundScore -= placement.points;
-                    redPoksRemaining++;
-                } else {
-                    blueRoundScore -= placement.points;
-                    bluePoksRemaining++;
-                }
+                updatePlayerScore(placement.player, -placement.points);
+                incrementPlayerPoks(placement.player);
 
                 // Remove from array and DOM
                 pokPlacements.splice(index, 1);
@@ -901,11 +908,7 @@
             }
 
             // Remove old score contribution
-            if (draggedPlacement.player === 'red') {
-                redRoundScore -= draggedPlacement.points;
-            } else {
-                blueRoundScore -= draggedPlacement.points;
-            }
+            updatePlayerScore(draggedPlacement.player, -draggedPlacement.points);
 
             // Calculate new position and score
             let newPoints, newZone, newLow, newHigh;
@@ -975,11 +978,7 @@
             // isHigh is already set in the zone-specific logic above
 
             // Add new score contribution
-            if (draggedPlacement.player === 'red') {
-                redRoundScore += newPoints;
-            } else {
-                blueRoundScore += newPoints;
-            }
+            updatePlayerScore(draggedPlacement.player, newPoints);
 
             updateDisplay();
 
@@ -992,7 +991,7 @@
             if (redPoksRemaining === 0 && bluePoksRemaining === 0) {
                 autoEndTimeout = setTimeout(() => {
                     endRound();
-                }, 1500);
+                }, AUTO_END_DELAY_MS);
             }
         }
 
@@ -1041,9 +1040,9 @@
             updateDisplay();
 
             // Check for game winner
-            if (redTotalScore >= 21) {
+            if (redTotalScore >= WINNING_SCORE) {
                 winnerText = 'Red Wins the Game!';
-            } else if (blueTotalScore >= 21) {
+            } else if (blueTotalScore >= WINNING_SCORE) {
                 winnerText = 'Blue Wins the Game!';
             }
 
@@ -1072,7 +1071,7 @@
             modal.classList.remove('show');
 
             // Check if game is over
-            if (redTotalScore >= 21 || blueTotalScore >= 21) {
+            if (redTotalScore >= WINNING_SCORE || blueTotalScore >= WINNING_SCORE) {
                 // Game is over, reset the game
                 resetGame();
                 return;
@@ -1130,7 +1129,7 @@
             document.getElementById('startSelector').style.display = 'flex';
 
             // Reset body background
-            document.body.classList.remove('red-turn', 'blue-turn');
+            document.body.classList.remove(PLAYER_CLASS[PLAYER.RED], PLAYER_CLASS[PLAYER.BLUE]);
 
             updateDisplay();
         }
