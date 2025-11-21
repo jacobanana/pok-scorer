@@ -370,6 +370,7 @@ class PokService {
     makePokDraggable(pokElement, callbacks) {
         pokElement.draggable = true;
 
+        // Desktop drag and drop
         pokElement.addEventListener('dragstart', (e) => {
             pokElement.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
@@ -384,6 +385,85 @@ class PokService {
                 callbacks.onDragEnd();
             }
         });
+
+        // Mobile touch events
+        let touchStartX, touchStartY, initialLeft, initialTop;
+        let isDragging = false;
+        let currentZone = null;
+
+        pokElement.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+
+            const rect = pokElement.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+
+            pokElement.classList.add('dragging');
+            pokElement.style.position = 'fixed';
+            pokElement.style.zIndex = '1000';
+            pokElement.style.left = `${initialLeft}px`;
+            pokElement.style.top = `${initialTop}px`;
+            pokElement.style.transform = 'translate(0, 0)';
+
+            if (callbacks.onDragStart) {
+                callbacks.onDragStart();
+            }
+        }, { passive: false });
+
+        pokElement.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+
+            pokElement.style.left = `${initialLeft + deltaX}px`;
+            pokElement.style.top = `${initialTop + deltaY}px`;
+
+            // Find the zone under the touch point
+            const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+            const zone = elementAtPoint?.closest('.zone');
+
+            if (zone && zone !== currentZone) {
+                currentZone = zone;
+                // Trigger boundary highlighting
+                if (callbacks.onTouchMove) {
+                    callbacks.onTouchMove(zone, touch);
+                }
+            }
+        }, { passive: false });
+
+        pokElement.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            isDragging = false;
+
+            const touch = e.changedTouches[0];
+            const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetZone = elementAtPoint?.closest('.zone');
+
+            pokElement.classList.remove('dragging');
+            pokElement.style.position = '';
+            pokElement.style.zIndex = '';
+            pokElement.style.left = '';
+            pokElement.style.top = '';
+            pokElement.style.transform = '';
+
+            if (callbacks.onDragEnd) {
+                callbacks.onDragEnd();
+            }
+
+            if (targetZone && callbacks.onTouchDrop) {
+                callbacks.onTouchDrop(targetZone, touch);
+            }
+
+            currentZone = null;
+        }, { passive: false });
     }
 
     clearLastPlacedHighlight() {
@@ -1876,6 +1956,25 @@ class GameOrchestrator {
             },
             onDragEnd: () => {
                 this.uiState.draggedPokId = null;
+            },
+            onTouchMove: (zone, touch) => {
+                // Create a synthetic event for boundary highlighting
+                const syntheticEvent = {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                };
+                this.handleZoneDragOver(zone, syntheticEvent);
+            },
+            onTouchDrop: (targetZone, touch) => {
+                // Create a synthetic event for the drop
+                const syntheticEvent = {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                };
+                this.movePok(pokId, targetZone, syntheticEvent);
+                this.services.ui.clearAllZoneBoundaryHighlights();
             }
         });
     }
@@ -1906,6 +2005,10 @@ function startGame(startingPlayerId) {
 }
 
 function placePok(zone, event) {
+    // Prevent default to avoid double-firing on touch devices
+    if (event.type === 'touchend') {
+        event.preventDefault();
+    }
     orchestrator.placePok(zone, event);
 }
 

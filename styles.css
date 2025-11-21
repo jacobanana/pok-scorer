@@ -454,6 +454,7 @@ body.blue-turn {
     color: white;
     z-index: 100;
     cursor: move;
+    touch-action: none;
 }
 
 .pok.dragging {
@@ -891,4 +892,23 @@ button:active {
 
 .main-score .blue {
     color: #1976d2;
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN                           */
+/* ============================================ */
+
+/* Hide left panel on smaller screens */
+@media (max-width: 1024px) {
+    .top-section {
+        grid-template-columns: 1fr;
+    }
+
+    .left-panel {
+        display: none;
+    }
+
+    .table-container {
+        width: 90%;
+    }
 }
