@@ -810,6 +810,27 @@ class Round {
         return this.redPoksRemaining === 0 && this.bluePoksRemaining === 0;
     }
 
+    recalculateScores() {
+        // Reset scores to zero
+        this.scores.red = 0;
+        this.scores.blue = 0;
+
+        // Sum up all pok scores
+        this.poksPlaced.forEach(pok => {
+            console.log(`Recalculating: Pok ${pok.id} (${pok.playerId}) has ${pok.points} points`);
+            if (pok.playerId === PLAYER_ID.RED) {
+                this.scores.red += pok.points;
+            } else if (pok.playerId === PLAYER_ID.BLUE) {
+                this.scores.blue += pok.points;
+            }
+        });
+
+        console.log(`Recalculated scores: Red=${this.scores.red}, Blue=${this.scores.blue}`);
+
+        // Update winner and point difference
+        this.scores.updateWinner();
+    }
+
     switchPlayer() {
         if (this.redPoksRemaining === 0 && this.bluePoksRemaining > 0) {
             this.currentPlayerId = PLAYER_ID.BLUE;
@@ -1275,9 +1296,6 @@ class GameOrchestrator {
 
         this.uiState.clearAutoEndTimer();
 
-        // Remove old score
-        round.scores.addPoints(pok.playerId, -pok.points);
-
         // Calculate new position and score
         const positionData = this.services.pok.calculatePositionFromEvent(targetZone, dropEvent);
         const scoreResult = this.services.scoring.calculateZoneScore(targetZone, positionData, positionData.rect);
@@ -1289,9 +1307,11 @@ class GameOrchestrator {
         const oldZoneId = pok.zoneId;
 
         // Update POK data
+        console.log(`Moving pok ${pokId}: old points=${oldPoints}, new points=${scoreResult.points}`);
         pok.updatePosition(positionData.x, positionData.y, positionData.xPercent, positionData.yPercent);
         pok.updateScore(scoreResult.points, scoreResult.isHigh);
         pok.updateZone(zoneId);
+        console.log(`After update, pok.points=${pok.points}`);
 
         // Move POK element to new zone
         if (pokElement.parentElement !== targetZone) {
@@ -1311,8 +1331,8 @@ class GameOrchestrator {
             pokElement.classList.add('low-score');
         }
 
-        // Add new score
-        round.scores.addPoints(pok.playerId, scoreResult.points);
+        // Recalculate round scores from all placed poks
+        round.recalculateScores();
 
         // Log the move event
         this.eventProcessor.process(new GameEvent(EVENT_TYPES.POK_MOVED, {
@@ -1321,7 +1341,7 @@ class GameOrchestrator {
             fromZone: oldZoneId,
             toZone: zoneId,
             oldPosition: oldPosition,
-            newPosition: { x: position.x, y: position.y },
+            newPosition: { x: positionData.x, y: positionData.y },
             oldPoints: oldPoints,
             newPoints: scoreResult.points,
             roundNumber: round.roundNumber
