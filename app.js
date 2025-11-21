@@ -27,11 +27,6 @@ const PLAYER_NAME = {
     [PLAYER_ID.BLUE]: 'Blue'
 };
 
-const PLAYER_COLOR = {
-    [PLAYER_ID.RED]: '#d32f2f',
-    [PLAYER_ID.BLUE]: '#1976d2'
-};
-
 // Utility Functions
 // ============================================
 
@@ -477,12 +472,13 @@ class UIService {
             // Update current round score background and difference based on leader
             const diff = Math.abs(round.scores.red - round.scores.blue);
             if (this.domElements.currentRoundScore) {
+                this.domElements.currentRoundScore.classList.remove('red-leading', 'blue-leading', 'tied');
                 if (round.scores.red > round.scores.blue) {
-                    this.domElements.currentRoundScore.style.backgroundColor = 'rgba(211, 47, 47, 0.15)';
+                    this.domElements.currentRoundScore.classList.add('red-leading');
                 } else if (round.scores.blue > round.scores.red) {
-                    this.domElements.currentRoundScore.style.backgroundColor = 'rgba(25, 118, 210, 0.15)';
+                    this.domElements.currentRoundScore.classList.add('blue-leading');
                 } else {
-                    this.domElements.currentRoundScore.style.backgroundColor = '#fafafa';
+                    this.domElements.currentRoundScore.classList.add('tied');
                 }
             }
 
@@ -502,7 +498,8 @@ class UIService {
             }
 
             if (this.domElements.currentRoundScore) {
-                this.domElements.currentRoundScore.style.backgroundColor = '#fafafa';
+                this.domElements.currentRoundScore.classList.remove('red-leading', 'blue-leading', 'tied');
+                this.domElements.currentRoundScore.classList.add('tied');
             }
             if (this.domElements.scoreDifference) {
                 this.domElements.scoreDifference.textContent = '0';
@@ -529,11 +526,11 @@ class UIService {
     }
 
     showStartSelector() {
-        this.domElements.startSelector.style.display = 'flex';
+        this.domElements.startSelector.classList.remove('hidden');
     }
 
     hideStartSelector() {
-        this.domElements.startSelector.style.display = 'none';
+        this.domElements.startSelector.classList.add('hidden');
     }
 
     showContinueButton() {

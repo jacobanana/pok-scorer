@@ -473,6 +473,18 @@ body.blue-turn {
     pointer-events: none;
 }
 
+.current-round-score.red-leading {
+    background-color: rgba(211, 47, 47, 0.15);
+}
+
+.current-round-score.blue-leading {
+    background-color: rgba(25, 118, 210, 0.15);
+}
+
+.current-round-score.tied {
+    background-color: #fafafa;
+}
+
 .current-round-score .score-row {
     display: flex;
     align-items: center;
@@ -538,6 +550,10 @@ body.blue-turn {
     z-index: 2000;
     display: flex;
     flex-wrap: wrap;
+}
+
+.start-selector.hidden {
+    display: none;
 }
 
 .continue-game-top-button {
