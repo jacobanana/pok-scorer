@@ -62,6 +62,7 @@ body.blue-turn {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    position: relative;
 }
 
 /* Overall Game Score Display */
@@ -188,6 +189,7 @@ body.blue-turn {
     flex-direction: column;
     gap: 15px;
     justify-content: center;
+    position: relative;
 }
 
 /* Game Board Container */
@@ -654,6 +656,43 @@ h2 {
     font-size: 16px;
     margin-bottom: 10px;
     color: #333;
+}
+
+/* ============================================ */
+/* PLAYER TURN NOTIFICATION                    */
+/* ============================================ */
+
+.player-turn-notification {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 100px;
+    font-weight: bold;
+    z-index: 3000;
+    pointer-events: none;
+    opacity: 0;
+    color: #ffffff;
+    padding: 15px;
+    border-radius: 15px;
+    transition: opacity 0.3s ease-in;
+}
+
+.player-turn-notification.red-player {
+    background: #d32f2f;
+}
+
+.player-turn-notification.blue-player {
+    background: #1976d2;
+}
+
+.player-turn-notification.show {
+    opacity: 1;
+}
+
+.player-turn-notification.fade-out {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
 }
 
 /* ============================================ */

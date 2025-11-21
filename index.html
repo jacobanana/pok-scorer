@@ -35,7 +35,6 @@
             <!-- LEFT PANEL: Scores & History  -->
             <!-- ============================= -->
             <div class="left-panel">
-
                 <!-- Overall Game Score Display -->
                 <div class="main-score-center">
                     <span class="red" id="totalScoreRed">0</span> - <span class="blue" id="totalScoreBlue">0</span>
@@ -69,7 +68,11 @@
             <!-- RIGHT PANEL: Game Board       -->
             <!-- ============================= -->
             <div class="right-panel">
+
                 <div class="table-container" id="gameBoardContainer">
+                    <!-- Player Turn Notification -->
+                    <div id="playerTurnNotification" class="player-turn-notification"></div>
+
 
                     <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
                     <div class="outer-zone zone" id="outerPlayAreaLeft" data-zone="outer" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">

@@ -1,8 +1,30 @@
 // Constants
 // ============================================
+
+// Game Configuration
+const GAME_CONFIG = {
+    WINNING_SCORE: 21,
+    POKS_PER_PLAYER: 5,
+    INITIAL_ROUND_NUMBER: 0
+};
+
+// UI Configuration
+const UI_CONFIG = {
+    BOUNDARY_THRESHOLD_PX: 10,
+    AUTO_END_ROUND_DELAY_MS: 1500,
+    PLAYER_TURN_NOTIFICATION_DURATION_MS: 1000,
+    DEFAULT_POSITION_PERCENT: 50
+};
+
+// Player Configuration
 const PLAYER_ID = {
     RED: 'red',
     BLUE: 'blue'
+};
+
+const PLAYER_NAME = {
+    [PLAYER_ID.RED]: 'Red',
+    [PLAYER_ID.BLUE]: 'Blue'
 };
 
 const PLAYER_COLOR = {
@@ -10,11 +32,31 @@ const PLAYER_COLOR = {
     [PLAYER_ID.BLUE]: '#1976d2'
 };
 
+// Utility Functions
+// ============================================
+
+/**
+ * Get a player-specific class name by suffix
+ * @param {string} playerId - The player ID (PLAYER_ID.RED or PLAYER_ID.BLUE)
+ * @param {string} suffix - The class suffix (e.g., 'bg', 'turn', 'circle')
+ * @returns {string} The constructed class name (e.g., 'red-bg', 'blue-turn')
+ */
+function getPlayerClass(playerId, suffix) {
+    return `${playerId}-${suffix}`;
+}
+
 const PLAYER_CLASS = {
-    [PLAYER_ID.RED]: 'red-turn',
-    [PLAYER_ID.BLUE]: 'blue-turn'
+    [PLAYER_ID.RED]: getPlayerClass(PLAYER_ID.RED, 'turn'),
+    [PLAYER_ID.BLUE]: getPlayerClass(PLAYER_ID.BLUE, 'turn')
 };
 
+const PLAYER_BG_CLASS = {
+    [PLAYER_ID.RED]: getPlayerClass(PLAYER_ID.RED, 'bg'),
+    [PLAYER_ID.BLUE]: getPlayerClass(PLAYER_ID.BLUE, 'bg'),
+    TIE: 'tie-bg'
+};
+
+// Event Types
 const EVENT_TYPES = {
     GAME_STARTED: 'GAME_STARTED',
     GAME_RESET: 'GAME_RESET',
@@ -181,7 +223,7 @@ class RulesEngine {
 
 class ScoringService {
     constructor() {
-        this.boundaryThreshold = 10;
+        this.boundaryThreshold = UI_CONFIG.BOUNDARY_THRESHOLD_PX;
     }
 
     calculateZoneScore(zone, clickPosition, zoneRect) {
@@ -232,8 +274,8 @@ class PokService {
 
     createPok(playerId, points, position, zoneId, isHighScore, zoneRect) {
         const pokId = this.generatePokId();
-        const xPercent = zoneRect ? (position.x / zoneRect.width) * 100 : 50;
-        const yPercent = zoneRect ? (position.y / zoneRect.height) * 100 : 50;
+        const xPercent = zoneRect ? (position.x / zoneRect.width) * 100 : UI_CONFIG.DEFAULT_POSITION_PERCENT;
+        const yPercent = zoneRect ? (position.y / zoneRect.height) * 100 : UI_CONFIG.DEFAULT_POSITION_PERCENT;
         const pok = new Pok(pokId, playerId, points, position.x, position.y, zoneId, isHighScore, xPercent, yPercent);
         return pok;
     }
@@ -409,7 +451,8 @@ class UIService {
             currentRoundScore: document.getElementById('currentRoundScoreDisplay'),
             scoreDifference: document.getElementById('currentRoundScoreDifference'),
             redPoksInfo: document.getElementById('remainingPoksRed'),
-            bluePoksInfo: document.getElementById('remainingPoksBlue')
+            bluePoksInfo: document.getElementById('remainingPoksBlue'),
+            turnNotification: document.getElementById('playerTurnNotification')
         };
     }
 
@@ -485,10 +528,10 @@ class UIService {
 
         if (this.domElements.nextPlayer) {
             if (currentPlayerId === PLAYER_ID.RED) {
-                this.domElements.nextPlayer.textContent = 'Next player: RED';
+                this.domElements.nextPlayer.textContent = `Next player: ${PLAYER_NAME[PLAYER_ID.RED]}`;
                 this.domElements.nextPlayer.style.backgroundColor = PLAYER_COLOR[PLAYER_ID.RED];
             } else if (currentPlayerId === PLAYER_ID.BLUE) {
-                this.domElements.nextPlayer.textContent = 'Next player: BLUE';
+                this.domElements.nextPlayer.textContent = `Next player: ${PLAYER_NAME[PLAYER_ID.BLUE]}`;
                 this.domElements.nextPlayer.style.backgroundColor = PLAYER_COLOR[PLAYER_ID.BLUE];
             }
         }
@@ -519,7 +562,11 @@ class UIService {
         this.domElements.modalRoundScores.textContent = `Round: Red ${redScore} - Blue ${blueScore}`;
         this.domElements.modalTotalScores.textContent = `Total: Red ${redTotal} - Blue ${blueTotal}`;
 
-        this.domElements.roundModal.classList.remove('red-bg', 'blue-bg', 'tie-bg');
+        this.domElements.roundModal.classList.remove(
+            PLAYER_BG_CLASS[PLAYER_ID.RED],
+            PLAYER_BG_CLASS[PLAYER_ID.BLUE],
+            PLAYER_BG_CLASS.TIE
+        );
         this.domElements.roundModal.classList.add(bgClass, 'show');
     }
 
@@ -551,13 +598,13 @@ class UIService {
             if (round.isComplete) {
                 // Completed round - show winner and diff
                 if (round.scores.winner === PLAYER_ID.RED) {
-                    winner.textContent = 'Red';
-                    winner.className = 'winner-red';
-                    row.className = 'round-row-red';
+                    winner.textContent = PLAYER_NAME[PLAYER_ID.RED];
+                    winner.className = getPlayerClass(PLAYER_ID.RED, 'winner');
+                    row.className = getPlayerClass(PLAYER_ID.RED, 'round-row');
                 } else if (round.scores.winner === PLAYER_ID.BLUE) {
-                    winner.textContent = 'Blue';
-                    winner.className = 'winner-blue';
-                    row.className = 'round-row-blue';
+                    winner.textContent = PLAYER_NAME[PLAYER_ID.BLUE];
+                    winner.className = getPlayerClass(PLAYER_ID.BLUE, 'winner');
+                    row.className = getPlayerClass(PLAYER_ID.BLUE, 'round-row');
                 } else {
                     winner.textContent = 'Tie';
                     winner.className = 'winner-tie';
@@ -584,6 +631,36 @@ class UIService {
     clearRoundsHistory() {
         if (!this.domElements.historyTableBody) return;
         this.domElements.historyTableBody.innerHTML = '';
+    }
+
+    showPlayerTurnNotification(playerId) {
+        if (!this.domElements.turnNotification) return;
+
+        const playerName = PLAYER_NAME[playerId];
+        this.domElements.turnNotification.textContent = `${playerName}'s turn`;
+
+        // Reset animation by removing classes
+        this.domElements.turnNotification.classList.remove(
+            'show',
+            'fade-out',
+            getPlayerClass(PLAYER_ID.RED, 'player'),
+            getPlayerClass(PLAYER_ID.BLUE, 'player')
+        );
+
+        // Add player color class
+        this.domElements.turnNotification.classList.add(getPlayerClass(playerId, 'player'));
+
+        // Force reflow to restart animation
+        void this.domElements.turnNotification.offsetWidth;
+
+        // Fade in
+        this.domElements.turnNotification.classList.add('show');
+
+        // Fade out after configured duration
+        setTimeout(() => {
+            this.domElements.turnNotification.classList.remove('show');
+            this.domElements.turnNotification.classList.add('fade-out');
+        }, UI_CONFIG.PLAYER_TURN_NOTIFICATION_DURATION_MS);
     }
 }
 
@@ -614,8 +691,8 @@ class Pok {
         this.position = {
             x,
             y,
-            xPercent: xPercent !== undefined ? xPercent : 50,
-            yPercent: yPercent !== undefined ? yPercent : 50
+            xPercent: xPercent !== undefined ? xPercent : UI_CONFIG.DEFAULT_POSITION_PERCENT,
+            yPercent: yPercent !== undefined ? yPercent : UI_CONFIG.DEFAULT_POSITION_PERCENT
         };
         this.zoneId = zoneId;
         this.isHighScore = isHighScore;
@@ -753,8 +830,8 @@ class Round {
 class Game {
     constructor() {
         this.isStarted = false;
-        this.winningScore = 21;
-        this.poksPerPlayer = 5;
+        this.winningScore = GAME_CONFIG.WINNING_SCORE;
+        this.poksPerPlayer = GAME_CONFIG.POKS_PER_PLAYER;
         this.players = {
             red: new Player(PLAYER_ID.RED),
             blue: new Player(PLAYER_ID.BLUE)
@@ -765,9 +842,9 @@ class Game {
 
     startNewGame(startingPlayerId) {
         this.isStarted = true;
-        const round = new Round(0, startingPlayerId, this.poksPerPlayer);
+        const round = new Round(GAME_CONFIG.INITIAL_ROUND_NUMBER, startingPlayerId, this.poksPerPlayer);
         this.rounds.push(round);
-        this.currentRoundIndex = 0;
+        this.currentRoundIndex = GAME_CONFIG.INITIAL_ROUND_NUMBER;
     }
 
     getCurrentRound() {
@@ -798,8 +875,8 @@ class Game {
 
 class UIState {
     constructor() {
-        this.lowScoreZoneThresholdPx = 10;
-        this.autoEndDelayMs = 1500;
+        this.lowScoreZoneThresholdPx = UI_CONFIG.BOUNDARY_THRESHOLD_PX;
+        this.autoEndDelayMs = UI_CONFIG.AUTO_END_ROUND_DELAY_MS;
         this.draggedPokId = null;
         this.autoEndTimeout = null;
         this.domElements = {
@@ -1125,7 +1202,7 @@ class GameOrchestrator {
         }));
 
         this.eventProcessor.process(new GameEvent(EVENT_TYPES.ROUND_STARTED, {
-            roundNumber: 0,
+            roundNumber: GAME_CONFIG.INITIAL_ROUND_NUMBER,
             startingPlayer: startingPlayerId
         }));
 
@@ -1277,6 +1354,7 @@ class GameOrchestrator {
         }));
 
         this.services.ui.updateCurrentPlayer(round);
+        this.services.ui.showPlayerTurnNotification(nextPlayer);
     }
 
     removePok(pokId) {
@@ -1337,15 +1415,15 @@ class GameOrchestrator {
 
         if (result.winner === PLAYER_ID.RED) {
             this.game.players.red.addScore(difference);
-            winnerText = 'Red Wins!';
-            bgClass = 'red-bg';
+            winnerText = `${PLAYER_NAME[PLAYER_ID.RED]} Wins!`;
+            bgClass = PLAYER_BG_CLASS[PLAYER_ID.RED];
         } else if (result.winner === PLAYER_ID.BLUE) {
             this.game.players.blue.addScore(difference);
-            winnerText = 'Blue Wins!';
-            bgClass = 'blue-bg';
+            winnerText = `${PLAYER_NAME[PLAYER_ID.BLUE]} Wins!`;
+            bgClass = PLAYER_BG_CLASS[PLAYER_ID.BLUE];
         } else {
             winnerText = 'Round Tied!';
-            bgClass = 'tie-bg';
+            bgClass = PLAYER_BG_CLASS.TIE;
             roundWinner = round.startingPlayerId === PLAYER_ID.RED ? PLAYER_ID.BLUE : PLAYER_ID.RED;
         }
 
@@ -1364,9 +1442,9 @@ class GameOrchestrator {
 
         if (this.services.rules.shouldEndGame(this.game)) {
             if (this.game.players.red.totalScore >= this.game.winningScore) {
-                winnerText = 'Red Wins the Game!';
+                winnerText = `${PLAYER_NAME[PLAYER_ID.RED]} Wins the Game!`;
             } else {
-                winnerText = 'Blue Wins the Game!';
+                winnerText = `${PLAYER_NAME[PLAYER_ID.BLUE]} Wins the Game!`;
             }
         }
 
