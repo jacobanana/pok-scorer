@@ -129,19 +129,19 @@ body.blue-turn {
 }
 
 /* Round Row Color Coding */
-#roundsHistoryTable .round-row-red {
+#roundsHistoryTable .red-round-row {
     background-color: rgba(211, 47, 47, 0.08);
 }
 
-#roundsHistoryTable .round-row-red:hover {
+#roundsHistoryTable .red-round-row:hover {
     background-color: rgba(211, 47, 47, 0.15);
 }
 
-#roundsHistoryTable .round-row-blue {
+#roundsHistoryTable .blue-round-row {
     background-color: rgba(25, 118, 210, 0.08);
 }
 
-#roundsHistoryTable .round-row-blue:hover {
+#roundsHistoryTable .blue-round-row:hover {
     background-color: rgba(25, 118, 210, 0.15);
 }
 
@@ -160,12 +160,12 @@ body.blue-turn {
     color: #666;
 }
 
-#roundsHistoryTable .winner-red {
+#roundsHistoryTable .red-winner {
     color: #d32f2f;
     font-weight: bold;
 }
 
-#roundsHistoryTable .winner-blue {
+#roundsHistoryTable .blue-winner {
     color: #1976d2;
     font-weight: bold;
 }
@@ -235,6 +235,14 @@ body.blue-turn {
     pointer-events: none;
     text-align: center;
     white-space: nowrap;
+}
+
+.next-player-indicator.red-bg {
+    background-color: #d32f2f;
+}
+
+.next-player-indicator.blue-bg {
+    background-color: #1976d2;
 }
 
 /* ============================================ */
@@ -441,14 +449,28 @@ body.blue-turn {
 /* CURRENT ROUND SCORE DISPLAY                 */
 /* ============================================ */
 
+.current-round-score-container {
+    position: relative;
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    min-height: 120px;
+}
+
 .current-round-score {
     text-align: center;
     padding: 15px 20px;
     border-radius: 12px;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, opacity 0.3s;
     max-width: 800px;
     width: 100%;
     margin: 0 auto;
+}
+
+.current-round-score.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .current-round-score .score-row {
@@ -664,17 +686,21 @@ h2 {
 
 .player-turn-notification {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 100px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
     font-weight: bold;
-    z-index: 3000;
+    z-index: 100;
     pointer-events: none;
     opacity: 0;
     color: #ffffff;
-    padding: 15px;
-    border-radius: 15px;
+    padding: 15px 20px;
+    border-radius: 12px;
     transition: opacity 0.3s ease-in;
 }
 

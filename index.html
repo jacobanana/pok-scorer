@@ -70,10 +70,6 @@
             <div class="right-panel">
 
                 <div class="table-container" id="gameBoardContainer">
-                    <!-- Player Turn Notification -->
-                    <div id="playerTurnNotification" class="player-turn-notification"></div>
-
-
                     <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
                     <div class="outer-zone zone" id="outerPlayAreaLeft" data-zone="outer" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
                     </div>
@@ -163,21 +159,26 @@
                 <!-- ============================= -->
                 <!-- CURRENT ROUND SCORE DISPLAY   -->
                 <!-- ============================= -->
-                <div class="current-round-score" id="currentRoundScoreDisplay">
-                    <!-- Score circles showing current round points -->
-                    <div class="score-row">
-                        <div class="score-circle red-circle">
-                            <span id="currentRoundScoreRed">0</span>
-                        </div>
-                        <div class="score-difference" id="currentRoundScoreDifference">0</div>
-                        <div class="score-circle blue-circle">
-                            <span id="currentRoundScoreBlue">0</span>
-                        </div>
-                    </div>
+                <div class="current-round-score-container">
+                    <!-- Player Turn Notification -->
+                    <div id="playerTurnNotification" class="player-turn-notification"></div>
 
-                    <!-- Remaining POKs counter -->
-                    <div class="poks-remaining-info">
-                        <span id="remainingPoksRed">5</span> - <span id="remainingPoksBlue">5</span>
+                    <div class="current-round-score" id="currentRoundScoreDisplay">
+                        <!-- Score circles showing current round points -->
+                        <div class="score-row">
+                            <div class="score-circle red-circle">
+                                <span id="currentRoundScoreRed">0</span>
+                            </div>
+                            <div class="score-difference" id="currentRoundScoreDifference">0</div>
+                            <div class="score-circle blue-circle">
+                                <span id="currentRoundScoreBlue">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Remaining POKs counter -->
+                        <div class="poks-remaining-info">
+                            <span id="remainingPoksRed">5</span> - <span id="remainingPoksBlue">5</span>
+                        </div>
                     </div>
                 </div>
             </div>

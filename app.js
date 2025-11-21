@@ -519,21 +519,12 @@ class UIService {
         const currentPlayerId = round.currentPlayerId;
 
         document.body.classList.remove(PLAYER_CLASS[PLAYER_ID.RED], PLAYER_CLASS[PLAYER_ID.BLUE]);
-
-        if (currentPlayerId === PLAYER_ID.RED) {
-            document.body.classList.add(PLAYER_CLASS[PLAYER_ID.RED]);
-        } else if (currentPlayerId === PLAYER_ID.BLUE) {
-            document.body.classList.add(PLAYER_CLASS[PLAYER_ID.BLUE]);
-        }
+        document.body.classList.add(PLAYER_CLASS[currentPlayerId]);
 
         if (this.domElements.nextPlayer) {
-            if (currentPlayerId === PLAYER_ID.RED) {
-                this.domElements.nextPlayer.textContent = `Next player: ${PLAYER_NAME[PLAYER_ID.RED]}`;
-                this.domElements.nextPlayer.style.backgroundColor = PLAYER_COLOR[PLAYER_ID.RED];
-            } else if (currentPlayerId === PLAYER_ID.BLUE) {
-                this.domElements.nextPlayer.textContent = `Next player: ${PLAYER_NAME[PLAYER_ID.BLUE]}`;
-                this.domElements.nextPlayer.style.backgroundColor = PLAYER_COLOR[PLAYER_ID.BLUE];
-            }
+            this.domElements.nextPlayer.textContent = `Next player: ${PLAYER_NAME[currentPlayerId]}`;
+            this.domElements.nextPlayer.classList.remove(PLAYER_BG_CLASS[PLAYER_ID.RED], PLAYER_BG_CLASS[PLAYER_ID.BLUE]);
+            this.domElements.nextPlayer.classList.add(PLAYER_BG_CLASS[currentPlayerId]);
         }
     }
 
@@ -650,6 +641,11 @@ class UIService {
         // Add player color class
         this.domElements.turnNotification.classList.add(getPlayerClass(playerId, 'player'));
 
+        // Hide the current round score display
+        if (this.domElements.currentRoundScore) {
+            this.domElements.currentRoundScore.classList.add('hidden');
+        }
+
         // Force reflow to restart animation
         void this.domElements.turnNotification.offsetWidth;
 
@@ -660,6 +656,13 @@ class UIService {
         setTimeout(() => {
             this.domElements.turnNotification.classList.remove('show');
             this.domElements.turnNotification.classList.add('fade-out');
+
+            // Show the current round score display again
+            setTimeout(() => {
+                if (this.domElements.currentRoundScore) {
+                    this.domElements.currentRoundScore.classList.remove('hidden');
+                }
+            }, 300); // Wait for fade-out transition
         }, UI_CONFIG.PLAYER_TURN_NOTIFICATION_DURATION_MS);
     }
 }
