@@ -1991,10 +1991,11 @@ class GameOrchestrator {
                 this.handleZoneDragOver(zone, syntheticEvent);
             },
             onTouchDrop: (targetZone, touch) => {
-                // Create a synthetic event for the drop
+                // Create a synthetic event for the drop with proper touch structure
                 const syntheticEvent = {
                     clientX: touch.clientX,
                     clientY: touch.clientY,
+                    changedTouches: [touch],
                     preventDefault: () => {},
                     stopPropagation: () => {}
                 };
