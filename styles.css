@@ -234,9 +234,12 @@ body.blue-turn {
 }
 
 /* Counter-flip text elements to keep them readable when table is flipped */
-.table-container.flipped .zone-label,
-.table-container.flipped .center-circle {
+.table-container.flipped .zone-label {
     transform: scaleX(-1);
+}
+
+.table-container.flipped .center-circle {
+    transform: translateY(-50%) scaleX(-1);
 }
 
 /* Adjust POK positioning and counter-flip text when table is flipped */
