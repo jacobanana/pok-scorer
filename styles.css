@@ -848,8 +848,8 @@ button:active {
 /* New Game Button (Top Right Corner) */
 .new-game-button {
     position: absolute;
-    top: 25px;
-    right: 25px;
+    top: 0px;
+    right: 0px;
     width: auto;
     padding: 8px 16px;
     font-size: 14px;
