@@ -604,6 +604,7 @@ class UIService {
 
         game.rounds.forEach((round, index) => {
             const row = document.createElement('tr');
+            row.dataset.roundIndex = index;
 
             const roundNum = document.createElement('td');
             roundNum.textContent = index + 1;
@@ -710,6 +711,32 @@ class UIService {
         document.querySelectorAll('.zone.boundary-highlight, .circle-zone.boundary-highlight').forEach(zone => {
             zone.classList.remove('boundary-highlight');
         });
+    }
+
+    displayHistoricalRound(round, pokService) {
+        // Add fade-out class to all poks
+        document.querySelectorAll('.pok').forEach(pok => {
+            pok.classList.add('historical-fade-out');
+        });
+
+        // Wait for fade-out to complete, then replace with historical POKs
+        setTimeout(() => {
+            // Clear all existing POKs
+            document.querySelectorAll('.pok').forEach(pok => pok.remove());
+
+            // Display historical POKs
+            round.poksPlaced.forEach(pok => {
+                const zoneElement = document.querySelector(`[data-zone="${pok.zoneId}"]`) ||
+                                   document.getElementById(pok.zoneId);
+
+                if (zoneElement) {
+                    const pokElement = pokService.createPokElement(pok);
+                    pokElement.classList.add('historical-fade-in');
+                    pokElement.style.pointerEvents = 'none'; // Disable interactions for historical POKs
+                    pokService.attachPokToZone(pokElement, zoneElement);
+                }
+            });
+        }, 200); // Match CSS transition time
     }
 }
 
@@ -1134,6 +1161,74 @@ class GameOrchestrator {
         this.services.ui.init();
         this.uiState.initDOMCache();
         this.loadSavedGame();
+        this.setupHistoryHoverHandlers();
+    }
+
+    setupHistoryHoverHandlers() {
+        const historyTableBody = document.getElementById('roundsHistoryTableBody');
+        if (!historyTableBody) return;
+
+        // Use event delegation for dynamically created rows
+        historyTableBody.addEventListener('mouseenter', (event) => {
+            const row = event.target.closest('tr');
+            if (row && row.dataset.roundIndex !== undefined) {
+                const roundIndex = parseInt(row.dataset.roundIndex);
+                this.previewHistoricalRound(roundIndex);
+            }
+        }, true);
+
+        historyTableBody.addEventListener('mouseleave', (event) => {
+            const row = event.target.closest('tr');
+            if (row && row.dataset.roundIndex !== undefined) {
+                const roundIndex = parseInt(row.dataset.roundIndex);
+                // Don't restore if leaving the current round (it was never changed)
+                if (roundIndex !== this.game.currentRoundIndex) {
+                    this.restoreCurrentRound();
+                }
+            }
+        }, true);
+    }
+
+    previewHistoricalRound(roundIndex) {
+        if (!this.game.isStarted || roundIndex < 0 || roundIndex >= this.game.rounds.length) {
+            return;
+        }
+
+        // Don't reload if hovering over the current round
+        if (roundIndex === this.game.currentRoundIndex) {
+            return;
+        }
+
+        const historicalRound = this.game.rounds[roundIndex];
+        this.services.ui.displayHistoricalRound(historicalRound, this.services.pok);
+    }
+
+    restoreCurrentRound() {
+        if (!this.game.isStarted) return;
+
+        const currentRound = this.game.getCurrentRound();
+        if (!currentRound) return;
+
+        // Add fade-out class to all poks
+        document.querySelectorAll('.pok').forEach(pok => {
+            pok.classList.add('historical-fade-out');
+        });
+
+        // Wait for fade-out to complete, then restore current round POKs
+        setTimeout(() => {
+            // Clear all existing POKs
+            document.querySelectorAll('.pok').forEach(pok => pok.remove());
+
+            // Restore current round POKs
+            this.restorePokElements(currentRound);
+
+            // Add fade-in animation to restored POKs
+            setTimeout(() => {
+                document.querySelectorAll('.pok').forEach(pok => {
+                    pok.classList.add('historical-fade-in');
+                });
+            }, 10);
+        }, 200); // Match CSS transition time
     }
 
     loadSavedGame() {
