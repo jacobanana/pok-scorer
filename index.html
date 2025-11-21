@@ -69,6 +69,9 @@
             <!-- ============================= -->
             <div class="right-panel">
 
+                <!-- Flip Table Button (Top Left) -->
+                <button id="flipTableButton" class="flip-table-button" onclick="flipTable()">Flip Table</button>
+
                 <div class="table-container" id="gameBoardContainer">
                     <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
                     <div class="outer-zone zone" id="outerPlayAreaLeft" data-zone="outer" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">

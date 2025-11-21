@@ -192,6 +192,25 @@ body.blue-turn {
     position: relative;
 }
 
+/* Flip Table Button (Top Left Corner) */
+.flip-table-button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: auto;
+    padding: 8px 16px;
+    font-size: 14px;
+    background: #4caf50;
+    color: white;
+    border-radius: 6px;
+    margin: 0;
+    z-index: 100;
+}
+
+.flip-table-button:hover {
+    background: #429444;
+}
+
 /* Game Board Container */
 .table-container {
     background: #c9985a;
@@ -206,6 +225,23 @@ body.blue-turn {
     pointer-events: auto;
     width: 75%;
     margin: auto;
+    transition: transform 0.3s ease;
+}
+
+/* Flipped Table */
+.table-container.flipped {
+    transform: scaleX(-1);
+}
+
+/* Counter-flip text elements to keep them readable when table is flipped */
+.table-container.flipped .zone-label,
+.table-container.flipped .center-circle {
+    transform: scaleX(-1);
+}
+
+/* Adjust POK positioning and counter-flip text when table is flipped */
+.table-container.flipped .pok {
+    transform: translate(-50%, -50%) scaleX(-1) !important;
 }
 
 /* Outer Play Area (outside scoring zones) */
@@ -455,7 +491,12 @@ body.blue-turn {
 }
 
 .pok.historical-fade-in {
-    animation: pok-fade-in 0.3s ease-in forwards;
+    animation: pok-fade-in 0.8s ease-in forwards;
+}
+
+/* POKs that need to start invisible before fading in */
+.pok.fade-ready {
+    opacity: 0;
 }
 
 @keyframes pok-fade-in {

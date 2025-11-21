@@ -13,7 +13,8 @@ const UI_CONFIG = {
     BOUNDARY_THRESHOLD_PX: 15,
     AUTO_END_ROUND_DELAY_MS: 1500,
     PLAYER_TURN_NOTIFICATION_DURATION_MS: 1000,
-    DEFAULT_POSITION_PERCENT: 50
+    DEFAULT_POSITION_PERCENT: 50,
+    HISTORY_RESTORE_DELAY_MS: 300
 };
 
 // Zone Scoring Configuration
@@ -345,8 +346,18 @@ class PokService {
 
     calculatePositionFromEvent(zone, event) {
         const rect = zone.getBoundingClientRect();
-        const x = event.clientX - rect.left;
+        let x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
+
+        // Check if table is flipped - if so, invert x coordinate
+        const tableContainer = document.getElementById('gameBoardContainer');
+        const isFlipped = tableContainer && tableContainer.classList.contains('flipped');
+
+        if (isFlipped) {
+            // Invert x coordinate for flipped table
+            x = rect.width - x;
+        }
+
         return {
             x,
             y,
@@ -417,6 +428,7 @@ class PersistenceService {
                 bluePoksRemaining: round.bluePoksRemaining,
                 isComplete: round.isComplete,
                 lastPlacedPokId: round.lastPlacedPokId,
+                tableOrientation: round.tableOrientation,
                 scores: {
                     red: round.scores.red,
                     blue: round.scores.blue,
@@ -713,30 +725,30 @@ class UIService {
         });
     }
 
-    displayHistoricalRound(round, pokService) {
-        // Add fade-out class to all poks
-        document.querySelectorAll('.pok').forEach(pok => {
-            pok.classList.add('historical-fade-out');
+    displayHistoricalRound(round, pokService, uiState) {
+        // Clear all existing POKs
+        document.querySelectorAll('.pok').forEach(pok => pok.remove());
+
+        // Display historical POKs (starting invisible)
+        round.poksPlaced.forEach(pok => {
+            const zoneElement = document.querySelector(`[data-zone="${pok.zoneId}"]`) ||
+                               document.getElementById(pok.zoneId);
+
+            if (zoneElement) {
+                const pokElement = pokService.createPokElement(pok);
+                pokElement.classList.add('fade-ready');
+                pokElement.style.pointerEvents = 'none'; // Disable interactions for historical POKs
+                pokService.attachPokToZone(pokElement, zoneElement);
+            }
         });
 
-        // Wait for fade-out to complete, then replace with historical POKs
-        setTimeout(() => {
-            // Clear all existing POKs
-            document.querySelectorAll('.pok').forEach(pok => pok.remove());
-
-            // Display historical POKs
-            round.poksPlaced.forEach(pok => {
-                const zoneElement = document.querySelector(`[data-zone="${pok.zoneId}"]`) ||
-                                   document.getElementById(pok.zoneId);
-
-                if (zoneElement) {
-                    const pokElement = pokService.createPokElement(pok);
-                    pokElement.classList.add('historical-fade-in');
-                    pokElement.style.pointerEvents = 'none'; // Disable interactions for historical POKs
-                    pokService.attachPokToZone(pokElement, zoneElement);
-                }
+        // Trigger fade-in animation after the restore delay
+        uiState.setHistoryFadeInTimer(UI_CONFIG.HISTORY_RESTORE_DELAY_MS, () => {
+            document.querySelectorAll('.pok.fade-ready').forEach(pok => {
+                pok.classList.remove('fade-ready');
+                pok.classList.add('historical-fade-in');
             });
-        }, 200); // Match CSS transition time
+        });
     }
 }
 
@@ -824,7 +836,7 @@ class RoundScore {
 }
 
 class Round {
-    constructor(roundNumber, startingPlayerId, poksPerPlayer) {
+    constructor(roundNumber, startingPlayerId, poksPerPlayer, tableOrientation = 'normal') {
         this.roundNumber = roundNumber;
         this.startingPlayerId = startingPlayerId;
         this.currentPlayerId = startingPlayerId;
@@ -834,6 +846,7 @@ class Round {
         this.scores = new RoundScore(0, 0);
         this.isComplete = false;
         this.lastPlacedPokId = null;
+        this.tableOrientation = tableOrientation;
     }
 
     addPok(pok) {
@@ -949,9 +962,9 @@ class Game {
         return this.rounds[this.currentRoundIndex];
     }
 
-    startNewRound(startingPlayerId) {
+    startNewRound(startingPlayerId, tableOrientation = 'normal') {
         const newRoundNumber = this.rounds.length;
-        const round = new Round(newRoundNumber, startingPlayerId, this.poksPerPlayer);
+        const round = new Round(newRoundNumber, startingPlayerId, this.poksPerPlayer, tableOrientation);
         this.rounds.push(round);
         this.currentRoundIndex = newRoundNumber;
     }
@@ -976,6 +989,8 @@ class UIState {
         this.autoEndDelayMs = UI_CONFIG.AUTO_END_ROUND_DELAY_MS;
         this.draggedPokId = null;
         this.autoEndTimeout = null;
+        this.historyRestoreTimeout = null;
+        this.historyFadeInTimeout = null;
         this.domElements = {
             startSelector: null,
             nextPlayer: null,
@@ -1017,6 +1032,30 @@ class UIState {
     setAutoEndTimer(delay, callback) {
         this.clearAutoEndTimer();
         this.autoEndTimeout = setTimeout(callback, delay);
+    }
+
+    clearHistoryRestoreTimer() {
+        if (this.historyRestoreTimeout) {
+            clearTimeout(this.historyRestoreTimeout);
+            this.historyRestoreTimeout = null;
+        }
+    }
+
+    setHistoryRestoreTimer(delay, callback) {
+        this.clearHistoryRestoreTimer();
+        this.historyRestoreTimeout = setTimeout(callback, delay);
+    }
+
+    clearHistoryFadeInTimer() {
+        if (this.historyFadeInTimeout) {
+            clearTimeout(this.historyFadeInTimeout);
+            this.historyFadeInTimeout = null;
+        }
+    }
+
+    setHistoryFadeInTimer(delay, callback) {
+        this.clearHistoryFadeInTimer();
+        this.historyFadeInTimeout = setTimeout(callback, delay);
     }
 
     clearPokElements() {
@@ -1183,7 +1222,11 @@ class GameOrchestrator {
                 const roundIndex = parseInt(row.dataset.roundIndex);
                 // Don't restore if leaving the current round (it was never changed)
                 if (roundIndex !== this.game.currentRoundIndex) {
-                    this.restoreCurrentRound();
+                    // Set a timer before restoring the current round
+                    this.uiState.setHistoryRestoreTimer(
+                        UI_CONFIG.HISTORY_RESTORE_DELAY_MS,
+                        () => this.restoreCurrentRound()
+                    );
                 }
             }
         }, true);
@@ -1199,8 +1242,25 @@ class GameOrchestrator {
             return;
         }
 
+        // Clear any pending timers when entering a new historical round
+        this.uiState.clearHistoryRestoreTimer();
+        this.uiState.clearHistoryFadeInTimer();
+
         const historicalRound = this.game.rounds[roundIndex];
-        this.services.ui.displayHistoricalRound(historicalRound, this.services.pok);
+
+        // Add fade-out class to all poks
+        document.querySelectorAll('.pok').forEach(pok => {
+            pok.classList.add('historical-fade-out');
+        });
+
+        // Wait for fade-out to complete, then apply table orientation and display POKs
+        setTimeout(() => {
+            // Apply the table orientation first (while POKs are invisible)
+            this.applyTableOrientation(historicalRound.tableOrientation);
+
+            // Then display the historical round POKs
+            this.services.ui.displayHistoricalRound(historicalRound, this.services.pok, this.uiState);
+        }, 200); // Match CSS fade-out transition time
     }
 
     restoreCurrentRound() {
@@ -1214,20 +1274,16 @@ class GameOrchestrator {
             pok.classList.add('historical-fade-out');
         });
 
-        // Wait for fade-out to complete, then restore current round POKs
+        // Wait for fade-out to complete, then restore current round
         setTimeout(() => {
+            // Apply table orientation first (while POKs are invisible)
+            this.applyTableOrientation(currentRound.tableOrientation);
+
             // Clear all existing POKs
             document.querySelectorAll('.pok').forEach(pok => pok.remove());
 
-            // Restore current round POKs
-            this.restorePokElements(currentRound);
-
-            // Add fade-in animation to restored POKs
-            setTimeout(() => {
-                document.querySelectorAll('.pok').forEach(pok => {
-                    pok.classList.add('historical-fade-in');
-                });
-            }, 10);
+            // Restore current round POKs with fade-in
+            this.restorePokElements(currentRound, true);
         }, 200); // Match CSS transition time
     }
 
@@ -1264,7 +1320,8 @@ class GameOrchestrator {
             const round = new Round(
                 roundData.roundNumber,
                 roundData.startingPlayerId,
-                this.game.poksPerPlayer
+                this.game.poksPerPlayer,
+                roundData.tableOrientation || 'normal'
             );
 
             round.currentPlayerId = roundData.currentPlayerId;
@@ -1319,6 +1376,7 @@ class GameOrchestrator {
                 const newRound = this.game.getCurrentRound();
                 this.services.ui.updateCurrentPlayer(newRound);
                 this.services.ui.updateScores(this.game);
+                this.applyTableOrientation(newRound.tableOrientation);
                 this.saveGameState();
             } else {
                 // Round is in progress, restore POKs and player state
@@ -1326,18 +1384,25 @@ class GameOrchestrator {
                 const nextPlayer = this.services.rules.getNextPlayer(currentRound);
                 currentRound.currentPlayerId = nextPlayer;
                 this.services.ui.updateCurrentPlayer(currentRound);
-                this.restorePokElements(currentRound);
+                this.applyTableOrientation(currentRound.tableOrientation);
+                this.restorePokElements(currentRound, true); // Fade in POKs when loading
             }
         }
     }
 
-    restorePokElements(round) {
+    restorePokElements(round, fadeIn = false) {
         round.poksPlaced.forEach(pok => {
             const zoneElement = document.querySelector(`[data-zone="${pok.zoneId}"]`) ||
                                document.getElementById(pok.zoneId);
 
             if (zoneElement) {
                 const pokElement = this.services.pok.createPokElement(pok);
+
+                // If fadeIn is requested, start invisible
+                if (fadeIn) {
+                    pokElement.classList.add('fade-ready');
+                }
+
                 this.services.pok.attachPokToZone(pokElement, zoneElement);
                 this.services.pok.setPokElement(pok.id, pokElement);
                 this.setupPokHandlers(pokElement, pok.id);
@@ -1348,6 +1413,19 @@ class GameOrchestrator {
                 }
             }
         });
+
+        // Trigger fade-in animation for all POKs at once after a small delay
+        if (fadeIn) {
+            setTimeout(() => {
+                round.poksPlaced.forEach(pok => {
+                    const pokElement = this.services.pok.getPokElement(pok.id);
+                    if (pokElement) {
+                        pokElement.classList.remove('fade-ready');
+                        pokElement.classList.add('historical-fade-in');
+                    }
+                });
+            }, 10);
+        }
     }
 
     saveGameState() {
@@ -1375,6 +1453,13 @@ class GameOrchestrator {
         this.services.ui.hideContinueButton();
         this.services.ui.updateScores(this.game);
         this.services.ui.updateCurrentPlayer(this.game.getCurrentRound());
+
+        // Apply initial table orientation (normal)
+        const currentRound = this.game.getCurrentRound();
+        if (currentRound) {
+            this.applyTableOrientation(currentRound.tableOrientation);
+        }
+
         this.saveGameState();
     }
 
@@ -1705,17 +1790,22 @@ class GameOrchestrator {
 
         const nextStarter = this.services.rules.getRoundStarter(prevRound);
 
+        // Alternate table orientation
+        const nextOrientation = prevRound.tableOrientation === 'normal' ? 'flipped' : 'normal';
+
         this.services.pok.clearAllPokElements();
 
-        this.game.startNewRound(nextStarter);
+        this.game.startNewRound(nextStarter, nextOrientation);
 
         this.eventProcessor.process(new GameEvent(EVENT_TYPES.ROUND_STARTED, {
             roundNumber: this.game.rounds.length - 1,
             startingPlayer: nextStarter
         }));
 
+        const newRound = this.game.getCurrentRound();
         this.services.ui.updateScores(this.game);
-        this.services.ui.updateCurrentPlayer(this.game.getCurrentRound());
+        this.services.ui.updateCurrentPlayer(newRound);
+        this.applyTableOrientation(newRound.tableOrientation);
         this.saveGameState();
     }
 
@@ -1746,6 +1836,29 @@ class GameOrchestrator {
 
         // Don't clear saved state here - keep it so user can restore if they change their mind
         // It will be cleared when they start a new game
+    }
+
+    flipTable() {
+        const round = this.game.getCurrentRound();
+        if (!round) return;
+
+        // Toggle orientation
+        round.tableOrientation = round.tableOrientation === 'normal' ? 'flipped' : 'normal';
+
+        // Update UI
+        this.applyTableOrientation(round.tableOrientation);
+        this.saveGameState();
+    }
+
+    applyTableOrientation(orientation) {
+        const tableContainer = document.getElementById('gameBoardContainer');
+        if (!tableContainer) return;
+
+        if (orientation === 'flipped') {
+            tableContainer.classList.add('flipped');
+        } else {
+            tableContainer.classList.remove('flipped');
+        }
     }
 
     setupPokHandlers(pokElement, pokId) {
@@ -1831,5 +1944,9 @@ function confirmNewGame() {
 
 function continueLastGame() {
     orchestrator.continueLastGame();
+}
+
+function flipTable() {
+    orchestrator.flipTable();
 }
 
