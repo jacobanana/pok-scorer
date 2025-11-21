@@ -10,15 +10,26 @@ const GAME_CONFIG = {
 
 // UI Configuration
 const UI_CONFIG = {
-    BOUNDARY_THRESHOLD_PX: 10,
+    BOUNDARY_THRESHOLD_PX: 15,
     AUTO_END_ROUND_DELAY_MS: 1500,
     PLAYER_TURN_NOTIFICATION_DURATION_MS: 1000,
     DEFAULT_POSITION_PERCENT: 50
 };
 
+// Zone Scoring Configuration
+const ZONE_SCORES = {
+    'outer': { points: 0, boundary: null },
+    '0': { points: 0, boundary: null },
+    '1': { points: 1, boundary: '0' },
+    '2': { points: 2, boundary: '1' },
+    '3': { points: 3, boundary: '2' },
+    '4': { points: 4, boundary: '1' },
+    '5': { points: 5, boundary: '1' }
+};
+
 // Player Configuration
 const PLAYER_ID = {
-    RED: 'red',
+        RED: 'red',
     BLUE: 'blue'
 };
 
@@ -222,11 +233,17 @@ class ScoringService {
     }
 
     calculateZoneScore(zone, clickPosition, zoneRect) {
-        const low = parseInt(zone.dataset.low);
-        const high = parseInt(zone.dataset.high);
+        const zoneId = zone.dataset.zone || zone.id;
+        const zoneConfig = ZONE_SCORES[zoneId];
 
-        if (low === high) {
-            return { points: high, isHigh: true };
+        if (!zoneConfig) {
+            console.warn(`No score configuration found for zone ${zoneId}`);
+            return { points: 0, isHigh: true, boundaryZone: null };
+        }
+
+        // If no boundary zone, always return full points
+        if (!zoneConfig.boundary) {
+            return { points: zoneConfig.points, isHigh: true, boundaryZone: null };
         }
 
         const isCircularZone = zone.classList.contains('circle-zone');
@@ -234,9 +251,21 @@ class ScoringService {
             ? this.isNearCircularBoundary(clickPosition, zoneRect)
             : this.isNearRectangularBoundary(clickPosition, zoneRect);
 
+        // If near boundary, get the boundary zone's points
+        if (isNearBoundary) {
+            const boundaryConfig = ZONE_SCORES[zoneConfig.boundary];
+            return {
+                points: boundaryConfig ? boundaryConfig.points : 0,
+                isHigh: false,
+                boundaryZone: zoneConfig.boundary
+            };
+        }
+
+        // Otherwise, return full points
         return {
-            points: isNearBoundary ? low : high,
-            isHigh: !isNearBoundary
+            points: zoneConfig.points,
+            isHigh: true,
+            boundaryZone: null
         };
     }
 
@@ -254,6 +283,12 @@ class ScoringService {
 
     isNearRectangularBoundary(clickPosition, zoneRect) {
         return clickPosition.x >= zoneRect.width - this.boundaryThreshold;
+    }
+
+    checkIfInBoundary(clickPosition, zoneRect, isCircularZone) {
+        return isCircularZone
+            ? this.isNearCircularBoundary(clickPosition, zoneRect)
+            : this.isNearRectangularBoundary(clickPosition, zoneRect);
     }
 }
 
@@ -661,6 +696,20 @@ class UIService {
                 }
             }, 300); // Wait for fade-out transition
         }, UI_CONFIG.PLAYER_TURN_NOTIFICATION_DURATION_MS);
+    }
+
+    highlightZoneBoundary(zoneElement) {
+        zoneElement.classList.add('boundary-highlight');
+    }
+
+    clearZoneBoundaryHighlight(zoneElement) {
+        zoneElement.classList.remove('boundary-highlight');
+    }
+
+    clearAllZoneBoundaryHighlights() {
+        document.querySelectorAll('.zone.boundary-highlight, .circle-zone.boundary-highlight').forEach(zone => {
+            zone.classList.remove('boundary-highlight');
+        });
     }
 }
 
@@ -1306,6 +1355,9 @@ class GameOrchestrator {
         const oldPoints = pok.points;
         const oldZoneId = pok.zoneId;
 
+        // Clear any boundary highlights when dropping
+        this.services.ui.clearAllZoneBoundaryHighlights();
+
         // Update POK data
         console.log(`Moving pok ${pokId}: old points=${oldPoints}, new points=${scoreResult.points}`);
         pok.updatePosition(positionData.x, positionData.y, positionData.xPercent, positionData.yPercent);
@@ -1355,6 +1407,62 @@ class GameOrchestrator {
         if (round.isRoundComplete()) {
             this.uiState.setAutoEndTimer(this.uiState.autoEndDelayMs, () => this.endRound());
         }
+    }
+
+    handleZoneDragOver(zone, event) {
+        event.preventDefault();
+
+        if (!this.uiState.draggedPokId) return;
+
+        // Calculate position and check if in boundary
+        const positionData = this.services.pok.calculatePositionFromEvent(zone, event);
+        const scoreResult = this.services.scoring.calculateZoneScore(zone, positionData, positionData.rect);
+
+        // Clear all highlights first
+        this.services.ui.clearAllZoneBoundaryHighlights();
+
+        // Highlight the boundary zone if position is near boundary
+        if (scoreResult.boundaryZone) {
+            const boundaryZoneElement = document.querySelector(`[data-zone="${scoreResult.boundaryZone}"]`);
+            if (boundaryZoneElement) {
+                this.services.ui.highlightZoneBoundary(boundaryZoneElement);
+            }
+        }
+    }
+
+    handleZoneDragLeave(zone, event) {
+        // Only clear if we're actually leaving the zone (not entering a child element)
+        if (event.relatedTarget && zone.contains(event.relatedTarget)) {
+            return;
+        }
+        this.services.ui.clearZoneBoundaryHighlight(zone);
+    }
+
+    handleZoneMouseMove(zone, event) {
+        // Don't show hover highlight if we're dragging a pok
+        if (this.uiState.draggedPokId) return;
+
+        // Calculate position and check if in boundary
+        const positionData = this.services.pok.calculatePositionFromEvent(zone, event);
+        const scoreResult = this.services.scoring.calculateZoneScore(zone, positionData, positionData.rect);
+
+        // Clear all highlights first
+        this.services.ui.clearAllZoneBoundaryHighlights();
+
+        // Highlight the boundary zone if position is near boundary
+        if (scoreResult.boundaryZone) {
+            const boundaryZoneElement = document.querySelector(`[data-zone="${scoreResult.boundaryZone}"]`);
+            if (boundaryZoneElement) {
+                this.services.ui.highlightZoneBoundary(boundaryZoneElement);
+            }
+        }
+    }
+
+    handleZoneMouseLeave(zone, event) {
+        // Don't clear if we're dragging a pok (let dragover handle it)
+        if (this.uiState.draggedPokId) return;
+
+        this.services.ui.clearAllZoneBoundaryHighlights();
     }
 
     switchPlayer() {
@@ -1600,6 +1708,22 @@ function handlePokDrop(event, targetZone) {
     if (!orchestrator.uiState.draggedPokId) return;
 
     orchestrator.movePok(orchestrator.uiState.draggedPokId, targetZone, event);
+}
+
+function handleZoneDragOver(event, zone) {
+    orchestrator.handleZoneDragOver(zone, event);
+}
+
+function handleZoneDragLeave(event, zone) {
+    orchestrator.handleZoneDragLeave(zone, event);
+}
+
+function handleZoneMouseMove(event, zone) {
+    orchestrator.handleZoneMouseMove(zone, event);
+}
+
+function handleZoneMouseLeave(event, zone) {
+    orchestrator.handleZoneMouseLeave(zone, event);
 }
 
 function continueToNextRound() {

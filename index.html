@@ -71,7 +71,7 @@
 
                 <div class="table-container" id="gameBoardContainer">
                     <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
-                    <div class="outer-zone zone" id="outerPlayAreaLeft" data-zone="outer" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                    <div class="outer-zone zone" id="outerPlayAreaLeft" data-zone="outer" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                     </div>
 
                     <!-- Main Game Table -->
@@ -84,38 +84,38 @@
                             <div class="side left">
                                 <!-- Zone 3: Highest scoring rectangle zone -->
                                 <div class="column">
-                                    <div class="zone" data-zone="3" data-low="2" data-high="3" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                    <div class="zone" data-zone="3" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                                         <div class="zone-label">3</div>
                                     </div>
                                 </div>
 
                                 <!-- Zone 2: Middle scoring rectangle zone -->
                                 <div class="column">
-                                    <div class="zone" data-zone="2" data-low="1" data-high="2" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                    <div class="zone" data-zone="2" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                                         <div class="zone-label">2</div>
                                     </div>
                                 </div>
 
                                 <!-- Zone 1: Inner rectangle zone + Circle zones 4 & 5 -->
                                 <div class="column">
-                                    <div class="zone" data-zone="1" data-low="0" data-high="1" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                    <div class="zone" data-zone="1" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                                         <div class="zone-label">1</div>
                                     </div>
 
                                     <!-- Zone 4: Top circle zone -->
-                                    <div class="circle-zone top" data-zone="4" data-low="1" data-high="4" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                    <div class="circle-zone top" data-zone="4" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                                         <div class="zone-label">4</div>
                                     </div>
 
                                     <!-- Zone 5: Bottom circle zone -->
-                                    <div class="circle-zone bottom" data-zone="5" data-low="1" data-high="5" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                    <div class="circle-zone bottom" data-zone="5" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                                         <div class="zone-label">5</div>
                                     </div>
                                 </div>
 
                                 <!-- Zero Zone: Center column with no points -->
                                 <div class="column zero-column">
-                                    <div class="zone" data-zone="0" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                                    <div class="zone" data-zone="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                                     </div>
                                 </div>
                             </div>
@@ -151,7 +151,7 @@
                     </div>
 
                     <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
-                    <div class="outer-zone zone" id="outerPlayAreaRight" data-zone="outer" data-low="0" data-high="0" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="event.preventDefault()">
+                    <div class="outer-zone zone" id="outerPlayAreaRight" data-zone="outer" onclick="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
                     </div>
 
                 </div>

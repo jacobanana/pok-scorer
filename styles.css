@@ -338,6 +338,12 @@ body.blue-turn {
     background: #d4b890;
 }
 
+.zone.boundary-highlight {
+    border: 3px dashed #ffd700;
+    background: rgba(255, 215, 0, 0.15);
+    animation: boundary-pulse 0.8s ease-in-out infinite;
+}
+
 .zone-label {
     font-size: 48px;
     font-weight: normal;
@@ -347,8 +353,8 @@ body.blue-turn {
 /* Circle Scoring Zones (zones 4 & 5) */
 .circle-zone {
     position: absolute;
-    width: 40%;
-    min-width: 40px;
+    width: 60%;
+    min-width: 45px;
     aspect-ratio: 1/1;
     border: 3px solid #2c1810;
     border-radius: 50%;
@@ -366,6 +372,12 @@ body.blue-turn {
 
 .circle-zone:hover {
     background: #d4b890;
+}
+
+.circle-zone.boundary-highlight {
+    border: 3px dashed #ffd700;
+    background: rgba(255, 215, 0, 0.15);
+    animation: boundary-pulse 0.8s ease-in-out infinite;
 }
 
 .circle-zone.top {
@@ -442,6 +454,17 @@ body.blue-turn {
     }
     50% {
         transform: translate(-50%, -50%) scale(1.15);
+    }
+}
+
+@keyframes boundary-pulse {
+    0%, 100% {
+        border-color: #ffd700;
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.5), inset 0 0 5px rgba(255, 215, 0, 0.3);
+    }
+    50% {
+        border-color: #ffed4e;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 215, 0, 0.5);
     }
 }
 
