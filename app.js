@@ -14,7 +14,9 @@ const UI_CONFIG = {
     AUTO_END_ROUND_DELAY_MS: 1500,
     PLAYER_TURN_NOTIFICATION_DURATION_MS: 1000,
     DEFAULT_POSITION_PERCENT: 50,
-    HISTORY_RESTORE_DELAY_MS: 300
+    HISTORY_RESTORE_DELAY_MS: 300,
+    TOUCH_DRAG_COOLDOWN_MS: 100,
+    TOUCH_DRAG_MOVE_THRESHOLD_PX: 5
 };
 
 // Zone Scoring Configuration
@@ -346,8 +348,13 @@ class PokService {
 
     calculatePositionFromEvent(zone, event) {
         const rect = zone.getBoundingClientRect();
-        let x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+
+        // Get client coordinates - handle both mouse and touch events
+        const clientX = event.clientX !== undefined ? event.clientX : (event.touches?.[0]?.clientX || event.changedTouches?.[0]?.clientX);
+        const clientY = event.clientY !== undefined ? event.clientY : (event.touches?.[0]?.clientY || event.changedTouches?.[0]?.clientY);
+
+        let x = clientX - rect.left;
+        const y = clientY - rect.top;
 
         // Check if table is flipped - if so, invert x coordinate
         const tableContainer = document.getElementById('gameBoardContainer');
@@ -389,11 +396,14 @@ class PokService {
         // Mobile touch events
         let touchStartX, touchStartY, initialLeft, initialTop;
         let isDragging = false;
+        let hasMoved = false;
         let currentZone = null;
 
         pokElement.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             isDragging = true;
+            hasMoved = false;
             const touch = e.touches[0];
             touchStartX = touch.clientX;
             touchStartY = touch.clientY;
@@ -417,10 +427,16 @@ class PokService {
         pokElement.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
             e.preventDefault();
+            e.stopPropagation();
 
             const touch = e.touches[0];
             const deltaX = touch.clientX - touchStartX;
             const deltaY = touch.clientY - touchStartY;
+
+            // Mark as moved if the touch has moved more than a small threshold
+            if (Math.abs(deltaX) > UI_CONFIG.TOUCH_DRAG_MOVE_THRESHOLD_PX || Math.abs(deltaY) > UI_CONFIG.TOUCH_DRAG_MOVE_THRESHOLD_PX) {
+                hasMoved = true;
+            }
 
             pokElement.style.left = `${initialLeft + deltaX}px`;
             pokElement.style.top = `${initialTop + deltaY}px`;
@@ -441,6 +457,7 @@ class PokService {
         pokElement.addEventListener('touchend', (e) => {
             if (!isDragging) return;
             e.preventDefault();
+            e.stopPropagation();
             isDragging = false;
 
             const touch = e.changedTouches[0];
@@ -458,11 +475,13 @@ class PokService {
                 callbacks.onDragEnd();
             }
 
-            if (targetZone && callbacks.onTouchDrop) {
+            // Only drop if we actually moved the POK
+            if (hasMoved && targetZone && callbacks.onTouchDrop) {
                 callbacks.onTouchDrop(targetZone, touch);
             }
 
             currentZone = null;
+            hasMoved = false;
         }, { passive: false });
     }
 
@@ -1068,6 +1087,7 @@ class UIState {
         this.lowScoreZoneThresholdPx = UI_CONFIG.BOUNDARY_THRESHOLD_PX;
         this.autoEndDelayMs = UI_CONFIG.AUTO_END_ROUND_DELAY_MS;
         this.draggedPokId = null;
+        this.isTouchDragging = false;
         this.autoEndTimeout = null;
         this.historyRestoreTimeout = null;
         this.historyFadeInTimeout = null;
@@ -1953,9 +1973,14 @@ class GameOrchestrator {
         this.services.pok.makePokDraggable(pokElement, {
             onDragStart: () => {
                 this.uiState.draggedPokId = pokId;
+                this.uiState.isTouchDragging = true;
             },
             onDragEnd: () => {
                 this.uiState.draggedPokId = null;
+                // Delay clearing the flag to prevent zone touchend from firing
+                setTimeout(() => {
+                    this.uiState.isTouchDragging = false;
+                }, UI_CONFIG.TOUCH_DRAG_COOLDOWN_MS);
             },
             onTouchMove: (zone, touch) => {
                 // Create a synthetic event for boundary highlighting
@@ -2008,6 +2033,10 @@ function placePok(zone, event) {
     // Prevent default to avoid double-firing on touch devices
     if (event.type === 'touchend') {
         event.preventDefault();
+        // Don't place a new POK if we were just dragging one
+        if (orchestrator.uiState.isTouchDragging) {
+            return;
+        }
     }
     orchestrator.placePok(zone, event);
 }
