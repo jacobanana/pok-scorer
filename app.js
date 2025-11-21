@@ -11,7 +11,7 @@ const GAME_CONFIG = {
 // UI Configuration
 const UI_CONFIG = {
     BOUNDARY_THRESHOLD_PX: 15,
-    AUTO_END_ROUND_DELAY_MS: 1500,
+    AUTO_END_ROUND_DELAY_MS: 5000,
     PLAYER_TURN_NOTIFICATION_DURATION_MS: 1000,
     DEFAULT_POSITION_PERCENT: 50,
     HISTORY_RESTORE_DELAY_MS: 300,
@@ -778,6 +778,7 @@ class UIService {
         this.domElements.turnNotification.classList.remove(
             'show',
             'fade-out',
+            'round-complete',
             getPlayerClass(PLAYER_ID.RED, 'player'),
             getPlayerClass(PLAYER_ID.BLUE, 'player')
         );
@@ -808,6 +809,50 @@ class UIService {
                 }
             }, 300); // Wait for fade-out transition
         }, UI_CONFIG.PLAYER_TURN_NOTIFICATION_DURATION_MS);
+    }
+
+    showRoundCompleteNotification(secondsRemaining) {
+        if (!this.domElements.turnNotification) return;
+
+        const seconds = Math.max(0, Math.ceil(secondsRemaining));
+        this.domElements.turnNotification.textContent = `All POKs played! Round ending in ${seconds}s...`;
+
+        // Reset animation by removing classes and add round-complete class
+        this.domElements.turnNotification.classList.remove(
+            'fade-out',
+            getPlayerClass(PLAYER_ID.RED, 'player'),
+            getPlayerClass(PLAYER_ID.BLUE, 'player')
+        );
+        this.domElements.turnNotification.classList.add('show', 'round-complete');
+
+        // Force reflow to ensure the element is visible
+        void this.domElements.turnNotification.offsetWidth;
+
+        // Hide the current round score display
+        if (this.domElements.currentRoundScore) {
+            this.domElements.currentRoundScore.classList.add('hidden');
+        }
+    }
+
+    hideRoundCompleteNotification() {
+        if (!this.domElements.turnNotification) return;
+
+        this.domElements.turnNotification.classList.remove('show', 'round-complete');
+
+        // Show the current round score display again
+        if (this.domElements.currentRoundScore) {
+            this.domElements.currentRoundScore.classList.remove('hidden');
+        }
+    }
+
+    disableZoneInteractions() {
+        // Prevent new POK placement via clicks, but still allow drag-and-drop editing
+        document.body.classList.add('round-ending');
+    }
+
+    enableZoneInteractions() {
+        // Re-enable new POK placement
+        document.body.classList.remove('round-ending');
     }
 
     highlightZoneBoundary(zoneElement) {
@@ -1091,6 +1136,11 @@ class UIState {
         this.autoEndTimeout = null;
         this.historyRestoreTimeout = null;
         this.historyFadeInTimeout = null;
+        this.countdownInterval = null;
+        this.countdownEndTime = null;
+        // Track the period when round is complete but result modal hasn't been shown yet
+        // During this time: countdown is shown, new POKs can't be placed, but POKs can be moved/edited
+        this.isRoundEnding = false;
         this.domElements = {
             startSelector: null,
             nextPlayer: null,
@@ -1131,7 +1181,21 @@ class UIState {
 
     setAutoEndTimer(delay, callback) {
         this.clearAutoEndTimer();
+        this.countdownEndTime = Date.now() + delay;
         this.autoEndTimeout = setTimeout(callback, delay);
+    }
+
+    clearCountdownInterval() {
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+        this.countdownEndTime = null;
+    }
+
+    setCountdownInterval(callback) {
+        this.clearCountdownInterval();
+        this.countdownInterval = setInterval(callback, 100); // Update every 100ms for smooth countdown
     }
 
     clearHistoryRestoreTimer() {
@@ -1567,6 +1631,11 @@ class GameOrchestrator {
         const round = this.game.getCurrentRound();
         if (!round) return;
 
+        // Prevent placing POKs when round is ending
+        if (this.uiState.isRoundEnding) {
+            return;
+        }
+
         if (!this.services.rules.canPlacePok(round, round.currentPlayerId)) {
             return;
         }
@@ -1608,7 +1677,7 @@ class GameOrchestrator {
         this.saveGameState();
 
         if (round.isRoundComplete()) {
-            this.uiState.setAutoEndTimer(this.uiState.autoEndDelayMs, () => this.endRound());
+            this.startRoundEndCountdown();
             return;
         }
 
@@ -1685,8 +1754,55 @@ class GameOrchestrator {
 
         // Check if round is complete
         if (round.isRoundComplete()) {
-            this.uiState.setAutoEndTimer(this.uiState.autoEndDelayMs, () => this.endRound());
+            this.startRoundEndCountdown();
         }
+    }
+
+    startRoundEndCountdown() {
+        const round = this.game.getCurrentRound();
+        if (!round || !round.isRoundComplete()) return;
+
+        // Enter the "round ending" state:
+        // - Countdown notification is shown with time remaining
+        // - New POKs cannot be placed (clicks on zones are blocked)
+        // - POKs can still be dragged and repositioned (allows final edits)
+        // - Timer resets if any edits are made (moving/removing POKs)
+        this.uiState.isRoundEnding = true;
+
+        // Prevent new POK placement but allow drag-and-drop
+        this.services.ui.disableZoneInteractions();
+
+        // Set the auto-end timer
+        this.uiState.setAutoEndTimer(this.uiState.autoEndDelayMs, () => this.endRound());
+
+        // Start the countdown display
+        this.updateCountdownDisplay();
+        this.uiState.setCountdownInterval(() => this.updateCountdownDisplay());
+    }
+
+    updateCountdownDisplay() {
+        if (!this.uiState.countdownEndTime) return;
+
+        const remaining = (this.uiState.countdownEndTime - Date.now()) / 1000;
+
+        if (remaining <= 0) {
+            this.uiState.clearCountdownInterval();
+            return;
+        }
+
+        this.services.ui.showRoundCompleteNotification(remaining);
+    }
+
+    stopRoundEndCountdown() {
+        // Exit the "round ending" state - called when:
+        // - User edits the board (drag/remove POK) - allows more time for edits
+        // - Round actually ends and modal is shown
+        // - New round starts or game resets
+        this.uiState.isRoundEnding = false;
+        this.uiState.clearAutoEndTimer();
+        this.uiState.clearCountdownInterval();
+        this.services.ui.hideRoundCompleteNotification();
+        this.services.ui.enableZoneInteractions();
     }
 
     handleZoneDragOver(zone, event) {
@@ -1766,7 +1882,7 @@ class GameOrchestrator {
     }
 
     removePok(pokId) {
-        this.uiState.clearAutoEndTimer();
+        this.stopRoundEndCountdown();
 
         const round = this.game.getCurrentRound();
         if (!round) return;
@@ -1805,6 +1921,9 @@ class GameOrchestrator {
     endRound() {
         const round = this.game.getCurrentRound();
         if (!round) return;
+
+        // Clear countdown when ending round
+        this.stopRoundEndCountdown();
 
         if (!round.isRoundComplete()) {
             if (!confirm('Not all poks have been placed. Continue anyway?')) {
@@ -1883,7 +2002,7 @@ class GameOrchestrator {
     }
 
     startNewRound() {
-        this.uiState.clearAutoEndTimer();
+        this.stopRoundEndCountdown();
 
         const prevRound = this.game.getCurrentRound();
         if (!prevRound) return;
@@ -1910,7 +2029,7 @@ class GameOrchestrator {
     }
 
     resetGame() {
-        this.uiState.clearAutoEndTimer();
+        this.stopRoundEndCountdown();
 
         this.services.pok.reset();
 
@@ -1974,6 +2093,9 @@ class GameOrchestrator {
             onDragStart: () => {
                 this.uiState.draggedPokId = pokId;
                 this.uiState.isTouchDragging = true;
+
+                // Stop the countdown when dragging starts (allows final edits after game finishes)
+                this.stopRoundEndCountdown();
             },
             onDragEnd: () => {
                 this.uiState.draggedPokId = null;

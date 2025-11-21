@@ -31,6 +31,31 @@ body.blue-turn {
     background: #1976d2;
 }
 
+/* Disable zone click interactions when round is ending (but allow drag-and-drop) */
+body.round-ending .zone {
+    cursor: not-allowed !important;
+    /* Don't disable pointer-events to allow drag-and-drop */
+}
+
+body.round-ending .zone:hover {
+    background: none !important;
+}
+
+body.round-ending .outer-zone {
+    cursor: not-allowed !important;
+    /* Don't disable pointer-events to allow drag-and-drop */
+}
+
+body.round-ending .outer-zone:hover {
+    background: none !important;
+}
+
+/* Keep POKs draggable during round ending */
+body.round-ending .pok {
+    cursor: move !important;
+    pointer-events: auto !important;
+}
+
 /* ============================================ */
 /* MAIN CONTAINER & LAYOUT                      */
 /* ============================================ */
@@ -813,6 +838,11 @@ h2 {
 
 .player-turn-notification.blue-player {
     background: #1976d2;
+}
+
+.player-turn-notification.round-complete {
+    background: #f57c00;
+    font-size: 36px;
 }
 
 .player-turn-notification.show {
