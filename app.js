@@ -542,6 +542,9 @@ class PokService {
             // Only drop if we actually moved the POK
             if (hasMoved && callbacks.onTouchDrop) {
                 callbacks.onTouchDrop(touch);
+            } else if (!hasMoved && callbacks.onTap) {
+                // If we didn't move, this is a tap - call the tap handler
+                callbacks.onTap();
             }
 
             hasMoved = false;
@@ -2155,50 +2158,67 @@ class GameOrchestrator {
         }
     }
 
+    handlePokClick(pokId) {
+        // Single source of truth for pok click/tap behavior
+        const round = this.game.getCurrentRound();
+        if (round && pokId === round.lastPlacedPokId) {
+            this.removePok(pokId);
+        }
+    }
+
+    handlePokDragStart(pokId) {
+        this.uiState.draggedPokId = pokId;
+        this.uiState.isTouchDragging = true;
+
+        // Stop the countdown when dragging starts (allows final edits after game finishes)
+        this.stopRoundEndCountdown();
+    }
+
+    handlePokDragEnd() {
+        this.uiState.draggedPokId = null;
+        // Delay clearing the flag to prevent zone touchend from firing
+        setTimeout(() => {
+            this.uiState.isTouchDragging = false;
+        }, UI_CONFIG.TOUCH_DRAG_COOLDOWN_MS);
+    }
+
+    handlePokDragMove(touch) {
+        // Create a synthetic event for boundary highlighting
+        const syntheticEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        };
+        this.handleTableDragOver(syntheticEvent);
+    }
+
+    handlePokDrop(pokId, touch) {
+        // Create a synthetic event for the drop with proper touch structure
+        const syntheticEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            changedTouches: [touch],
+            preventDefault: () => {},
+            stopPropagation: () => {}
+        };
+        this.movePok(pokId, syntheticEvent);
+        this.services.ui.clearAllZoneBoundaryHighlights();
+    }
+
     setupPokHandlers(pokElement, pokId) {
+        // Desktop click handler
         pokElement.onclick = (e) => {
+            e.preventDefault();
             e.stopPropagation();
-            const round = this.game.getCurrentRound();
-            if (round && pokId === round.lastPlacedPokId) {
-                this.removePok(pokId);
-            }
+            this.handlePokClick(pokId);
         };
 
+        // Desktop drag and touch handlers
         this.services.pok.makePokDraggable(pokElement, {
-            onDragStart: () => {
-                this.uiState.draggedPokId = pokId;
-                this.uiState.isTouchDragging = true;
-
-                // Stop the countdown when dragging starts (allows final edits after game finishes)
-                this.stopRoundEndCountdown();
-            },
-            onDragEnd: () => {
-                this.uiState.draggedPokId = null;
-                // Delay clearing the flag to prevent zone touchend from firing
-                setTimeout(() => {
-                    this.uiState.isTouchDragging = false;
-                }, UI_CONFIG.TOUCH_DRAG_COOLDOWN_MS);
-            },
-            onTouchMove: (touch) => {
-                // Create a synthetic event for boundary highlighting
-                const syntheticEvent = {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                };
-                this.handleTableDragOver(syntheticEvent);
-            },
-            onTouchDrop: (touch) => {
-                // Create a synthetic event for the drop with proper touch structure
-                const syntheticEvent = {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    changedTouches: [touch],
-                    preventDefault: () => {},
-                    stopPropagation: () => {}
-                };
-                this.movePok(pokId, syntheticEvent);
-                this.services.ui.clearAllZoneBoundaryHighlights();
-            }
+            onDragStart: () => this.handlePokDragStart(pokId),
+            onDragEnd: () => this.handlePokDragEnd(),
+            onTouchMove: (touch) => this.handlePokDragMove(touch),
+            onTouchDrop: (touch) => this.handlePokDrop(pokId, touch),
+            onTap: () => this.handlePokClick(pokId)
         });
     }
 }
