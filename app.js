@@ -492,9 +492,8 @@ class PokService {
             pokElement.style.top = `${initialTop}px`;
             pokElement.style.transform = 'translate(0, 0)';
 
-            if (callbacks.onDragStart) {
-                callbacks.onDragStart();
-            }
+            // Only call onDragStart when we actually start moving (called from touchmove)
+            // Don't call it here to avoid setting isTouchDragging for taps
         }, { passive: false });
 
         pokElement.addEventListener('touchmove', (e) => {
@@ -508,6 +507,10 @@ class PokService {
 
             // Mark as moved if the touch has moved more than a small threshold
             if (Math.abs(deltaX) > UI_CONFIG.TOUCH_DRAG_MOVE_THRESHOLD_PX || Math.abs(deltaY) > UI_CONFIG.TOUCH_DRAG_MOVE_THRESHOLD_PX) {
+                // First time we actually move - call onDragStart to set the isTouchDragging flag
+                if (!hasMoved && callbacks.onDragStart) {
+                    callbacks.onDragStart();
+                }
                 hasMoved = true;
             }
 
@@ -535,7 +538,8 @@ class PokService {
             pokElement.style.top = '';
             pokElement.style.transform = 'translate(-50%, -50%)'; // Restore original centering transform
 
-            if (callbacks.onDragEnd) {
+            // Only call onDragEnd if we actually moved (onDragStart was called)
+            if (hasMoved && callbacks.onDragEnd) {
                 callbacks.onDragEnd();
             }
 
