@@ -533,7 +533,7 @@ class PokService {
             pokElement.style.zIndex = '';
             pokElement.style.left = '';
             pokElement.style.top = '';
-            pokElement.style.transform = '';
+            pokElement.style.transform = 'translate(-50%, -50%)'; // Restore original centering transform
 
             if (callbacks.onDragEnd) {
                 callbacks.onDragEnd();
