@@ -183,27 +183,31 @@ export class UIProjection {
             const zone5Label = zone5.querySelector('.zone-label');
 
             if (isFlipped) {
-                // Swap positions: zone 4 moves to bottom, zone 5 to top
+                // Swap positions: zone 4 element moves to bottom, zone 5 element moves to top
                 console.log('Swapping zone 4 and 5 positions for flip');
                 zone4.style.top = 'auto';
                 zone4.style.bottom = '10%';
                 zone5.style.bottom = 'auto';
                 zone5.style.top = '10%';
 
-                // Swap labels to show effective zone numbers
-                if (zone4Label) zone4Label.textContent = '5';
-                if (zone5Label) zone5Label.textContent = '4';
+                // When flipped: top scores 5 pts, bottom scores 4 pts
+                // zone5 is now at top → display "5" (it scores 5 points)
+                // zone4 is now at bottom → display "4" (it scores 4 points)
+                if (zone4Label) zone4Label.textContent = '4';  // at bottom, scores 4
+                if (zone5Label) zone5Label.textContent = '5';  // at top, scores 5
             } else {
-                // Restore: zone 4 to top, zone 5 to bottom
+                // Not flipped: zone 4 at top, zone 5 at bottom
                 console.log('Restoring zone 4 and 5 positions for unflip');
                 zone4.style.top = '10%';
                 zone4.style.bottom = 'auto';
                 zone5.style.bottom = '10%';
                 zone5.style.top = 'auto';
 
-                // Restore labels
-                if (zone4Label) zone4Label.textContent = '4';
-                if (zone5Label) zone5Label.textContent = '5';
+                // When not flipped: top scores 4 pts, bottom scores 5 pts
+                // zone4 is at top → display "4" (it scores 4 points)
+                // zone5 is at bottom → display "5" (it scores 5 points)
+                if (zone4Label) zone4Label.textContent = '4';  // at top, scores 4
+                if (zone5Label) zone5Label.textContent = '5';  // at bottom, scores 5
             }
         });
     }
