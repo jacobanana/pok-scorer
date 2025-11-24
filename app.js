@@ -646,6 +646,7 @@ class UIService {
         this.domElements = {
             startSelector: document.getElementById('gameStartSelector'),
             continueButton: document.getElementById('continueGameButton'),
+            saveLatestButton: document.getElementById('saveLatestGameButton'),
             nextPlayer: document.getElementById('nextPlayerIndicator'),
             tableContainer: document.getElementById('gameBoardContainer'),
             mainRedTotal: document.getElementById('totalScoreRed'),
@@ -751,11 +752,17 @@ class UIService {
         if (this.domElements.continueButton) {
             this.domElements.continueButton.classList.add('show');
         }
+        if (this.domElements.saveLatestButton) {
+            this.domElements.saveLatestButton.classList.add('show');
+        }
     }
 
     hideContinueButton() {
         if (this.domElements.continueButton) {
             this.domElements.continueButton.classList.remove('show');
+        }
+        if (this.domElements.saveLatestButton) {
+            this.domElements.saveLatestButton.classList.remove('show');
         }
     }
 
@@ -1451,6 +1458,19 @@ class GameOrchestrator {
 
         this.loadSavedGame();
         this.setupHistoryHoverHandlers();
+        this.setupKeyboardHandlers();
+    }
+
+    setupKeyboardHandlers() {
+        document.addEventListener('keydown', (e) => {
+            // Escape key to dismiss round end modal
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('roundEndModal');
+                if (modal && modal.classList.contains('show')) {
+                    this.services.ui.hideRoundModal();
+                }
+            }
+        });
     }
 
     setupHistoryHoverHandlers() {
@@ -1498,6 +1518,12 @@ class GameOrchestrator {
 
         const historicalRound = this.game.rounds[roundIndex];
 
+        // Update the round scores display (not the total scores)
+        const redRoundScore = document.getElementById('currentRoundScoreRed');
+        const blueRoundScore = document.getElementById('currentRoundScoreBlue');
+        if (redRoundScore) redRoundScore.textContent = historicalRound.scores.red;
+        if (blueRoundScore) blueRoundScore.textContent = historicalRound.scores.blue;
+
         // Add fade-out class to all poks
         document.querySelectorAll('.pok').forEach(pok => {
             pok.classList.add('historical-fade-out');
@@ -1518,6 +1544,12 @@ class GameOrchestrator {
 
         const currentRound = this.game.getCurrentRound();
         if (!currentRound) return;
+
+        // Restore the current round scores display
+        const redRoundScore = document.getElementById('currentRoundScoreRed');
+        const blueRoundScore = document.getElementById('currentRoundScoreBlue');
+        if (redRoundScore) redRoundScore.textContent = currentRound.scores.red;
+        if (blueRoundScore) blueRoundScore.textContent = currentRound.scores.blue;
 
         // Add fade-out class to all poks
         document.querySelectorAll('.pok').forEach(pok => {
@@ -1682,6 +1714,155 @@ class GameOrchestrator {
     saveGameState() {
         if (this.game.isStarted) {
             this.services.persistence.saveGameState(this.game, this);
+        }
+    }
+
+    exportMatchAsJSON() {
+        if (!this.game.isStarted || this.game.rounds.length === 0) {
+            alert('No game data to export. Start a game first!');
+            return;
+        }
+
+        // Create a comprehensive match export
+        const matchData = {
+            exportDate: new Date().toISOString(),
+            gameSettings: {
+                winningScore: this.game.winningScore,
+                poksPerPlayer: this.game.poksPerPlayer
+            },
+            finalScores: {
+                red: this.game.players.red.totalScore,
+                blue: this.game.players.blue.totalScore
+            },
+            rounds: this.game.rounds.map(round => ({
+                roundNumber: round.roundNumber + 1, // Display as 1-indexed
+                startingPlayer: round.startingPlayerId,
+                tableOrientation: round.tableOrientation,
+                scores: {
+                    red: round.scores.red,
+                    blue: round.scores.blue,
+                    winner: round.scores.winner,
+                    pointDifference: round.scores.pointDifference
+                },
+                poksPlayed: round.poksPlaced.map(pok => ({
+                    playerId: pok.playerId,
+                    points: pok.points,
+                    zoneId: pok.zoneId,
+                    isHighScore: pok.isHighScore,
+                    position: {
+                        tableXPercent: pok.position.tableXPercent,
+                        tableYPercent: pok.position.tableYPercent
+                    }
+                }))
+            })),
+            winner: this.game.players.red.totalScore >= this.game.winningScore
+                ? 'red'
+                : (this.game.players.blue.totalScore >= this.game.winningScore ? 'blue' : null)
+        };
+
+        // Convert to JSON string
+        const jsonString = JSON.stringify(matchData, null, 2);
+
+        // Create blob and download
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pok-match-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('Match exported as JSON');
+    }
+
+    importMatchFromJSON(jsonData) {
+        try {
+            // Parse the JSON data
+            const matchData = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+
+            // Validate the data structure
+            if (!matchData.rounds || !matchData.gameSettings) {
+                throw new Error('Invalid match data format');
+            }
+
+            // Clear current game
+            this.resetGame();
+
+            // Restore game settings
+            this.game.winningScore = matchData.gameSettings.winningScore || GAME_CONFIG.WINNING_SCORE;
+            this.game.poksPerPlayer = matchData.gameSettings.poksPerPlayer || GAME_CONFIG.POKS_PER_PLAYER;
+
+            // Restore player scores
+            this.game.players.red.totalScore = matchData.finalScores.red;
+            this.game.players.blue.totalScore = matchData.finalScores.blue;
+
+            // Restore rounds
+            this.game.rounds = matchData.rounds.map((roundData, index) => {
+                const round = new Round(
+                    index,
+                    roundData.startingPlayer,
+                    this.game.poksPerPlayer,
+                    roundData.tableOrientation || 'normal'
+                );
+
+                round.currentPlayerId = roundData.startingPlayer;
+                round.redPoksRemaining = this.game.poksPerPlayer - roundData.poksPlayed.filter(p => p.playerId === PLAYER_ID.RED).length;
+                round.bluePoksRemaining = this.game.poksPerPlayer - roundData.poksPlayed.filter(p => p.playerId === PLAYER_ID.BLUE).length;
+                round.isComplete = roundData.scores.winner !== null;
+
+                round.scores.red = roundData.scores.red;
+                round.scores.blue = roundData.scores.blue;
+                round.scores.winner = roundData.scores.winner;
+                round.scores.pointDifference = roundData.scores.pointDifference;
+
+                // Restore poks
+                round.poksPlaced = roundData.poksPlayed.map((pokData, pokIndex) => {
+                    const pokId = `imported-pok-${index}-${pokIndex}`;
+                    return new Pok(
+                        pokId,
+                        pokData.playerId,
+                        pokData.points,
+                        pokData.position.tableXPercent,
+                        pokData.position.tableYPercent,
+                        pokData.zoneId,
+                        pokData.isHighScore
+                    );
+                });
+
+                if (round.poksPlaced.length > 0) {
+                    round.lastPlacedPokId = round.poksPlaced[round.poksPlaced.length - 1].id;
+                }
+
+                return round;
+            });
+
+            // Set to last round
+            this.game.currentRoundIndex = this.game.rounds.length - 1;
+            this.game.isStarted = true;
+
+            // Update POK ID counter
+            this.services.pok.pokIdCounter = this.game.rounds.reduce((max, round) =>
+                Math.max(max, round.poksPlaced.length), 0);
+
+            // Update UI
+            this.stateMachine.setState('PLAYER_TURN');
+            this.services.ui.hideStartSelector();
+            this.services.ui.updateScores(this.game);
+
+            const currentRound = this.game.getCurrentRound();
+            if (currentRound) {
+                this.services.ui.updateCurrentPlayer(currentRound);
+                this.applyTableOrientation(currentRound.tableOrientation);
+                this.restorePokElements(currentRound, true);
+            }
+
+            console.log('Match imported successfully');
+            alert('Match loaded successfully!');
+        } catch (error) {
+            console.error('Error importing match:', error);
+            alert('Failed to load match: ' + error.message);
         }
     }
 
@@ -2307,6 +2488,96 @@ function scrollToScoreDisplay(event) {
         // Stop the countdown and immediately end the round
         orchestrator.stopRoundEndCountdown();
         orchestrator.endRound();
+    }
+}
+
+function exportMatch() {
+    orchestrator.exportMatchAsJSON();
+}
+
+function importMatch() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            orchestrator.importMatchFromJSON(event.target.result);
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+function saveLatestGame() {
+    // Load the latest game from localStorage
+    const savedState = localStorage.getItem('pok-scorer-game-state');
+    if (!savedState) {
+        alert('No saved game found!');
+        return;
+    }
+
+    try {
+        const gameState = JSON.parse(savedState);
+
+        // Create match data from saved state
+        const matchData = {
+            exportDate: new Date().toISOString(),
+            gameSettings: {
+                winningScore: gameState.winningScore,
+                poksPerPlayer: gameState.poksPerPlayer
+            },
+            finalScores: {
+                red: gameState.players.red.totalScore,
+                blue: gameState.players.blue.totalScore
+            },
+            rounds: gameState.rounds.map(round => ({
+                roundNumber: round.roundNumber + 1,
+                startingPlayer: round.startingPlayerId,
+                tableOrientation: round.tableOrientation,
+                scores: {
+                    red: round.scores.red,
+                    blue: round.scores.blue,
+                    winner: round.scores.winner,
+                    pointDifference: round.scores.pointDifference
+                },
+                poksPlayed: round.poksPlaced.map(pok => ({
+                    playerId: pok.playerId,
+                    points: pok.points,
+                    zoneId: pok.zoneId,
+                    isHighScore: pok.isHighScore,
+                    position: {
+                        tableXPercent: pok.position.tableXPercent,
+                        tableYPercent: pok.position.tableYPercent
+                    }
+                }))
+            })),
+            winner: gameState.players.red.totalScore >= gameState.winningScore
+                ? 'red'
+                : (gameState.players.blue.totalScore >= gameState.winningScore ? 'blue' : null)
+        };
+
+        // Convert to JSON string
+        const jsonString = JSON.stringify(matchData, null, 2);
+
+        // Create blob and download
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pok-match-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('Latest game exported successfully');
+    } catch (error) {
+        console.error('Error exporting latest game:', error);
+        alert('Failed to export latest game: ' + error.message);
     }
 }
 

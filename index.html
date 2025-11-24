@@ -14,6 +14,16 @@
             Resume Last Game
         </button>
 
+        <!-- Save Latest Game Button (shown when saved game exists) -->
+        <button id="saveLatestGameButton" class="save-latest-game-button" onclick="saveLatestGame()">
+            Save Latest Game
+        </button>
+
+        <!-- Import Match Button -->
+        <button id="importMatchButton" class="import-match-button" onclick="importMatch()">
+            Load from File
+        </button>
+
         <div class="start-half red" onclick="startGame('red')">
             RED
         </div>
@@ -68,11 +78,13 @@
 
                 <!-- Flip Table Button (Top Left) -->
                 <button id="flipTableButton" class="flip-table-button" onclick="flipTable()">Flip Table</button>
+                <!-- Export Match Button -->
+                <button id="exportMatchButton" class="export-match-button" onclick="exportMatch()">Export JSON</button>
                 <!-- New Game Button (Top Right) -->
                 <button id="newGameButton" class="new-game-button" onclick="confirmNewGame()">New Game</button>
 
 
-                <div class="table-container" id="gameBoardContainer" onclick="placePok(event)" ontouchend="placePok(event)" ondrop="handleTableDrop(event)" ondragover="handleTableDragOver(event)" onmousemove="handleTableMouseMove(event)" onmouseleave="handleTableMouseLeave(event)">
+                <div class="table-container" id="gameBoardContainer" onclick="placePok(event)" ontouchend="placePok(event)">
                     <!-- Main Game Table -->
                     <div class="table">
                         <div class="table-inner">
@@ -155,7 +167,7 @@
                 <!-- ============================= -->
                 <div class="current-round-score-container">
                     <!-- Player Turn Notification -->
-                    <div id="playerTurnNotification" class="player-turn-notification" onclick="scrollToScoreDisplay(event)"></div>
+                    <div id="playerTurnNotification" class="player-turn-notification"></div>
 
                     <div class="current-round-score" id="currentRoundScoreDisplay">
                         <!-- Score circles showing current round points -->
@@ -202,6 +214,6 @@
     <!-- ============================= -->
     <!-- JAVASCRIPT                    -->
     <!-- ============================= -->
-    <script src="app.js"></script>
+    <script src="app-v2.js"></script>
 </body>
 </html>
