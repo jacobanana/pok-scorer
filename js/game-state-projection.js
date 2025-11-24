@@ -58,6 +58,7 @@ export class GameStateProjection {
 
     onGameStarted(event) {
         this.state.isStarted = true;
+        console.log('[GAME_STARTED] Creating round 0 with isFlipped:', this.state.isFlipped);
         this.state.rounds.push({
             roundNumber: 0,
             startingPlayerId: event.data.startingPlayerId,
@@ -77,7 +78,13 @@ export class GameStateProjection {
         if (!round) return;
 
         // Calculate derived data from position
-        const zoneInfo = ScoringService.getZoneInfo(event.data.x, event.data.y);
+        const zoneInfo = ScoringService.getZoneInfo(event.data.x, event.data.y, round.isFlipped);
+
+        console.log('POK_PLACED:', {
+            position: { x: event.data.x, y: event.data.y },
+            isFlipped: round.isFlipped,
+            zoneInfo: zoneInfo
+        });
 
         round.poks.push({
             id: event.data.pokId,
@@ -119,7 +126,7 @@ export class GameStateProjection {
         pok.y = event.data.y;
 
         // Recalculate derived data
-        const zoneInfo = ScoringService.getZoneInfo(pok.x, pok.y);
+        const zoneInfo = ScoringService.getZoneInfo(pok.x, pok.y, round.isFlipped);
         pok.zoneId = zoneInfo.zoneId;
         pok.points = zoneInfo.points;
         pok.isHigh = zoneInfo.isHigh;
@@ -175,6 +182,7 @@ export class GameStateProjection {
     }
 
     onRoundStarted(event) {
+        console.log(`[ROUND_STARTED] Creating round ${event.data.roundNumber} with isFlipped:`, this.state.isFlipped);
         this.state.rounds.push({
             roundNumber: event.data.roundNumber,
             startingPlayerId: event.data.startingPlayerId,
@@ -191,6 +199,21 @@ export class GameStateProjection {
 
     onTableFlipped(event) {
         this.state.isFlipped = event.data.isFlipped;
+
+        // Update the current round's isFlipped state ONLY if it's not complete
+        const round = this.getCurrentRound();
+        if (round && !round.isComplete) {
+            round.isFlipped = event.data.isFlipped;
+
+            // Recalculate all POK zones with the new flip state
+            round.poks.forEach(pok => {
+                const zoneInfo = ScoringService.getZoneInfo(pok.x, pok.y, round.isFlipped);
+                pok.zoneId = zoneInfo.zoneId;
+                pok.points = zoneInfo.points;
+                pok.isHigh = zoneInfo.isHigh;
+                pok.boundaryZone = zoneInfo.boundaryZone;
+            });
+        }
     }
 
     onGameReset(event) {

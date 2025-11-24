@@ -6,31 +6,37 @@ import { CONFIG } from './config.js';
 
 export class ScoringService {
     // Calculate zone and points from position
-    static getZoneInfo(x, y) {
-        const { ZONE_BOUNDARIES, ZONE_POINTS, BOUNDARY_THRESHOLD_PERCENT, TABLE_ASPECT_RATIO } = CONFIG;
+    static getZoneInfo(x, y, isFlipped = false) {
+        const { ZONES, CIRCLE_ZONES } = CONFIG;
 
         // Outside table
         if (x < 0 || x > 100 || y < 0 || y > 100) {
             return { zoneId: 'outer', points: 0, isHigh: true, boundaryZone: null };
         }
 
-        // Check circular zones first
-        const circle4 = this.checkCircle(x, y, ZONE_BOUNDARIES.circle4, '4', '1');
-        if (circle4) return circle4;
+        // Check circular zones first (swap zone IDs when flipped)
+        for (const circle of CIRCLE_ZONES) {
+            // When flipped, zone 4 (top) becomes zone 5, and zone 5 (bottom) becomes zone 4
+            const actualZoneId = isFlipped
+                ? (circle.id === '4' ? '5' : circle.id === '5' ? '4' : circle.id)
+                : circle.id;
 
-        const circle5 = this.checkCircle(x, y, ZONE_BOUNDARIES.circle5, '5', '1');
-        if (circle5) return circle5;
-
-        // Check rectangular zones
-        if (x < ZONE_BOUNDARIES.zone3Right) {
-            return this.checkRectangle(x, ZONE_BOUNDARIES.zone3Right, '3', '2');
-        } else if (x < ZONE_BOUNDARIES.zone2Right) {
-            return this.checkRectangle(x, ZONE_BOUNDARIES.zone2Right, '2', '1');
-        } else if (x < ZONE_BOUNDARIES.zone1Right) {
-            return this.checkRectangle(x, ZONE_BOUNDARIES.zone1Right, '1', '0');
-        } else {
-            return this.checkRectangle(x, ZONE_BOUNDARIES.zone0Right, '0', null);
+            const result = this.checkCircle(x, y, circle, actualZoneId, circle.boundaryZone);
+            if (result) return result;
         }
+
+        // Check rectangular zones (iterate from highest score to lowest)
+        for (let i = ZONES.length - 1; i >= 0; i--) {
+            const zone = ZONES[i];
+            const boundaryZone = i > 0 ? ZONES[i - 1].id : null;
+
+            if (x < zone.boundary) {
+                return this.checkRectangle(x, zone.boundary, zone.id, boundaryZone);
+            }
+        }
+
+        // Fallback (shouldn't reach here)
+        return { zoneId: '0', points: 0, isHigh: true, boundaryZone: null };
     }
 
     static checkCircle(x, y, circle, zoneId, boundaryZone) {

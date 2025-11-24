@@ -194,7 +194,9 @@ export class PokScorerApp {
             // Show boundary highlighting while dragging
             if (this.isDragging) {
                 const pos = this.calculateTablePosition(e);
-                const zoneInfo = ScoringService.getZoneInfo(pos.x, pos.y);
+                const round = this.gameState.getCurrentRound();
+                const isFlipped = round ? round.isFlipped : false;
+                const zoneInfo = ScoringService.getZoneInfo(pos.x, pos.y, isFlipped);
 
                 const zones = document.querySelectorAll('.zone, .circle-zone');
                 zones.forEach(zone => {
@@ -313,7 +315,8 @@ export class PokScorerApp {
             const pos = this.calculateTablePosition(e);
 
             // Get zone info to check if in boundary
-            const zoneInfo = ScoringService.getZoneInfo(pos.x, pos.y);
+            const isFlipped = round.isFlipped;
+            const zoneInfo = ScoringService.getZoneInfo(pos.x, pos.y, isFlipped);
 
             // Highlight zones that are in boundary areas
             const zones = document.querySelectorAll('.zone, .circle-zone');

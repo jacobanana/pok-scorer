@@ -146,6 +146,66 @@ export class UIProjection {
 
     onTableFlipped(event) {
         this.dom.tableContainer.classList.toggle('flipped', event.data.isFlipped);
+        this.swapCircleZoneDOMPositions(event.data.isFlipped);
+
+        // Update all POK elements to reflect new zone calculations
+        const round = this.gameState.getCurrentRound();
+        if (round) {
+            round.poks.forEach(pok => {
+                const pokEl = this.pokElements.get(pok.id);
+                if (pokEl) {
+                    // Update points display
+                    pokEl.textContent = pok.points;
+
+                    // Update high/low score styling
+                    pokEl.classList.toggle('low-score', !pok.isHigh);
+
+                    // Update boundary zone styling
+                    pokEl.classList.toggle('boundary-zone', !!pok.boundaryZone);
+                }
+            });
+        }
+
+        // Update scores as they may have changed due to zone recalculation
+        this.updateScores();
+        this.updateRoundsHistory();
+    }
+
+    swapCircleZoneDOMPositions(isFlipped) {
+        const zone4Elements = document.querySelectorAll('[data-zone="4"]');
+        const zone5Elements = document.querySelectorAll('[data-zone="5"]');
+
+        zone4Elements.forEach(zone4 => {
+            const zone5 = Array.from(zone5Elements).find(z => z.parentElement === zone4.parentElement);
+            if (!zone5) return;
+
+            const zone4Label = zone4.querySelector('.zone-label');
+            const zone5Label = zone5.querySelector('.zone-label');
+
+            if (isFlipped) {
+                // Swap positions: zone 4 moves to bottom, zone 5 to top
+                console.log('Swapping zone 4 and 5 positions for flip');
+                zone4.style.top = 'auto';
+                zone4.style.bottom = '10%';
+                zone5.style.bottom = 'auto';
+                zone5.style.top = '10%';
+
+                // Swap labels to show effective zone numbers
+                if (zone4Label) zone4Label.textContent = '5';
+                if (zone5Label) zone5Label.textContent = '4';
+            } else {
+                // Restore: zone 4 to top, zone 5 to bottom
+                console.log('Restoring zone 4 and 5 positions for unflip');
+                zone4.style.top = '10%';
+                zone4.style.bottom = 'auto';
+                zone5.style.bottom = '10%';
+                zone5.style.top = 'auto';
+
+                // Restore labels
+                if (zone4Label) zone4Label.textContent = '4';
+                if (zone5Label) zone5Label.textContent = '5';
+            }
+        });
     }
 
     onGameReset(event) {
@@ -154,6 +214,7 @@ export class UIProjection {
         this.showStartSelector();
         this.updateScores();
         this.updateRoundsHistory();
+        this.swapCircleZoneDOMPositions(false); // Reset to non-flipped state
         document.body.className = '';
     }
 
@@ -410,6 +471,7 @@ export class UIProjection {
 
         // Restore table flip state for this round
         this.dom.tableContainer.classList.toggle('flipped', round.isFlipped);
+        this.swapCircleZoneDOMPositions(round.isFlipped);
     }
 
     hideRoundPreview() {
@@ -433,6 +495,7 @@ export class UIProjection {
 
         // Restore current table flip state
         this.dom.tableContainer.classList.toggle('flipped', currentRound.isFlipped);
+        this.swapCircleZoneDOMPositions(currentRound.isFlipped);
     }
 
     showStartSelector() {

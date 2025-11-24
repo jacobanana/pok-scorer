@@ -116,11 +116,12 @@ export class CommandHandler {
             starter = prevRound.startingPlayerId === 'red' ? 'blue' : 'red';
         }
 
-        // Flip the table for the next round
-        this.eventStore.append(new TableFlippedEvent(!state.isFlipped));
-
+        // Start the next round first (inherits current flip state)
         const nextRoundNumber = state.rounds.length;
         this.eventStore.append(new RoundStartedEvent(nextRoundNumber, starter));
+
+        // Then flip the table for the new round
+        this.eventStore.append(new TableFlippedEvent(!state.isFlipped));
     }
 
     flipTable(isFlipped) {

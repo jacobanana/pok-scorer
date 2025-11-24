@@ -35,13 +35,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Quick access to common actions
         events: () => app.eventStore.getAllEvents(),
-        lastEvent: () => app.eventStore.events[app.eventStore.events.length - 1]
+        lastEvent: () => app.eventStore.events[app.eventStore.events.length - 1],
+
+        // Display rounds info in a table
+        rounds: () => {
+            const state = app.gameState.getState();
+            const roundsInfo = state.rounds.map((round, index) => {
+                const scores = app.gameState.calculateRoundScores
+                    ? app.gameState.calculateRoundScores(round)
+                    : {
+                        red: round.poks.filter(p => p.playerId === 'red').reduce((sum, p) => sum + p.points, 0),
+                        blue: round.poks.filter(p => p.playerId === 'blue').reduce((sum, p) => sum + p.points, 0)
+                    };
+
+                return {
+                    roundNumber: round.roundNumber,
+                    isComplete: round.isComplete,
+                    isFlipped: round.isFlipped,
+                    startingPlayer: round.startingPlayerId,
+                    currentPlayer: round.currentPlayerId,
+                    redScore: scores.red,
+                    blueScore: scores.blue,
+                    redPoksLeft: round.redPoksRemaining,
+                    bluePoksLeft: round.bluePoksRemaining,
+                    totalPoks: round.poks.length
+                };
+            });
+            console.table(roundsInfo);
+            return roundsInfo;
+        },
+
+        // Show all TABLE_FLIPPED events
+        flips: () => {
+            const events = app.eventStore.getAllEvents();
+            const flipEvents = events.filter(e => e.type === 'TABLE_FLIPPED');
+            console.log(`Found ${flipEvents.length} TABLE_FLIPPED events:`);
+            flipEvents.forEach((e, i) => {
+                console.log(`  ${i + 1}. Event #${e.id}: isFlipped=${e.data.isFlipped} at ${new Date(e.timestamp).toLocaleString()}`);
+            });
+            return flipEvents;
+        }
     };
 
     console.log('%c🎮 POK Score Counter - Event Sourced',
         'color: #2196F3; font-size: 16px; font-weight: bold');
     console.log('%cDebug tools available via: window.pokDebug',
         'color: #4CAF50; font-size: 12px');
-    console.log('%cTry: pokDebug.log(), pokDebug.stats(), pokDebug.state()',
+    console.log('%cTry: pokDebug.log(), pokDebug.stats(), pokDebug.state(), pokDebug.rounds()',
         'color: #666; font-size: 11px; font-style: italic');
 });
