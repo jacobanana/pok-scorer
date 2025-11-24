@@ -220,7 +220,6 @@ export class UIProjection {
         el.textContent = pok.points;
         el.style.left = `${pok.x}%`;
         el.style.top = `${pok.y}%`;
-        el.style.transform = 'translate(-50%, -50%)';
         el.draggable = true;
         return el;
     }
@@ -408,6 +407,9 @@ export class UIProjection {
         // Render POKs and update scores for the selected round
         this.renderPoksForRound(round);
         this.updateRoundScoreDisplay(round);
+
+        // Restore table flip state for this round
+        this.dom.tableContainer.classList.toggle('flipped', round.isFlipped);
     }
 
     hideRoundPreview() {
@@ -428,6 +430,9 @@ export class UIProjection {
 
         // Restore current scores
         this.updateScores();
+
+        // Restore current table flip state
+        this.dom.tableContainer.classList.toggle('flipped', currentRound.isFlipped);
     }
 
     showStartSelector() {

@@ -66,7 +66,8 @@ export class GameStateProjection {
             redPoksRemaining: CONFIG.POKS_PER_PLAYER,
             bluePoksRemaining: CONFIG.POKS_PER_PLAYER,
             isComplete: false,
-            lastPlacedPokId: null
+            lastPlacedPokId: null,
+            isFlipped: this.state.isFlipped
         });
         this.state.currentRoundIndex = 0;
     }
@@ -182,7 +183,8 @@ export class GameStateProjection {
             redPoksRemaining: CONFIG.POKS_PER_PLAYER,
             bluePoksRemaining: CONFIG.POKS_PER_PLAYER,
             isComplete: false,
-            lastPlacedPokId: null
+            lastPlacedPokId: null,
+            isFlipped: this.state.isFlipped
         });
         this.state.currentRoundIndex = event.data.roundNumber;
     }

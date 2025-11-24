@@ -292,7 +292,7 @@ body.round-ending .pok:active {
 
 /* Adjust POK positioning and counter-flip text when table is flipped */
 .table-container.flipped .pok {
-    transform: translate(-50%, -50%) scaleX(-1) !important;
+    transform: translate(-50%, -50%) scaleX(-1);
 }
 
 /* Outer Play Area (outside scoring zones) */
@@ -505,6 +505,7 @@ body.round-ending .pok:active {
     z-index: 100;
     cursor: grab;
     touch-action: none;
+    transform: translate(-50%, -50%);
 }
 
 .pok:active {
@@ -542,6 +543,11 @@ body.round-ending .pok:active {
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
+/* Use flipped animation when table is flipped */
+.table-container.flipped .pok.last-placed {
+    animation: pok-breathe-flipped 1.3s ease-in-out infinite !important;
+}
+
 /* Historical POK Fade Transitions */
 .pok.historical-fade-out {
     opacity: 0;
@@ -568,10 +574,19 @@ body.round-ending .pok:active {
 
 @keyframes pok-breathe {
     0%, 100% {
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%, -50%) scale(1) scaleX(1);
     }
     50% {
-        transform: translate(-50%, -50%) scale(1.15);
+        transform: translate(-50%, -50%) scale(1.15) scaleX(1);
+    }
+}
+
+@keyframes pok-breathe-flipped {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1) scaleX(-1);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.15) scaleX(-1);
     }
 }
 
