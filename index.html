@@ -72,11 +72,7 @@
                 <button id="newGameButton" class="new-game-button" onclick="confirmNewGame()">New Game</button>
 
 
-                <div class="table-container" id="gameBoardContainer">
-                    <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
-                    <div class="outer-zone zone" id="outerPlayAreaLeft" data-zone="outer" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
-                    </div>
-
+                <div class="table-container" id="gameBoardContainer" onclick="placePok(event)" ontouchend="placePok(event)" ondrop="handleTableDrop(event)" ondragover="handleTableDragOver(event)" onmousemove="handleTableMouseMove(event)" onmouseleave="handleTableMouseLeave(event)">
                     <!-- Main Game Table -->
                     <div class="table">
                         <div class="table-inner">
@@ -87,38 +83,38 @@
                             <div class="side left">
                                 <!-- Zone 3: Highest scoring rectangle zone -->
                                 <div class="column">
-                                    <div class="zone" data-zone="3" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
+                                    <div class="zone" data-zone="3">
                                         <div class="zone-label">3</div>
                                     </div>
                                 </div>
 
                                 <!-- Zone 2: Middle scoring rectangle zone -->
                                 <div class="column">
-                                    <div class="zone" data-zone="2" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
+                                    <div class="zone" data-zone="2">
                                         <div class="zone-label">2</div>
                                     </div>
                                 </div>
 
                                 <!-- Zone 1: Inner rectangle zone + Circle zones 4 & 5 -->
                                 <div class="column">
-                                    <div class="zone" data-zone="1" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
+                                    <div class="zone" data-zone="1">
                                         <div class="zone-label">1</div>
                                     </div>
 
                                     <!-- Zone 4: Top circle zone -->
-                                    <div class="circle-zone top" data-zone="4" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
+                                    <div class="circle-zone top" data-zone="4">
                                         <div class="zone-label">4</div>
                                     </div>
 
                                     <!-- Zone 5: Bottom circle zone -->
-                                    <div class="circle-zone bottom" data-zone="5" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
+                                    <div class="circle-zone bottom" data-zone="5">
                                         <div class="zone-label">5</div>
                                     </div>
                                 </div>
 
                                 <!-- Zero Zone: Center column with no points -->
                                 <div class="column zero-column">
-                                    <div class="zone" data-zone="0" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
+                                    <div class="zone" data-zone="0">
                                     </div>
                                 </div>
                             </div>
@@ -152,11 +148,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Outer Zone: Area outside the main scoring zones (0 points) -->
-                    <div class="outer-zone zone" id="outerPlayAreaRight" data-zone="outer" onclick="placePok(this, event)" ontouchend="placePok(this, event)" ondrop="handlePokDrop(event, this)" ondragover="handleZoneDragOver(event, this)" ondragleave="handleZoneDragLeave(event, this)" onmousemove="handleZoneMouseMove(event, this)" onmouseleave="handleZoneMouseLeave(event, this)">
-                    </div>
-
                 </div>
 
                 <!-- ============================= -->
@@ -164,7 +155,7 @@
                 <!-- ============================= -->
                 <div class="current-round-score-container">
                     <!-- Player Turn Notification -->
-                    <div id="playerTurnNotification" class="player-turn-notification"></div>
+                    <div id="playerTurnNotification" class="player-turn-notification" onclick="scrollToScoreDisplay(event)"></div>
 
                     <div class="current-round-score" id="currentRoundScoreDisplay">
                         <!-- Score circles showing current round points -->
@@ -193,8 +184,17 @@
     <!-- ============================= -->
     <div id="roundEndModal" class="modal" onclick="continueToNextRound()">
         <div class="modal-content">
+            <div class="modal-round-number" id="roundEndModalRoundNumber">Round 1</div>
             <div class="winner" id="roundEndModalWinner"></div>
-            <div class="round-scores" id="roundEndModalRoundScores"></div>
+            <div class="modal-score-display">
+                <div class="modal-score-circle red-circle">
+                    <span id="roundEndModalRedScore">0</span>
+                </div>
+                <div class="modal-score-difference" id="roundEndModalScoreDiff">0</div>
+                <div class="modal-score-circle blue-circle">
+                    <span id="roundEndModalBlueScore">0</span>
+                </div>
+            </div>
             <div class="total-scores" id="roundEndModalTotalScores"></div>
         </div>
     </div>

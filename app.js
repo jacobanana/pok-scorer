@@ -232,66 +232,128 @@ class RulesEngine {
 
 class ScoringService {
     constructor() {
-        this.boundaryThreshold = UI_CONFIG.BOUNDARY_THRESHOLD_PX;
+        this.boundaryThresholdPercent = 2; // 2% threshold for boundary detection
+
+        // Define zone boundaries as percentages of table dimensions
+        // The table layout: left side has 4 columns with flex: 3(1), 2(1), 1(1), 0(2)
+        // Total flex units = 5, so each unit = 100% / 5 = 20%
+        // Zone 3: 0-20%, Zone 2: 20-40%, Zone 1: 40-60%, Zone 0: 60-100%
+        this.zoneBoundaries = {
+            // Horizontal boundaries (X axis, from left to right)
+            zone3Right: 20,   // Zone 3: 0-20%
+            zone2Right: 40,   // Zone 2: 20-40%
+            zone1Right: 60,   // Zone 1: 40-60%
+            zone0Right: 100,  // Zone 0: 60-100%
+
+            // Circle zones (zone 4 and 5) - positioned within zone 1 area (40-60%)
+            // Zone 1 center is at 50% of table width
+            // Circles are centered horizontally (left:50%, transform:translateX(-50%)) = 50% of table
+            // Circle width is 60% of zone 1 column width = 60% of 20% = 12% of table width
+            // Radius in X dimension = 6% of table width
+            // But with aspect ratio 1.5:1, the same visual circle has radius of 9% in Y dimension
+            circle4Center: { x: 50, y: 19 },  // Top circle: top:10% of table + radius in Y(9%) = 19%
+            circle5Center: { x: 50, y: 81 },  // Bottom circle: bottom:10% = 90%, minus radius in Y(9%) = 81%
+            circleRadius: 6  // Circle radius as percentage of table width (will be scaled by aspect ratio in Y)
+        };
     }
 
-    calculateZoneScore(zone, clickPosition, zoneRect) {
-        const zoneId = zone.dataset.zone || zone.id;
-        const zoneConfig = ZONE_SCORES[zoneId];
+    // Get zone and scoring info from table-relative percentage coordinates
+    getZoneAtPosition(tableXPercent, tableYPercent) {
+        const x = tableXPercent;
+        const y = tableYPercent;
 
-        if (!zoneConfig) {
-            console.warn(`No score configuration found for zone ${zoneId}`);
-            return { points: 0, isHigh: true, boundaryZone: null };
+        // Outer zone is valid (POKs can be placed outside table)
+        if (x < 0 || x > 100 || y < 0 || y > 100) {
+            return { zoneId: 'outer', points: 0, isHigh: true, boundaryZone: null };
         }
 
-        // If no boundary zone, always return full points
-        if (!zoneConfig.boundary) {
-            return { points: zoneConfig.points, isHigh: true, boundaryZone: null };
+        // Check circular zones (4 and 5) within zone 1 area first
+        const circle4Result = this.checkCircularZone(x, y, this.zoneBoundaries.circle4Center, this.zoneBoundaries.circleRadius, '4', '1');
+        if (circle4Result) return circle4Result;
+
+        const circle5Result = this.checkCircularZone(x, y, this.zoneBoundaries.circle5Center, this.zoneBoundaries.circleRadius, '5', '1');
+        if (circle5Result) return circle5Result;
+
+        // Check rectangular zones from left to right
+        if (x < this.zoneBoundaries.zone3Right) {
+            // Zone 3: leftmost zone, boundary with zone 2 on right
+            return this.checkRectangularZone(x, this.zoneBoundaries.zone3Right, '3', '2');
+        } else if (x < this.zoneBoundaries.zone2Right) {
+            // Zone 2: boundary with zone 3 on left, zone 1 on right
+            return this.checkRectangularZone(x, this.zoneBoundaries.zone2Right, '2', '1');
+        } else if (x < this.zoneBoundaries.zone1Right) {
+            // Zone 1: boundary with zone 2 on left, zone 0 on right
+            return this.checkRectangularZone(x, this.zoneBoundaries.zone1Right, '1', '0');
+        } else {
+            // Zone 0: rightmost zone, no boundary on right
+            return this.checkRectangularZone(x, this.zoneBoundaries.zone0Right, '0', null);
         }
+    }
 
-        const isCircularZone = zone.classList.contains('circle-zone');
-        const isNearBoundary = isCircularZone
-            ? this.isNearCircularBoundary(clickPosition, zoneRect)
-            : this.isNearRectangularBoundary(clickPosition, zoneRect);
+    checkCircularZone(x, y, center, radius, zoneId, boundaryZone) {
+        // Calculate distance accounting for table aspect ratio (1.5:1)
+        // The table is 1.5x wider than tall, so Y percentages represent smaller physical distances
+        // To make a perfect circle, we need to scale Y by the aspect ratio
+        const aspectRatio = 1.5;
+        const dx = x - center.x;
+        const dy = (y - center.y) / aspectRatio; // Scale Y to match X proportions
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // If near boundary, get the boundary zone's points
-        if (isNearBoundary) {
-            const boundaryConfig = ZONE_SCORES[zoneConfig.boundary];
+        if (distance <= radius) {
+            const config = ZONE_SCORES[zoneId];
+            // For circles, boundary is near the outer edge (circumference)
+            // Check if distance from center is within the boundary threshold from the radius
+            // Example: radius=6%, threshold=2% -> boundary when distance >= 4% (i.e., 6%-2%)
+            const boundaryStartDistance = radius - this.boundaryThresholdPercent;
+            const isNearBoundary = distance >= boundaryStartDistance;
+
+            if (isNearBoundary && boundaryZone) {
+                const boundaryConfig = ZONE_SCORES[boundaryZone];
+                return {
+                    zoneId: zoneId,
+                    points: boundaryConfig.points,
+                    isHigh: false,
+                    boundaryZone: boundaryZone
+                };
+            }
+
             return {
-                points: boundaryConfig ? boundaryConfig.points : 0,
-                isHigh: false,
-                boundaryZone: zoneConfig.boundary
+                zoneId: zoneId,
+                points: config.points,
+                isHigh: true,
+                boundaryZone: null
             };
         }
 
-        // Otherwise, return full points
+        return null;
+    }
+
+    checkRectangularZone(x, rightBoundary, zoneId, boundaryZone) {
+        const config = ZONE_SCORES[zoneId];
+        // For rectangles, boundary is near the right edge (intersection with next zone)
+        const isNearBoundary = boundaryZone && x >= rightBoundary - this.boundaryThresholdPercent;
+
+        if (isNearBoundary) {
+            const boundaryConfig = ZONE_SCORES[boundaryZone];
+            return {
+                zoneId: zoneId,
+                points: boundaryConfig.points,
+                isHigh: false,
+                boundaryZone: boundaryZone
+            };
+        }
+
         return {
-            points: zoneConfig.points,
+            zoneId: zoneId,
+            points: config.points,
             isHigh: true,
             boundaryZone: null
         };
     }
 
-    isNearCircularBoundary(clickPosition, zoneRect) {
-        const centerX = zoneRect.width / 2;
-        const centerY = zoneRect.height / 2;
-        const radius = zoneRect.width / 2;
-
-        const dx = clickPosition.x - centerX;
-        const dy = clickPosition.y - centerY;
-        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
-
-        return distanceFromCenter >= radius - this.boundaryThreshold;
-    }
-
-    isNearRectangularBoundary(clickPosition, zoneRect) {
-        return clickPosition.x >= zoneRect.width - this.boundaryThreshold;
-    }
-
-    checkIfInBoundary(clickPosition, zoneRect, isCircularZone) {
-        return isCircularZone
-            ? this.isNearCircularBoundary(clickPosition, zoneRect)
-            : this.isNearRectangularBoundary(clickPosition, zoneRect);
+    // Get the DOM element for a given zone ID (for highlighting)
+    getZoneElement(zoneId) {
+        return document.querySelector(`[data-zone="${zoneId}"]`) || document.getElementById(zoneId);
     }
 }
 
@@ -299,17 +361,20 @@ class PokService {
     constructor() {
         this.pokIdCounter = 0;
         this.pokElements = new Map();
+        this.tableElement = null; // Reference to the table element
+    }
+
+    setTableElement(element) {
+        this.tableElement = element;
     }
 
     generatePokId() {
         return `pok-${this.pokIdCounter++}`;
     }
 
-    createPok(playerId, points, position, zoneId, isHighScore, zoneRect) {
+    createPok(playerId, points, tableXPercent, tableYPercent, zoneId, isHighScore) {
         const pokId = this.generatePokId();
-        const xPercent = zoneRect ? (position.x / zoneRect.width) * 100 : UI_CONFIG.DEFAULT_POSITION_PERCENT;
-        const yPercent = zoneRect ? (position.y / zoneRect.height) * 100 : UI_CONFIG.DEFAULT_POSITION_PERCENT;
-        const pok = new Pok(pokId, playerId, points, position.x, position.y, zoneId, isHighScore, xPercent, yPercent);
+        const pok = new Pok(pokId, playerId, points, tableXPercent, tableYPercent, zoneId, isHighScore);
         return pok;
     }
 
@@ -320,14 +385,18 @@ class PokService {
             el.classList.add('low-score');
         }
         el.textContent = pok.points;
-        el.style.left = `${pok.position.xPercent}%`;
-        el.style.top = `${pok.position.yPercent}%`;
+        el.style.left = `${pok.position.tableXPercent}%`;
+        el.style.top = `${pok.position.tableYPercent}%`;
         el.style.transform = 'translate(-50%, -50%)';
         return el;
     }
 
-    attachPokToZone(pokElement, zoneElement) {
-        zoneElement.appendChild(pokElement);
+    attachPokToTable(pokElement) {
+        if (!this.tableElement) {
+            console.error('Table element not set in PokService');
+            return;
+        }
+        this.tableElement.appendChild(pokElement);
     }
 
     removePokElement(pokId) {
@@ -346,8 +415,14 @@ class PokService {
         return this.pokElements.get(pokId);
     }
 
-    calculatePositionFromEvent(zone, event) {
-        const rect = zone.getBoundingClientRect();
+    // Convert event (mouse or touch) to table-relative percentage coordinates
+    calculateTablePositionFromEvent(event) {
+        if (!this.tableElement) {
+            console.error('Table element not set in PokService');
+            return { tableXPercent: 50, tableYPercent: 50 };
+        }
+
+        const rect = this.tableElement.getBoundingClientRect();
 
         // Get client coordinates - handle both mouse and touch events
         const clientX = event.clientX !== undefined ? event.clientX : (event.touches?.[0]?.clientX || event.changedTouches?.[0]?.clientX);
@@ -365,12 +440,11 @@ class PokService {
             x = rect.width - x;
         }
 
+        // Allow coordinates outside the table (0-100% range)
+        // This enables placing POKs in the "outer" zone
         return {
-            x,
-            y,
-            xPercent: (x / rect.width) * 100,
-            yPercent: (y / rect.height) * 100,
-            rect
+            tableXPercent: (x / rect.width) * 100,
+            tableYPercent: (y / rect.height) * 100
         };
     }
 
@@ -397,7 +471,6 @@ class PokService {
         let touchStartX, touchStartY, initialLeft, initialTop;
         let isDragging = false;
         let hasMoved = false;
-        let currentZone = null;
 
         pokElement.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -441,16 +514,9 @@ class PokService {
             pokElement.style.left = `${initialLeft + deltaX}px`;
             pokElement.style.top = `${initialTop + deltaY}px`;
 
-            // Find the zone under the touch point
-            const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-            const zone = elementAtPoint?.closest('.zone');
-
-            if (zone && zone !== currentZone) {
-                currentZone = zone;
-                // Trigger boundary highlighting
-                if (callbacks.onTouchMove) {
-                    callbacks.onTouchMove(zone, touch);
-                }
+            // Trigger boundary highlighting (no longer need to track zone)
+            if (callbacks.onTouchMove) {
+                callbacks.onTouchMove(touch);
             }
         }, { passive: false });
 
@@ -461,8 +527,6 @@ class PokService {
             isDragging = false;
 
             const touch = e.changedTouches[0];
-            const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-            const targetZone = elementAtPoint?.closest('.zone');
 
             pokElement.classList.remove('dragging');
             pokElement.style.position = '';
@@ -476,11 +540,10 @@ class PokService {
             }
 
             // Only drop if we actually moved the POK
-            if (hasMoved && targetZone && callbacks.onTouchDrop) {
-                callbacks.onTouchDrop(targetZone, touch);
+            if (hasMoved && callbacks.onTouchDrop) {
+                callbacks.onTouchDrop(touch);
             }
 
-            currentZone = null;
             hasMoved = false;
         }, { passive: false });
     }
@@ -539,10 +602,8 @@ class PersistenceService {
                     playerId: pok.playerId,
                     points: pok.points,
                     position: {
-                        x: pok.position.x,
-                        y: pok.position.y,
-                        xPercent: pok.position.xPercent,
-                        yPercent: pok.position.yPercent
+                        tableXPercent: pok.position.tableXPercent,
+                        tableYPercent: pok.position.tableYPercent
                     },
                     zoneId: pok.zoneId,
                     isHighScore: pok.isHighScore
@@ -691,9 +752,29 @@ class UIService {
         }
     }
 
-    showRoundModal(winnerText, redScore, blueScore, redTotal, blueTotal, bgClass) {
+    showRoundModal(winnerText, redScore, blueScore, redTotal, blueTotal, bgClass, roundNumber) {
+        // Update round number
+        const modalRoundNumber = document.getElementById('roundEndModalRoundNumber');
+        if (modalRoundNumber) {
+            modalRoundNumber.textContent = `Round ${roundNumber + 1}`;
+        }
+
+        // Update winner text
         this.domElements.modalWinner.textContent = winnerText;
-        this.domElements.modalRoundScores.textContent = `Round: Red ${redScore} - Blue ${blueScore}`;
+
+        // Update score circles
+        const modalRedScore = document.getElementById('roundEndModalRedScore');
+        const modalBlueScore = document.getElementById('roundEndModalBlueScore');
+        const modalScoreDiff = document.getElementById('roundEndModalScoreDiff');
+
+        if (modalRedScore) modalRedScore.textContent = redScore;
+        if (modalBlueScore) modalBlueScore.textContent = blueScore;
+        if (modalScoreDiff) {
+            const diff = Math.abs(redScore - blueScore);
+            modalScoreDiff.textContent = diff > 0 ? '+' + diff : '0';
+        }
+
+        // Update total scores
         this.domElements.modalTotalScores.textContent = `Total: Red ${redTotal} - Blue ${blueTotal}`;
 
         this.domElements.roundModal.classList.remove(
@@ -875,15 +956,10 @@ class UIService {
 
         // Display historical POKs (starting invisible)
         round.poksPlaced.forEach(pok => {
-            const zoneElement = document.querySelector(`[data-zone="${pok.zoneId}"]`) ||
-                               document.getElementById(pok.zoneId);
-
-            if (zoneElement) {
-                const pokElement = pokService.createPokElement(pok);
-                pokElement.classList.add('fade-ready');
-                pokElement.style.pointerEvents = 'none'; // Disable interactions for historical POKs
-                pokService.attachPokToZone(pokElement, zoneElement);
-            }
+            const pokElement = pokService.createPokElement(pok);
+            pokElement.classList.add('fade-ready');
+            pokElement.style.pointerEvents = 'none'; // Disable interactions for historical POKs
+            pokService.attachPokToTable(pokElement);
         });
 
         // Trigger fade-in animation after the restore delay
@@ -916,25 +992,21 @@ class Player {
 }
 
 class Pok {
-    constructor(id, playerId, points, x, y, zoneId, isHighScore, xPercent, yPercent) {
+    constructor(id, playerId, points, tableXPercent, tableYPercent, zoneId, isHighScore) {
         this.id = id;
         this.playerId = playerId;
         this.points = points;
         this.position = {
-            x,
-            y,
-            xPercent: xPercent !== undefined ? xPercent : UI_CONFIG.DEFAULT_POSITION_PERCENT,
-            yPercent: yPercent !== undefined ? yPercent : UI_CONFIG.DEFAULT_POSITION_PERCENT
+            tableXPercent: tableXPercent !== undefined ? tableXPercent : UI_CONFIG.DEFAULT_POSITION_PERCENT,
+            tableYPercent: tableYPercent !== undefined ? tableYPercent : UI_CONFIG.DEFAULT_POSITION_PERCENT
         };
         this.zoneId = zoneId;
         this.isHighScore = isHighScore;
     }
 
-    updatePosition(x, y, xPercent, yPercent) {
-        this.position.x = x;
-        this.position.y = y;
-        if (xPercent !== undefined) this.position.xPercent = xPercent;
-        if (yPercent !== undefined) this.position.yPercent = yPercent;
+    updatePosition(tableXPercent, tableYPercent) {
+        this.position.tableXPercent = tableXPercent;
+        this.position.tableYPercent = tableYPercent;
     }
 
     updateScore(points, isHighScore) {
@@ -1363,6 +1435,13 @@ class GameOrchestrator {
     init() {
         this.services.ui.init();
         this.uiState.initDOMCache();
+
+        // Set the table element reference for POK positioning
+        const tableElement = document.querySelector('.table');
+        if (tableElement) {
+            this.services.pok.setTableElement(tableElement);
+        }
+
         this.loadSavedGame();
         this.setupHistoryHoverHandlers();
     }
@@ -1501,16 +1580,22 @@ class GameOrchestrator {
 
             // Restore poks
             round.poksPlaced = roundData.poksPlaced.map(pokData => {
+                // Handle both old format (x, y, xPercent, yPercent) and new format (tableXPercent, tableYPercent)
+                const tableXPercent = pokData.position.tableXPercent !== undefined
+                    ? pokData.position.tableXPercent
+                    : pokData.position.xPercent;
+                const tableYPercent = pokData.position.tableYPercent !== undefined
+                    ? pokData.position.tableYPercent
+                    : pokData.position.yPercent;
+
                 return new Pok(
                     pokData.id,
                     pokData.playerId,
                     pokData.points,
-                    pokData.position.x,
-                    pokData.position.y,
+                    tableXPercent,
+                    tableYPercent,
                     pokData.zoneId,
-                    pokData.isHighScore,
-                    pokData.position.xPercent,
-                    pokData.position.yPercent
+                    pokData.isHighScore
                 );
             });
 
@@ -1556,25 +1641,20 @@ class GameOrchestrator {
 
     restorePokElements(round, fadeIn = false) {
         round.poksPlaced.forEach(pok => {
-            const zoneElement = document.querySelector(`[data-zone="${pok.zoneId}"]`) ||
-                               document.getElementById(pok.zoneId);
+            const pokElement = this.services.pok.createPokElement(pok);
 
-            if (zoneElement) {
-                const pokElement = this.services.pok.createPokElement(pok);
+            // If fadeIn is requested, start invisible
+            if (fadeIn) {
+                pokElement.classList.add('fade-ready');
+            }
 
-                // If fadeIn is requested, start invisible
-                if (fadeIn) {
-                    pokElement.classList.add('fade-ready');
-                }
+            this.services.pok.attachPokToTable(pokElement);
+            this.services.pok.setPokElement(pok.id, pokElement);
+            this.setupPokHandlers(pokElement, pok.id);
 
-                this.services.pok.attachPokToZone(pokElement, zoneElement);
-                this.services.pok.setPokElement(pok.id, pokElement);
-                this.setupPokHandlers(pokElement, pok.id);
-
-                // Highlight last placed pok
-                if (pok.id === round.lastPlacedPokId) {
-                    this.services.pok.highlightAsLastPlaced(pokElement);
-                }
+            // Highlight last placed pok
+            if (pok.id === round.lastPlacedPokId) {
+                this.services.pok.highlightAsLastPlaced(pokElement);
             }
         });
 
@@ -1627,7 +1707,7 @@ class GameOrchestrator {
         this.saveGameState();
     }
 
-    placePok(zone, clickPosition) {
+    placePok(event) {
         const round = this.game.getCurrentRound();
         if (!round) return;
 
@@ -1640,17 +1720,19 @@ class GameOrchestrator {
             return;
         }
 
-        const positionData = this.services.pok.calculatePositionFromEvent(zone, clickPosition);
-        const scoreResult = this.services.scoring.calculateZoneScore(zone, positionData, positionData.rect);
-        const zoneId = zone.dataset.zone || zone.id;
+        // Get table-relative position from event
+        const position = this.services.pok.calculateTablePositionFromEvent(event);
+
+        // Determine zone and score from position
+        const scoreResult = this.services.scoring.getZoneAtPosition(position.tableXPercent, position.tableYPercent);
 
         const pok = this.services.pok.createPok(
             round.currentPlayerId,
             scoreResult.points,
-            positionData,
-            zoneId,
-            scoreResult.isHigh,
-            positionData.rect
+            position.tableXPercent,
+            position.tableYPercent,
+            scoreResult.zoneId,
+            scoreResult.isHigh
         );
 
         round.addPok(pok);
@@ -1659,7 +1741,7 @@ class GameOrchestrator {
             pokId: pok.id,
             playerId: pok.playerId,
             zoneId: pok.zoneId,
-            position: { x: positionData.x, y: positionData.y },
+            position: { tableXPercent: position.tableXPercent, tableYPercent: position.tableYPercent },
             points: pok.points,
             isHighScore: pok.isHighScore,
             roundNumber: round.roundNumber,
@@ -1668,7 +1750,7 @@ class GameOrchestrator {
         }));
 
         const pokElement = this.services.pok.createPokElement(pok);
-        this.services.pok.attachPokToZone(pokElement, zone);
+        this.services.pok.attachPokToTable(pokElement);
         this.services.pok.setPokElement(pok.id, pokElement);
         this.setupPokHandlers(pokElement, pok.id);
         this.services.pok.highlightAsLastPlaced(pokElement);
@@ -1684,7 +1766,7 @@ class GameOrchestrator {
         this.switchPlayer();
     }
 
-    movePok(pokId, targetZone, dropEvent) {
+    movePok(pokId, dropEvent) {
         const round = this.game.getCurrentRound();
         if (!round) return;
 
@@ -1694,13 +1776,14 @@ class GameOrchestrator {
 
         this.uiState.clearAutoEndTimer();
 
-        // Calculate new position and score
-        const positionData = this.services.pok.calculatePositionFromEvent(targetZone, dropEvent);
-        const scoreResult = this.services.scoring.calculateZoneScore(targetZone, positionData, positionData.rect);
-        const zoneId = targetZone.dataset.zone || targetZone.id;
+        // Get table-relative position from event
+        const position = this.services.pok.calculateTablePositionFromEvent(dropEvent);
+
+        // Determine zone and score from position
+        const scoreResult = this.services.scoring.getZoneAtPosition(position.tableXPercent, position.tableYPercent);
 
         // Store old values for event logging
-        const oldPosition = { x: pok.position.x, y: pok.position.y };
+        const oldPosition = { tableXPercent: pok.position.tableXPercent, tableYPercent: pok.position.tableYPercent };
         const oldPoints = pok.points;
         const oldZoneId = pok.zoneId;
 
@@ -1709,19 +1792,14 @@ class GameOrchestrator {
 
         // Update POK data
         console.log(`Moving pok ${pokId}: old points=${oldPoints}, new points=${scoreResult.points}`);
-        pok.updatePosition(positionData.x, positionData.y, positionData.xPercent, positionData.yPercent);
+        pok.updatePosition(position.tableXPercent, position.tableYPercent);
         pok.updateScore(scoreResult.points, scoreResult.isHigh);
-        pok.updateZone(zoneId);
+        pok.updateZone(scoreResult.zoneId);
         console.log(`After update, pok.points=${pok.points}`);
 
-        // Move POK element to new zone
-        if (pokElement.parentElement !== targetZone) {
-            targetZone.appendChild(pokElement);
-        }
-
-        // Update POK element visuals
-        pokElement.style.left = `${positionData.xPercent}%`;
-        pokElement.style.top = `${positionData.yPercent}%`;
+        // Update POK element visuals (position is already on table, just update style)
+        pokElement.style.left = `${position.tableXPercent}%`;
+        pokElement.style.top = `${position.tableYPercent}%`;
         pokElement.style.transform = 'translate(-50%, -50%)';
         pokElement.textContent = scoreResult.points;
 
@@ -1740,9 +1818,9 @@ class GameOrchestrator {
             pokId: pok.id,
             playerId: pok.playerId,
             fromZone: oldZoneId,
-            toZone: zoneId,
+            toZone: scoreResult.zoneId,
             oldPosition: oldPosition,
-            newPosition: { x: positionData.x, y: positionData.y },
+            newPosition: { tableXPercent: position.tableXPercent, tableYPercent: position.tableYPercent },
             oldPoints: oldPoints,
             newPoints: scoreResult.points,
             roundNumber: round.roundNumber
@@ -1805,56 +1883,52 @@ class GameOrchestrator {
         this.services.ui.enableZoneInteractions();
     }
 
-    handleZoneDragOver(zone, event) {
+    handleTableDragOver(event) {
         event.preventDefault();
 
         if (!this.uiState.draggedPokId) return;
 
-        // Calculate position and check if in boundary
-        const positionData = this.services.pok.calculatePositionFromEvent(zone, event);
-        const scoreResult = this.services.scoring.calculateZoneScore(zone, positionData, positionData.rect);
+        // Get table-relative position
+        const position = this.services.pok.calculateTablePositionFromEvent(event);
+
+        // Get zone and score from position
+        const scoreResult = this.services.scoring.getZoneAtPosition(position.tableXPercent, position.tableYPercent);
 
         // Clear all highlights first
         this.services.ui.clearAllZoneBoundaryHighlights();
 
         // Highlight the boundary zone if position is near boundary
         if (scoreResult.boundaryZone) {
-            const boundaryZoneElement = document.querySelector(`[data-zone="${scoreResult.boundaryZone}"]`);
+            const boundaryZoneElement = this.services.scoring.getZoneElement(scoreResult.boundaryZone);
             if (boundaryZoneElement) {
                 this.services.ui.highlightZoneBoundary(boundaryZoneElement);
             }
         }
     }
 
-    handleZoneDragLeave(zone, event) {
-        // Only clear if we're actually leaving the zone (not entering a child element)
-        if (event.relatedTarget && zone.contains(event.relatedTarget)) {
-            return;
-        }
-        this.services.ui.clearZoneBoundaryHighlight(zone);
-    }
-
-    handleZoneMouseMove(zone, event) {
+    handleTableMouseMove(event) {
         // Don't show hover highlight if we're dragging a pok
         if (this.uiState.draggedPokId) return;
 
-        // Calculate position and check if in boundary
-        const positionData = this.services.pok.calculatePositionFromEvent(zone, event);
-        const scoreResult = this.services.scoring.calculateZoneScore(zone, positionData, positionData.rect);
+        // Get table-relative position
+        const position = this.services.pok.calculateTablePositionFromEvent(event);
+
+        // Get zone and score from position
+        const scoreResult = this.services.scoring.getZoneAtPosition(position.tableXPercent, position.tableYPercent);
 
         // Clear all highlights first
         this.services.ui.clearAllZoneBoundaryHighlights();
 
         // Highlight the boundary zone if position is near boundary
         if (scoreResult.boundaryZone) {
-            const boundaryZoneElement = document.querySelector(`[data-zone="${scoreResult.boundaryZone}"]`);
+            const boundaryZoneElement = this.services.scoring.getZoneElement(scoreResult.boundaryZone);
             if (boundaryZoneElement) {
                 this.services.ui.highlightZoneBoundary(boundaryZoneElement);
             }
         }
     }
 
-    handleZoneMouseLeave(zone, event) {
+    handleTableMouseLeave() {
         // Don't clear if we're dragging a pok (let dragover handle it)
         if (this.uiState.draggedPokId) return;
 
@@ -1981,7 +2055,8 @@ class GameOrchestrator {
             round.scores.blue,
             this.game.players.red.totalScore,
             this.game.players.blue.totalScore,
-            bgClass
+            bgClass,
+            round.roundNumber
         );
 
         this.services.ui.updateRoundsHistory(this.game);
@@ -2104,15 +2179,15 @@ class GameOrchestrator {
                     this.uiState.isTouchDragging = false;
                 }, UI_CONFIG.TOUCH_DRAG_COOLDOWN_MS);
             },
-            onTouchMove: (zone, touch) => {
+            onTouchMove: (touch) => {
                 // Create a synthetic event for boundary highlighting
                 const syntheticEvent = {
                     clientX: touch.clientX,
                     clientY: touch.clientY
                 };
-                this.handleZoneDragOver(zone, syntheticEvent);
+                this.handleTableDragOver(syntheticEvent);
             },
-            onTouchDrop: (targetZone, touch) => {
+            onTouchDrop: (touch) => {
                 // Create a synthetic event for the drop with proper touch structure
                 const syntheticEvent = {
                     clientX: touch.clientX,
@@ -2121,7 +2196,7 @@ class GameOrchestrator {
                     preventDefault: () => {},
                     stopPropagation: () => {}
                 };
-                this.movePok(pokId, targetZone, syntheticEvent);
+                this.movePok(pokId, syntheticEvent);
                 this.services.ui.clearAllZoneBoundaryHighlights();
             }
         });
@@ -2152,7 +2227,7 @@ function startGame(startingPlayerId) {
     orchestrator.startGame(startingPlayerId);
 }
 
-function placePok(zone, event) {
+function placePok(event) {
     // Prevent default to avoid double-firing on touch devices
     if (event.type === 'touchend') {
         event.preventDefault();
@@ -2161,32 +2236,28 @@ function placePok(zone, event) {
             return;
         }
     }
-    orchestrator.placePok(zone, event);
+    orchestrator.placePok(event);
 }
 
-function handlePokDrop(event, targetZone) {
+function handleTableDrop(event) {
     event.preventDefault();
     event.stopPropagation();
 
     if (!orchestrator.uiState.draggedPokId) return;
 
-    orchestrator.movePok(orchestrator.uiState.draggedPokId, targetZone, event);
+    orchestrator.movePok(orchestrator.uiState.draggedPokId, event);
 }
 
-function handleZoneDragOver(event, zone) {
-    orchestrator.handleZoneDragOver(zone, event);
+function handleTableDragOver(event) {
+    orchestrator.handleTableDragOver(event);
 }
 
-function handleZoneDragLeave(event, zone) {
-    orchestrator.handleZoneDragLeave(zone, event);
+function handleTableMouseMove(event) {
+    orchestrator.handleTableMouseMove(event);
 }
 
-function handleZoneMouseMove(event, zone) {
-    orchestrator.handleZoneMouseMove(zone, event);
-}
-
-function handleZoneMouseLeave(event, zone) {
-    orchestrator.handleZoneMouseLeave(zone, event);
+function handleTableMouseLeave(event) {
+    orchestrator.handleTableMouseLeave(event);
 }
 
 function continueToNextRound() {
@@ -2203,5 +2274,15 @@ function continueLastGame() {
 
 function flipTable() {
     orchestrator.flipTable();
+}
+
+function scrollToScoreDisplay(event) {
+    // Only respond if the round-complete notification is showing
+    const notification = event.target;
+    if (notification.classList.contains('round-complete')) {
+        // Stop the countdown and immediately end the round
+        orchestrator.stopRoundEndCountdown();
+        orchestrator.endRound();
+    }
 }
 

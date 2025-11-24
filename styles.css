@@ -239,7 +239,7 @@ body.round-ending .pok {
 /* Game Board Container */
 .table-container {
     background: #c9985a;
-    padding: 20px;
+    padding: 40px;
     border-radius: 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     display: flex;
@@ -251,6 +251,7 @@ body.round-ending .pok {
     width: 75%;
     margin: auto;
     transition: transform 0.3s ease;
+    cursor: pointer;
 }
 
 /* Flipped Table */
@@ -322,6 +323,7 @@ body.round-ending .pok {
     width: 92%;
     max-width: 800px;
     z-index: 1;
+    cursor: pointer;
 }
 
 .table-inner {
@@ -467,14 +469,15 @@ body.round-ending .pok {
 
 .pok {
     position: absolute;
-    width: 30px;
-    height: 30px;
+    /* Use viewport-based sizing that scales with the table */
+    width: clamp(20px, 3vw, 35px);
+    height: clamp(20px, 3vw, 35px);
     border-radius: 50%;
     border: 2px solid #333;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: clamp(8px, 1.2vw, 12px);
     font-weight: bold;
     color: white;
     z-index: 100;
@@ -766,6 +769,15 @@ body.round-ending .pok {
     padding: 40px;
 }
 
+.modal-round-number {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
 .modal-content .winner {
     font-size: 96px;
     font-weight: bold;
@@ -773,10 +785,49 @@ body.round-ending .pok {
     color: white;
 }
 
-.modal-content .round-scores {
-    font-size: 48px;
-    margin: 30px 0;
+/* Modal Score Display - reusing score-circle styles */
+.modal-score-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    margin: 40px 0;
+}
+
+.modal-score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    font-weight: bold;
     color: white;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.modal-score-circle.red-circle {
+    background-color: #d32f2f;
+}
+
+.modal-score-circle.blue-circle {
+    background-color: #1976d2;
+}
+
+.modal-score-difference {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: bold;
+    color: white;
+    background-color: rgba(255, 255, 255, 0.35);
+    border: 4px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .modal-content .total-scores {
@@ -832,6 +883,11 @@ h2 {
     transition: opacity 0.3s ease-in;
 }
 
+.player-turn-notification.round-complete {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
 .player-turn-notification.red-player {
     background: #d32f2f;
 }
@@ -842,7 +898,7 @@ h2 {
 
 .player-turn-notification.round-complete {
     background: #f57c00;
-    font-size: 36px;
+    font-size: 32px;
 }
 
 .player-turn-notification.show {
