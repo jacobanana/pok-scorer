@@ -25,6 +25,7 @@ export class PokScorerApp {
 
     init() {
         this.ui.init();
+        this.setupDOMEventListeners();
         this.setupEventHandlers();
 
         // Set up subscriptions BEFORE loading saved game
@@ -59,99 +60,130 @@ export class PokScorerApp {
         }
     }
 
-    setupEventHandlers() {
-        // Start game
-        window.startGame = (playerId) => {
-            this.commands.startGame(playerId);
-        };
-
-        // Continue game
-        window.continueLastGame = () => {
-            this.ui.hideStartSelector();
-            const round = this.gameState.getCurrentRound();
-            if (round) {
-                this.ui.updateBodyClass(round.currentPlayerId);
-            }
-        };
-
-        // Save game to file
-        window.saveLatestGame = () => {
-            this.eventStore.exportToFile();
-        };
-
-        // Import game
-        window.importMatch = () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'application/json';
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    try {
-                        await this.eventStore.importFromFile(file);
-                        this.ui.hideStartSelector();
-                        this.ui.updateScores();
-                        this.ui.updateRoundsHistory();
-                    } catch (error) {
-                        alert('Failed to import game: ' + error.message);
-                    }
+    setupDOMEventListeners() {
+        // Buttons
+        const continueGameButton = document.getElementById('continueGameButton');
+        if (continueGameButton) {
+            continueGameButton.addEventListener('click', () => {
+                this.ui.hideStartSelector();
+                const round = this.gameState.getCurrentRound();
+                if (round) {
+                    this.ui.updateBodyClass(round.currentPlayerId);
                 }
-            };
-            input.click();
-        };
+            });
+        }
 
-        // New game
-        window.confirmNewGame = () => {
-            if (confirm('Start a new game? Current progress will be lost.')) {
-                this.commands.resetGame();
-            }
-        };
+        const saveLatestGameButton = document.getElementById('saveLatestGameButton');
+        if (saveLatestGameButton) {
+            saveLatestGameButton.addEventListener('click', () => {
+                this.eventStore.exportToFile();
+            });
+        }
 
-        // Flip table
-        window.flipTable = () => {
-            const state = this.gameState.getState();
-            this.commands.flipTable(!state.isFlipped);
-        };
+        const importMatchButton = document.getElementById('importMatchButton');
+        if (importMatchButton) {
+            importMatchButton.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            await this.eventStore.importFromFile(file);
+                            this.ui.hideStartSelector();
+                            this.ui.updateScores();
+                            this.ui.updateRoundsHistory();
+                        } catch (error) {
+                            alert('Failed to import game: ' + error.message);
+                        }
+                    }
+                };
+                input.click();
+            });
+        }
 
-        // Export game
-        window.exportMatch = () => {
-            this.eventStore.exportToFile();
-        };
+        const flipTableButton = document.getElementById('flipTableButton');
+        if (flipTableButton) {
+            flipTableButton.addEventListener('click', () => {
+                const state = this.gameState.getState();
+                this.commands.flipTable(!state.isFlipped);
+            });
+        }
 
-        // Place POK
-        window.placePok = (event) => {
-            if (this.isDragging) return;
+        const exportMatchButton = document.getElementById('exportMatchButton');
+        if (exportMatchButton) {
+            exportMatchButton.addEventListener('click', () => {
+                this.eventStore.exportToFile();
+            });
+        }
 
-            // Don't place POK if we clicked on an existing POK element
-            if (event.target.classList.contains('pok')) {
-                return;
-            }
+        const newGameButton = document.getElementById('newGameButton');
+        if (newGameButton) {
+            newGameButton.addEventListener('click', () => {
+                if (confirm('Start a new game? Current progress will be lost.')) {
+                    this.commands.resetGame();
+                }
+            });
+        }
 
-            const round = this.gameState.getCurrentRound();
-            if (!round || round.isComplete) return;
+        // Start game buttons
+        const startRedButton = document.querySelector('.start-half.red');
+        if (startRedButton) {
+            startRedButton.addEventListener('click', () => {
+                this.commands.startGame('red');
+            });
+        }
 
-            const pos = this.calculateTablePosition(event);
-            const nextPlayer = this.gameState.getNextPlayer();
+        const startBlueButton = document.querySelector('.start-half.blue');
+        if (startBlueButton) {
+            startBlueButton.addEventListener('click', () => {
+                this.commands.startGame('blue');
+            });
+        }
 
-            try {
-                this.commands.placePok(nextPlayer, pos.x, pos.y);
-            } catch (error) {
-                console.log(error.message);
-            }
-        };
+        // Modal
+        const roundEndModal = document.getElementById('roundEndModal');
+        if (roundEndModal) {
+            roundEndModal.addEventListener('click', () => {
+                this.clearAutoEndTimer();
 
-        // Continue to next round
-        window.continueToNextRound = () => {
-            this.clearAutoEndTimer();
+                // Check if game is over
+                if (this.gameState.hasWinner()) {
+                    this.commands.resetGame();
+                } else {
+                    this.commands.startNextRound();
+                }
+            });
+        }
 
-            // Check if game is over
-            if (this.gameState.hasWinner()) {
-                this.commands.resetGame();
-            } else {
-                this.commands.startNextRound();
-            }
-        };
+        // Game board - place POK
+        const tableContainer = document.getElementById('gameBoardContainer');
+        if (tableContainer) {
+            tableContainer.addEventListener('click', (event) => {
+                if (this.isDragging) return;
 
+                // Don't place POK if we clicked on an existing POK element
+                if (event.target.classList.contains('pok')) {
+                    return;
+                }
+
+                const round = this.gameState.getCurrentRound();
+                if (!round || round.isComplete) return;
+
+                const pos = this.calculateTablePosition(event);
+                const nextPlayer = this.gameState.getNextPlayer();
+
+                try {
+                    this.commands.placePok(nextPlayer, pos.x, pos.y);
+                } catch (error) {
+                    console.log(error.message);
+                }
+            });
+        }
+    }
+
+    setupEventHandlers() {
         // Drag and drop
         this.setupDragAndDrop();
 
