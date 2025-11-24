@@ -18,6 +18,7 @@ const CONFIG = {
     TURN_NOTIFICATION_MS: 1000,
     BOUNDARY_THRESHOLD_PERCENT: 2,
     TABLE_ASPECT_RATIO: 1.5,
+    ENABLE_LOGGING: true, // Set to false to disable event logging
 
     ZONE_BOUNDARIES: {
         // Horizontal (X-axis percentages)
@@ -146,7 +147,10 @@ class EventStore {
         this.events = [];
         this.version = 0;
         this.subscribers = new Map(); // eventType → Set<handler>
-        this.enableLogging = true; // Set to false to disable logging
+    }
+
+    get enableLogging() {
+        return CONFIG.ENABLE_LOGGING;
     }
 
     append(event) {
@@ -190,12 +194,12 @@ class EventStore {
     }
 
     publish(event) {
-        // Specific handlers
-        const handlers = this.subscribers.get(event.type) || new Set();
-        // Wildcard handlers
+        // Wildcard handlers (run first - typically projections that build state)
         const wildcardHandlers = this.subscribers.get('*') || new Set();
+        // Specific handlers (run after - typically UI that reads state)
+        const handlers = this.subscribers.get(event.type) || new Set();
 
-        const allHandlers = [...handlers, ...wildcardHandlers];
+        const allHandlers = [...wildcardHandlers, ...handlers];
 
         if (this.enableLogging && allHandlers.length > 0) {
             console.log(`%c[Publish] ${event.type} → ${allHandlers.length} handler(s)`,
@@ -735,102 +739,73 @@ class UIProjection {
     }
 
     onPokPlaced(event) {
-        // Need to wait for game state projection to process first
-        // Use setTimeout to defer to next tick
-        setTimeout(() => {
-            const pok = this.findPok(event.data.pokId);
-            if (!pok) {
-                console.error('POK not found in game state:', event.data.pokId);
-                return;
-            }
+        const pok = this.findPok(event.data.pokId);
+        if (!pok) {
+            console.error('POK not found in game state:', event.data.pokId);
+            return;
+        }
 
-            // Create DOM element
-            const pokEl = this.createPokElement(pok);
-            this.pokElements.set(pok.id, pokEl);
-            this.tableElement.appendChild(pokEl);
+        // Create DOM element
+        const pokEl = this.createPokElement(pok);
+        this.pokElements.set(pok.id, pokEl);
+        this.tableElement.appendChild(pokEl);
 
-            // Highlight as last placed
-            this.clearLastPlacedHighlight();
-            pokEl.classList.add('last-placed');
+        // Highlight as last placed
+        this.clearLastPlacedHighlight();
+        pokEl.classList.add('last-placed');
 
-            // Update UI
-            this.updateScores();
-            this.updateRoundsHistory(); // Update history to show current round progress
-
-            // Switch player and show notification
-            const nextPlayer = this.gameState.getNextPlayer();
-            if (nextPlayer) {
-                this.showTurnNotification(nextPlayer);
-            }
-
-            // Update current player in round
-            const round = this.gameState.getCurrentRound();
-            if (round) {
-                round.currentPlayerId = nextPlayer;
-                this.updateBodyClass(nextPlayer);
-            }
-        }, 0);
+        // Update UI
+        this.updateScores();
+        this.updateRoundsHistory();
+        this.updateNextPlayerTurn();
     }
 
     onPokMoved(event) {
-        setTimeout(() => {
-            const pok = this.findPok(event.data.pokId);
-            const pokEl = this.pokElements.get(event.data.pokId);
+        const pok = this.findPok(event.data.pokId);
+        const pokEl = this.pokElements.get(event.data.pokId);
 
-            if (!pok || !pokEl) return;
+        if (!pok || !pokEl) return;
 
-            // Update position
-            pokEl.style.left = `${pok.x}%`;
-            pokEl.style.top = `${pok.y}%`;
+        // Update position
+        pokEl.style.left = `${pok.x}%`;
+        pokEl.style.top = `${pok.y}%`;
 
-            // Update points display
-            pokEl.textContent = pok.points;
+        // Update points display
+        pokEl.textContent = pok.points;
 
-            // Update high/low score styling
-            pokEl.classList.toggle('low-score', !pok.isHigh);
+        // Update high/low score styling
+        pokEl.classList.toggle('low-score', !pok.isHigh);
 
-            // Update boundary zone styling
-            pokEl.classList.toggle('boundary-zone', !!pok.boundaryZone);
+        // Update boundary zone styling
+        pokEl.classList.toggle('boundary-zone', !!pok.boundaryZone);
 
-            // Update scores
-            this.updateScores();
-            this.updateRoundsHistory(); // Update history to reflect new scores
-        }, 0);
+        // Update UI
+        this.updateScores();
+        this.updateRoundsHistory();
+        this.updateNextPlayerTurn();
     }
 
     onPokRemoved(event) {
-        setTimeout(() => {
-            const pokEl = this.pokElements.get(event.data.pokId);
-            if (!pokEl) return;
+        const pokEl = this.pokElements.get(event.data.pokId);
+        if (!pokEl) return;
 
-            pokEl.remove();
-            this.pokElements.delete(event.data.pokId);
+        pokEl.remove();
+        this.pokElements.delete(event.data.pokId);
 
-            // Highlight new last placed
-            this.clearLastPlacedHighlight();
-            const round = this.gameState.getCurrentRound();
-            if (round && round.lastPlacedPokId) {
-                const lastPokEl = this.pokElements.get(round.lastPlacedPokId);
-                if (lastPokEl) {
-                    lastPokEl.classList.add('last-placed');
-                }
+        // Highlight new last placed
+        this.clearLastPlacedHighlight();
+        const round = this.gameState.getCurrentRound();
+        if (round && round.lastPlacedPokId) {
+            const lastPokEl = this.pokElements.get(round.lastPlacedPokId);
+            if (lastPokEl) {
+                lastPokEl.classList.add('last-placed');
             }
+        }
 
-            // Update UI
-            this.updateScores();
-            this.updateRoundsHistory(); // Update history after undo
-
-            // Update player turn
-            const nextPlayer = this.gameState.getNextPlayer();
-            if (nextPlayer) {
-                this.showTurnNotification(nextPlayer);
-                const round = this.gameState.getCurrentRound();
-                if (round) {
-                    round.currentPlayerId = nextPlayer;
-                    this.updateBodyClass(nextPlayer);
-                }
-            }
-        }, 0);
+        // Update UI
+        this.updateScores();
+        this.updateRoundsHistory();
+        this.updateNextPlayerTurn();
     }
 
     onRoundEnded(event) {
@@ -853,15 +828,12 @@ class UIProjection {
     }
 
     onGameReset(event) {
-        // Defer to next tick to ensure GameStateProjection processes reset first
-        setTimeout(() => {
-            this.clearTable();
-            this.hideRoundModal();
-            this.showStartSelector();
-            this.updateScores();
-            this.updateRoundsHistory();
-            document.body.className = '';
-        }, 0);
+        this.clearTable();
+        this.hideRoundModal();
+        this.showStartSelector();
+        this.updateScores();
+        this.updateRoundsHistory();
+        document.body.className = '';
     }
 
     // UI Helper Methods
@@ -870,6 +842,53 @@ class UIProjection {
         const round = this.gameState.getCurrentRound();
         if (!round) return null;
         return round.poks.find(p => p.id === pokId);
+    }
+
+    renderPoksForRound(round) {
+        // Clear existing POKs
+        this.pokElements.forEach(el => el.remove());
+        this.pokElements.clear();
+
+        // Render all POKs from the round
+        round.poks.forEach(pok => {
+            const pokEl = this.createPokElement(pok);
+            this.pokElements.set(pok.id, pokEl);
+            this.tableElement.appendChild(pokEl);
+        });
+    }
+
+    updateRoundScoreDisplay(round) {
+        const scores = this.calculateRoundScores(round);
+
+        this.dom.redRound.textContent = scores.red;
+        this.dom.blueRound.textContent = scores.blue;
+        this.dom.redPoksInfo.textContent = round.redPoksRemaining;
+        this.dom.bluePoksInfo.textContent = round.bluePoksRemaining;
+
+        const diff = Math.abs(scores.red - scores.blue);
+        this.dom.scoreDiff.textContent = diff > 0 ? '+' + diff : '0';
+
+        // Update background color
+        this.dom.currentRoundScore.classList.remove('red-leading', 'blue-leading', 'tied');
+        if (scores.red > scores.blue) {
+            this.dom.currentRoundScore.classList.add('red-leading');
+        } else if (scores.blue > scores.red) {
+            this.dom.currentRoundScore.classList.add('blue-leading');
+        } else {
+            this.dom.currentRoundScore.classList.add('tied');
+        }
+    }
+
+    updateNextPlayerTurn() {
+        const nextPlayer = this.gameState.getNextPlayer();
+        if (nextPlayer) {
+            this.showTurnNotification(nextPlayer);
+            const round = this.gameState.getCurrentRound();
+            if (round) {
+                round.currentPlayerId = nextPlayer;
+                this.updateBodyClass(nextPlayer);
+            }
+        }
     }
 
     createPokElement(pok) {
@@ -1039,6 +1058,15 @@ class UIProjection {
                 <td>${round.isComplete ? diff : '-'}</td>
             `;
 
+            // Add hover functionality to temporarily show this round
+            row.addEventListener('mouseenter', () => {
+                this.showRoundPreview(index);
+            });
+
+            row.addEventListener('mouseleave', () => {
+                this.hideRoundPreview();
+            });
+
             this.dom.historyTableBody.appendChild(row);
         });
     }
@@ -1053,6 +1081,36 @@ class UIProjection {
             .reduce((sum, p) => sum + p.points, 0);
 
         return { red: redScore, blue: blueScore };
+    }
+
+    showRoundPreview(roundIndex) {
+        const state = this.gameState.getState();
+        const round = state.rounds[roundIndex];
+        if (!round) return;
+
+        // Render POKs and update scores for the selected round
+        this.renderPoksForRound(round);
+        this.updateRoundScoreDisplay(round);
+    }
+
+    hideRoundPreview() {
+        const currentRound = this.gameState.getCurrentRound();
+        if (!currentRound) return;
+
+        // Restore current round display
+        this.renderPoksForRound(currentRound);
+
+        // Re-highlight last placed POK
+        this.clearLastPlacedHighlight();
+        if (currentRound.lastPlacedPokId) {
+            const lastPokEl = this.pokElements.get(currentRound.lastPlacedPokId);
+            if (lastPokEl) {
+                lastPokEl.classList.add('last-placed');
+            }
+        }
+
+        // Restore current scores
+        this.updateScores();
     }
 
     showStartSelector() {
@@ -1184,6 +1242,9 @@ class CommandHandler {
             // Tie: alternate
             starter = prevRound.startingPlayerId === 'red' ? 'blue' : 'red';
         }
+
+        // Flip the table for the next round
+        this.eventStore.append(new TableFlippedEvent(!state.isFlipped));
 
         const nextRoundNumber = state.rounds.length;
         this.eventStore.append(new RoundStartedEvent(nextRoundNumber, starter));
@@ -1654,8 +1715,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.groupEnd();
         },
         toggleLogging: () => {
-            app.eventStore.enableLogging = !app.eventStore.enableLogging;
-            console.log(`Event logging ${app.eventStore.enableLogging ? 'enabled' : 'disabled'}`);
+            CONFIG.ENABLE_LOGGING = !CONFIG.ENABLE_LOGGING;
+            console.log(`Event logging ${CONFIG.ENABLE_LOGGING ? 'enabled' : 'disabled'}`);
         },
 
         // Quick access to common actions
