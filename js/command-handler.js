@@ -133,6 +133,9 @@ export class CommandHandler {
         this.eventStore.clear();
         localStorage.removeItem('pok-event-store');
 
+        // Reset the POK ID counter
+        this.pokIdCounter = 0;
+
         // Manually trigger a special reset event that won't be stored
         // This allows projections to reset their state properly
         this.eventStore.publish(new GameResetEvent());

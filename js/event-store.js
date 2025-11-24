@@ -3,7 +3,7 @@
 // ============================================
 
 import { CONFIG } from './config.js';
-import { GameLoadedEvent, GameImportedEvent, GameExportedEvent } from './events.js';
+import { GameLoadedEvent, GameImportedEvent, GameExportedEvent, GameResetEvent } from './events.js';
 
 export class EventStore {
     constructor() {
@@ -141,13 +141,21 @@ export class EventStore {
         if (!saved) return false;
 
         const data = JSON.parse(saved);
-        this.events = data.events;
-        this.version = data.version;
 
         if (this.enableLogging) {
-            console.log(`%c[EventStore] Loading ${this.events.length} events from LocalStorage`,
+            console.log(`%c[EventStore] Loading ${data.events.length} events from LocalStorage`,
                 'color: #4CAF50; font-weight: bold');
         }
+
+        // Clear current state (events and projections)
+        this.clear();
+
+        // Publish reset event to clear projection state
+        this.publish(new GameResetEvent(0));
+
+        // Load events and version
+        this.events = data.events;
+        this.version = data.version;
 
         // Replay all events to rebuild projections
         this.events.forEach(event => this.publish(event));
@@ -198,9 +206,17 @@ export class EventStore {
                             'color: #FF9800; font-weight: bold');
                     }
 
+                    // Clear current state (events and projections)
                     this.clear();
+
+                    // Publish reset event to clear projection state
+                    this.publish(new GameResetEvent(0));
+
+                    // Load events and version
                     this.events = data.events;
                     this.version = data.version;
+
+                    // Replay all events to rebuild projections
                     this.events.forEach(event => this.publish(event));
 
                     // Publish (not append) a GAME_IMPORTED event for tracking

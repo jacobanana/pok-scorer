@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         blue: round.poks.filter(p => p.playerId === 'blue').reduce((sum, p) => sum + p.points, 0)
                     };
 
+                const redPoksPlayed = round.poks.filter(p => p.playerId === 'red').length;
+                const bluePoksPlayed = round.poks.filter(p => p.playerId === 'blue').length;
+
                 return {
                     roundNumber: round.roundNumber,
                     isComplete: round.isComplete,
@@ -56,6 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentPlayer: round.currentPlayerId,
                     redScore: scores.red,
                     blueScore: scores.blue,
+                    redPoksPlayed: redPoksPlayed,
+                    bluePoksPlayed: bluePoksPlayed,
                     redPoksLeft: round.redPoksRemaining,
                     bluePoksLeft: round.bluePoksRemaining,
                     totalPoks: round.poks.length

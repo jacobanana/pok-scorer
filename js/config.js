@@ -13,18 +13,22 @@ export const CONFIG = {
 
     // Zone definitions (from lowest to highest score)
     ZONES: [
-        { id: '0', boundary: 100 },   // Zone 0: 60-100%
-        { id: '1', boundary: 60 },    // Zone 1: 40-60%
-        { id: '2', boundary: 40 },    // Zone 2: 20-40%
-        { id: '3', boundary: 20 }     // Zone 3: 0-20%
+        { id: '0', boundary: 100, score: 0, boundaryScore: null },   // Zone 0: 60-100%, no boundary (outer edge)
+        { id: '1', boundary: 60, score: 1, boundaryScore: 0 },       // Zone 1: 40-60%, boundary with zone 0
+        { id: '2', boundary: 40, score: 2, boundaryScore: 1 },       // Zone 2: 20-40%, boundary with zone 1
+        { id: '3', boundary: 20, score: 3, boundaryScore: 2 }        // Zone 3: 0-20%, boundary with zone 2
     ],
 
     // Circular zones (within zone 1 area)
     CIRCLE_ZONES: [
-        { id: '4', x: 50, y: 19, radius: 6, boundaryZone: '1' },  // Top circle
-        { id: '5', x: 50, y: 81, radius: 6, boundaryZone: '1' }   // Bottom circle
+        { id: '4', x: 50, y: 19, radius: 6, score: 4, boundaryScore: 1 },  // Top circle, boundary with zone 1
+        { id: '5', x: 50, y: 81, radius: 6, score: 5, boundaryScore: 1 }   // Bottom circle, boundary with zone 1
     ],
 
+    // Outer zone (off table) score
+    OUTER_ZONE_SCORE: 0,
+
+    // Legacy zone points mapping (deprecated - use zone definitions above)
     ZONE_POINTS: {
         'outer': 0, '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5
     },

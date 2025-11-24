@@ -27,20 +27,36 @@ export class PokScorerApp {
         this.ui.init();
         this.setupEventHandlers();
 
-        // Try to load saved game
-        const loaded = this.eventStore.load();
-        if (loaded) {
-            this.ui.updateScores();
-            this.ui.updateRoundsHistory();
-        } else {
-            this.ui.showStartSelector();
-        }
-
+        // Set up subscriptions BEFORE loading saved game
         // Auto-save on every event
         this.eventStore.subscribe('*', () => {
             this.eventStore.save();
             this.checkRoundComplete();
         });
+
+        // Handle game reset to clear app state
+        this.eventStore.subscribe('GAME_RESET', () => {
+            this.clearAutoEndTimer();
+            this.isDragging = false;
+            this.draggedPokId = null;
+        });
+
+        // Try to load saved game (after all subscriptions are set up)
+        const loaded = this.eventStore.load();
+        if (loaded) {
+            // Game was loaded - hide start selector and show the game board
+            this.ui.hideStartSelector();
+            this.ui.updateScores();
+            this.ui.updateRoundsHistory();
+
+            // Update body class for current player
+            const round = this.gameState.getCurrentRound();
+            if (round) {
+                this.ui.updateBodyClass(round.currentPlayerId);
+            }
+        } else {
+            this.ui.showStartSelector();
+        }
     }
 
     setupEventHandlers() {

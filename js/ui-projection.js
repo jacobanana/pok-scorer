@@ -66,6 +66,12 @@ export class UIProjection {
             return;
         }
 
+        // Check if table element is initialized
+        if (!this.tableElement) {
+            console.error('Table element not initialized yet. Call ui.init() before loading events.');
+            return;
+        }
+
         // Create DOM element
         const pokEl = this.createPokElement(pok);
         this.pokElements.set(pok.id, pokEl);
@@ -184,7 +190,6 @@ export class UIProjection {
 
             if (isFlipped) {
                 // Swap positions: zone 4 element moves to bottom, zone 5 element moves to top
-                console.log('Swapping zone 4 and 5 positions for flip');
                 zone4.style.top = 'auto';
                 zone4.style.bottom = '10%';
                 zone5.style.bottom = 'auto';
@@ -197,7 +202,6 @@ export class UIProjection {
                 if (zone5Label) zone5Label.textContent = '5';  // at top, scores 5
             } else {
                 // Not flipped: zone 4 at top, zone 5 at bottom
-                console.log('Restoring zone 4 and 5 positions for unflip');
                 zone4.style.top = '10%';
                 zone4.style.bottom = 'auto';
                 zone5.style.bottom = '10%';
@@ -213,13 +217,23 @@ export class UIProjection {
     }
 
     onGameReset(event) {
+        // Clear all UI elements
         this.clearTable();
         this.hideRoundModal();
-        this.showStartSelector();
+
+        // Reset table flip state
+        this.dom.tableContainer.classList.remove('flipped');
+        this.swapCircleZoneDOMPositions(false); // Reset to non-flipped state
+
+        // Reset scores and history
         this.updateScores();
         this.updateRoundsHistory();
-        this.swapCircleZoneDOMPositions(false); // Reset to non-flipped state
+
+        // Reset body classes
         document.body.className = '';
+
+        // Show start selector with updated button states
+        this.showStartSelector();
     }
 
     // UI Helper Methods
