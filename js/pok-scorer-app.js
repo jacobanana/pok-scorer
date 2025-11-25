@@ -67,24 +67,16 @@ export class PokScorerApp {
             this.checkRoundComplete();
         });
 
-        // Try to load saved game (after all subscriptions are set up)
-        this.isLoading = true;
-        const loaded = this.eventStore.load();
-        if (loaded) {
-            // Game was loaded - hide start selector and show the game board
-            this.ui.hideStartSelector();
-            this.ui.updateScores();
-            this.ui.updateRoundsHistory();
+        // Check if there's a saved game and show appropriate UI
+        this.isLoading = false;
+        const hasSavedGame = localStorage.getItem('pok-event-store');
 
-            // Update body class for current player
-            const round = this.gameState.getCurrentRound();
-            if (round) {
-                this.ui.updateBodyClass(round.currentPlayerId);
-            }
-            // isLoading flag will be cleared by GAME_LOADED event
+        if (hasSavedGame) {
+            // Show start selector with Resume button visible
+            this.ui.showStartSelector();
+            this.ui.showContinueButton();
         } else {
-            // No saved game found - clear loading flag immediately
-            this.isLoading = false;
+            // No saved game - show normal start selector
             this.ui.showStartSelector();
         }
     }
@@ -94,10 +86,24 @@ export class PokScorerApp {
         const continueGameButton = document.getElementById('continueGameButton');
         if (continueGameButton) {
             continueGameButton.addEventListener('click', () => {
-                this.ui.hideStartSelector();
-                const round = this.gameState.getCurrentRound();
-                if (round) {
-                    this.ui.updateBodyClass(round.currentPlayerId);
+                // Load the saved game
+                this.isLoading = true;
+                const loaded = this.eventStore.load();
+                if (loaded) {
+                    // Game was loaded - hide start selector and show the game board
+                    this.ui.hideStartSelector();
+                    this.ui.updateScores();
+                    this.ui.updateRoundsHistory();
+
+                    // Update body class for current player
+                    const round = this.gameState.getCurrentRound();
+                    if (round) {
+                        this.ui.updateBodyClass(round.currentPlayerId);
+                    }
+                    // isLoading flag will be cleared by GAME_LOADED event
+                } else {
+                    alert('Failed to load saved game');
+                    this.isLoading = false;
                 }
             });
         }

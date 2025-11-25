@@ -15,7 +15,8 @@ runner.describe('Integration - Full Game Flow', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store'); // Clear test storage
+        eventStore = new EventStore('pok-test-event-store');
         gameState = new GameStateProjection(eventStore);
         commands = new CommandHandler(eventStore, gameState);
     });
@@ -142,7 +143,8 @@ runner.describe('Integration - Event Sourcing Consistency', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store'); // Clear test storage
+        eventStore = new EventStore('pok-test-event-store');
         gameState = new GameStateProjection(eventStore);
     });
 
@@ -173,7 +175,7 @@ runner.describe('Integration - Event Sourcing Consistency', () => {
 
         const state1 = gameState.getState();
 
-        // Create new projection with same events
+        // Create new projection with same event store (uses same test storage key)
         const newProjection = new GameStateProjection(eventStore);
         const state2 = newProjection.getState();
 
@@ -229,7 +231,8 @@ runner.describe('Integration - Multi-Round Game', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store'); // Clear test storage
+        eventStore = new EventStore('pok-test-event-store');
         gameState = new GameStateProjection(eventStore);
         commands = new CommandHandler(eventStore, gameState);
     });
@@ -315,8 +318,8 @@ runner.describe('Integration - Persistence', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        localStorage.removeItem('pok-event-store');
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store'); // Clear test storage
+        eventStore = new EventStore('pok-test-event-store');
         gameState = new GameStateProjection(eventStore);
         commands = new CommandHandler(eventStore, gameState);
     });
@@ -336,8 +339,8 @@ runner.describe('Integration - Persistence', () => {
         // Save
         eventStore.save();
 
-        // Create new instances and load
-        const newEventStore = new EventStore();
+        // Create new instances and load (use same test storage key)
+        const newEventStore = new EventStore('pok-test-event-store');
         const newGameState = new GameStateProjection(newEventStore);
 
         newEventStore.load();
@@ -362,7 +365,7 @@ runner.describe('Integration - Persistence', () => {
 
         eventStore.save();
 
-        const newEventStore = new EventStore();
+        const newEventStore = new EventStore('pok-test-event-store');
         const newGameState = new GameStateProjection(newEventStore);
         newEventStore.load();
 

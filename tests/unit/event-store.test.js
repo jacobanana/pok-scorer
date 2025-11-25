@@ -14,7 +14,8 @@ runner.describe('EventStore - Initialization', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
     });
 
     runner.it('should initialize with empty events', () => {
@@ -32,7 +33,8 @@ runner.describe('EventStore - Event Appending', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
     });
 
     runner.it('should append event and assign version', () => {
@@ -79,7 +81,8 @@ runner.describe('EventStore - Pub/Sub', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
     });
 
     runner.it('should allow subscription to specific event type', () => {
@@ -207,15 +210,15 @@ runner.describe('EventStore - Persistence (LocalStorage)', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        localStorage.removeItem('pok-event-store');
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
     });
 
     runner.it('should save events to LocalStorage', () => {
         eventStore.append(new GameStartedEvent('red'));
         eventStore.save();
 
-        const saved = localStorage.getItem('pok-event-store');
+        const saved = localStorage.getItem('pok-test-event-store');
         assert.ok(saved, 'Should have saved to LocalStorage');
 
         const data = JSON.parse(saved);
@@ -229,8 +232,8 @@ runner.describe('EventStore - Persistence (LocalStorage)', () => {
         eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
         eventStore.save();
 
-        // Create new store and load
-        const newStore = new EventStore();
+        // Create new store and load (use same test storage key)
+        const newStore = new EventStore('pok-test-event-store');
         const loaded = newStore.load();
 
         assert.ok(loaded, 'Should have loaded successfully');
@@ -251,8 +254,8 @@ runner.describe('EventStore - Persistence (LocalStorage)', () => {
         eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
         eventStore.save();
 
-        // Create new store with subscriber
-        const newStore = new EventStore();
+        // Create new store with subscriber (use same test storage key)
+        const newStore = new EventStore('pok-test-event-store');
         let replayCount = 0;
         newStore.subscribe('*', () => replayCount++);
 

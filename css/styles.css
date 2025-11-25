@@ -731,24 +731,38 @@ body.round-ending .pok:active {
     display: none;
 }
 
-.continue-game-top-button {
+/* Container for action buttons at top of start screen */
+.start-selector-buttons {
     position: absolute;
-    top: 10%;
+    top: 8%;
     left: 50%;
-    width: 30%;
-    transform: translate(-50%, -50%);
-    padding: 30px 60px;
-    font-size: 32px;
-    font-weight: bold;
-    background: #4caf50;
-    color: white;
-    border-radius: 16px;
-    cursor: pointer;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
     z-index: 2001;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 90%;
+}
+
+.continue-game-top-button,
+.save-latest-game-button,
+.import-match-button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     transition: all 0.2s;
-    display: none;
     white-space: nowrap;
+    border: none;
+}
+
+.continue-game-top-button {
+    background: #4caf50;
+    display: none;
 }
 
 .continue-game-top-button.show {
@@ -757,27 +771,12 @@ body.round-ending .pok:active {
 
 .continue-game-top-button:hover {
     background: #45a049;
-    transform: translate(-50%, -50%) scale(1.02);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
 .save-latest-game-button {
-    position: absolute;
-    top: 17%;
-    left: 50%;
-    width: 30%;
-    transform: translate(-50%, -50%);
-    padding: 30px 60px;
-    font-size: 32px;
-    font-weight: bold;
     background: #ff9800;
-    color: white;
-    border-radius: 16px;
-    cursor: pointer;
-    z-index: 2001;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    transition: all 0.2s;
-    white-space: nowrap;
     display: none;
 }
 
@@ -787,33 +786,18 @@ body.round-ending .pok:active {
 
 .save-latest-game-button:hover {
     background: #f57c00;
-    transform: translate(-50%, -50%) scale(1.02);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
 .import-match-button {
-    position: absolute;
-    top: 25%;
-    left: 50%;
-    width: 30%;
-    transform: translate(-50%, -50%);
-    padding: 30px 60px;
-    font-size: 32px;
-    font-weight: bold;
     background: #2196f3;
-    color: white;
-    border-radius: 16px;
-    cursor: pointer;
-    z-index: 2001;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    transition: all 0.2s;
-    white-space: nowrap;
 }
 
 .import-match-button:hover {
     background: #1976d2;
-    transform: translate(-50%, -50%) scale(1.02);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
 .start-half {
@@ -1657,6 +1641,22 @@ button:active {
 
     .show-history-button {
         left: 70px;
+    }
+
+    /* Stack start selector buttons on mobile */
+    .start-selector-buttons {
+        flex-direction: column;
+        gap: 10px;
+        width: 90%;
+        max-width: 300px;
+    }
+
+    .continue-game-top-button,
+    .save-latest-game-button,
+    .import-match-button {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 16px;
     }
 
     .save-game-button {

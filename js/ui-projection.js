@@ -575,6 +575,11 @@ export class UIProjection {
         }
     }
 
+    showContinueButton() {
+        this.dom.continueButton.classList.add('show');
+        this.dom.saveLatestButton.classList.add('show');
+    }
+
     hideStartSelector() {
         this.dom.startSelector.classList.add('hidden');
     }

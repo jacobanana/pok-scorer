@@ -15,7 +15,8 @@ runner.describe('GameStateProjection - Initialization', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
         projection = new GameStateProjection(eventStore);
     });
 
@@ -46,7 +47,8 @@ runner.describe('GameStateProjection - Game Started', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
         projection = new GameStateProjection(eventStore);
     });
 
@@ -238,7 +240,8 @@ runner.describe('GameStateProjection - Calculated State', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
         projection = new GameStateProjection(eventStore);
     });
 
@@ -394,7 +397,8 @@ runner.describe('GameStateProjection - Game Reset', () => {
 
     runner.beforeEach(() => {
         CONFIG.ENABLE_LOGGING = false;
-        eventStore = new EventStore();
+        localStorage.removeItem('pok-test-event-store');
+        eventStore = new EventStore('pok-test-event-store');
         projection = new GameStateProjection(eventStore);
     });
 
