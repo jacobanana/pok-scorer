@@ -4,26 +4,32 @@
 
 import { EventStore } from '../../js/event-store.js';
 import { GameStateProjection } from '../../js/game-state-projection.js';
-import { CommandHandler } from '../../js/command-handler.js';
 import { CONFIG } from '../../js/config.js';
+import {
+    createTestContext,
+    cleanupTestContext,
+    disableLogging,
+    TEST_STORAGE_KEY
+} from '../lib/fixtures.js';
 
 const { assert } = window;
 const runner = window.testRunner;
 
 runner.describe('Integration - Full Game Flow', () => {
-    let eventStore, gameState, commands;
+    let ctx;
 
     runner.beforeEach(() => {
-        CONFIG.ENABLE_LOGGING = false;
-        localStorage.removeItem('pok-test-event-store'); // Clear test storage
-        eventStore = new EventStore('pok-test-event-store');
-        gameState = new GameStateProjection(eventStore);
-        commands = new CommandHandler(eventStore, gameState);
+        disableLogging();
+        ctx = createTestContext();
+    });
+
+    runner.afterEach(() => {
+        cleanupTestContext(ctx);
     });
 
     runner.it('should start game and create first round', () => {
-        commands.startGame('red');
-        const state = gameState.getState();
+        ctx.commands.startGame('red');
+        const state = ctx.gameState.getState();
 
         assert.ok(state.isStarted);
         assert.lengthOf(state.rounds, 1);
@@ -31,11 +37,11 @@ runner.describe('Integration - Full Game Flow', () => {
     });
 
     runner.it('should place poks and update state', () => {
-        commands.startGame('red');
-        commands.placePok('red', 30, 50);
-        commands.placePok('blue', 10, 50);
+        ctx.commands.startGame('red');
+        ctx.commands.placePok('red', 30, 50);
+        ctx.commands.placePok('blue', 10, 50);
 
-        const round = gameState.getCurrentRound();
+        const round = ctx.gameState.getCurrentRound();
 
         assert.lengthOf(round.poks, 2);
         assert.equal(round.redPoksRemaining, 4);
@@ -43,75 +49,75 @@ runner.describe('Integration - Full Game Flow', () => {
     });
 
     runner.it('should calculate scores correctly', () => {
-        commands.startGame('red');
-        commands.placePok('red', 10, 50);  // Zone 3 = 3 points
-        commands.placePok('blue', 30, 50); // Zone 2 = 2 points
+        ctx.commands.startGame('red');
+        ctx.commands.placePok('red', 10, 50);  // Zone 3 = 3 points
+        ctx.commands.placePok('blue', 30, 50); // Zone 2 = 2 points
 
-        const scores = gameState.getRoundScores();
+        const scores = ctx.gameState.getRoundScores();
 
         assert.equal(scores.red, 3);
         assert.equal(scores.blue, 2);
     });
 
     runner.it('should complete round and update total scores', () => {
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
         // Place all poks - respecting turn order (lower score plays first)
         for (let i = 0; i < 5; i++) {
-            let nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 30, 50);  // 2 points each
+            let nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 30, 50);  // 2 points each
 
-            nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 50, 50); // 1 point each
+            nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 50, 50); // 1 point each
         }
 
-        commands.endRound();
+        ctx.commands.endRound();
 
-        const state = gameState.getState();
+        const state = ctx.gameState.getState();
 
         // Winner gets the difference in points
         assert.ok(state.players.red.totalScore > 0 || state.players.blue.totalScore > 0);
     });
 
     runner.it('should start new round after previous ends', () => {
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
         // Complete first round - respecting turn order
         for (let i = 0; i < 5; i++) {
-            let nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 30, 50);
+            let nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 30, 50);
 
-            nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 50, 50);
+            nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 50, 50);
         }
 
-        commands.endRound();
+        ctx.commands.endRound();
 
         // Start second round
-        commands.startNextRound();
+        ctx.commands.startNextRound();
 
-        const state = gameState.getState();
+        const state = ctx.gameState.getState();
 
         assert.lengthOf(state.rounds, 2);
         assert.equal(state.currentRoundIndex, 1);
     });
 
     runner.it('should handle pok removal (undo)', () => {
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
-        let nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 30, 50);
+        let nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 30, 50);
 
-        nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 30, 50);
+        nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 30, 50);
 
-        const beforeRound = gameState.getCurrentRound();
+        const beforeRound = ctx.gameState.getCurrentRound();
         const lastPokId = beforeRound.lastPlacedPokId;
         const lastPlayer = beforeRound.poks.find(p => p.id === lastPokId).playerId;
 
-        commands.removePok(lastPokId);
+        ctx.commands.removePok(lastPokId);
 
-        const afterRound = gameState.getCurrentRound();
+        const afterRound = ctx.gameState.getCurrentRound();
 
         assert.lengthOf(afterRound.poks, 1);
         // Check that the removed player's poks were restored
@@ -120,17 +126,17 @@ runner.describe('Integration - Full Game Flow', () => {
     });
 
     runner.it('should handle table flip and recalculate zones', () => {
-        commands.startGame('red');
-        commands.placePok('red', 50, 19); // Circle 4
+        ctx.commands.startGame('red');
+        ctx.commands.placePok('red', 50, 19); // Circle 4
 
-        const beforeRound = gameState.getCurrentRound();
+        const beforeRound = ctx.gameState.getCurrentRound();
         const beforePok = beforeRound.poks[0];
 
         assert.equal(beforePok.zoneId, '4');
 
-        commands.flipTable(true);
+        ctx.commands.flipTable(true);
 
-        const afterRound = gameState.getCurrentRound();
+        const afterRound = ctx.gameState.getCurrentRound();
         const afterPok = afterRound.poks[0];
 
         // Should swap to circle 5
@@ -139,25 +145,25 @@ runner.describe('Integration - Full Game Flow', () => {
 });
 
 runner.describe('Integration - Event Sourcing Consistency', () => {
-    let eventStore, gameState;
+    let ctx;
 
     runner.beforeEach(() => {
-        CONFIG.ENABLE_LOGGING = false;
-        localStorage.removeItem('pok-test-event-store'); // Clear test storage
-        eventStore = new EventStore('pok-test-event-store');
-        gameState = new GameStateProjection(eventStore);
+        disableLogging();
+        ctx = createTestContext();
+    });
+
+    runner.afterEach(() => {
+        cleanupTestContext(ctx);
     });
 
     runner.it('should maintain consistency across multiple calculations', () => {
-        const commands = new CommandHandler(eventStore, gameState);
+        ctx.commands.startGame('red');
+        ctx.commands.placePok('red', 30, 50);
+        ctx.commands.placePok('blue', 10, 50);
 
-        commands.startGame('red');
-        commands.placePok('red', 30, 50);
-        commands.placePok('blue', 10, 50);
-
-        const state1 = gameState.getState();
-        const state2 = gameState.getState();
-        const state3 = gameState.getState();
+        const state1 = ctx.gameState.getState();
+        const state2 = ctx.gameState.getState();
+        const state3 = ctx.gameState.getState();
 
         // All calculations should produce same result
         assert.deepEqual(state1, state2);
@@ -165,18 +171,16 @@ runner.describe('Integration - Event Sourcing Consistency', () => {
     });
 
     runner.it('should produce same state from event replay', () => {
-        const commands = new CommandHandler(eventStore, gameState);
-
         // Do some operations
-        commands.startGame('red');
-        commands.placePok('red', 30, 50);
-        commands.placePok('blue', 10, 50);
-        commands.movePok('pok-1', 50, 50);
+        ctx.commands.startGame('red');
+        ctx.commands.placePok('red', 30, 50);
+        ctx.commands.placePok('blue', 10, 50);
+        ctx.commands.movePok('pok-1', 50, 50);
 
-        const state1 = gameState.getState();
+        const state1 = ctx.gameState.getState();
 
         // Create new projection with same event store (uses same test storage key)
-        const newProjection = new GameStateProjection(eventStore);
+        const newProjection = new GameStateProjection(ctx.eventStore);
         const state2 = newProjection.getState();
 
         // Should produce identical state
@@ -184,38 +188,36 @@ runner.describe('Integration - Event Sourcing Consistency', () => {
     });
 
     runner.it('should handle complex sequence of operations', () => {
-        const commands = new CommandHandler(eventStore, gameState);
-
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
         // Place some poks - respecting turn order
-        let nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 30, 50);
+        let nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 30, 50);
 
-        nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 10, 50);
+        nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 10, 50);
 
-        nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 50, 19); // Circle 4
+        nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 50, 19); // Circle 4
 
         // Move a pok
-        const round1 = gameState.getCurrentRound();
-        commands.movePok(round1.poks[0].id, 10, 50);
+        const round1 = ctx.gameState.getCurrentRound();
+        ctx.commands.movePok(round1.poks[0].id, 10, 50);
 
         // Flip table
-        commands.flipTable(true);
+        ctx.commands.flipTable(true);
 
         // Remove a pok
-        const round2 = gameState.getCurrentRound();
-        commands.removePok(round2.lastPlacedPokId);
+        const round2 = ctx.gameState.getCurrentRound();
+        ctx.commands.removePok(round2.lastPlacedPokId);
 
         // Place more poks
-        nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 30, 50);
+        nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 30, 50);
 
         // State should still be consistent
-        const state = gameState.getState();
-        const events = eventStore.getAllEvents();
+        const state = ctx.gameState.getState();
+        const events = ctx.eventStore.getAllEvents();
 
         // Verify event count matches state
         const pokPlaced = events.filter(e => e.type === 'POK_PLACED').length;
@@ -227,46 +229,47 @@ runner.describe('Integration - Event Sourcing Consistency', () => {
 });
 
 runner.describe('Integration - Multi-Round Game', () => {
-    let eventStore, gameState, commands;
+    let ctx;
 
     runner.beforeEach(() => {
-        CONFIG.ENABLE_LOGGING = false;
-        localStorage.removeItem('pok-test-event-store'); // Clear test storage
-        eventStore = new EventStore('pok-test-event-store');
-        gameState = new GameStateProjection(eventStore);
-        commands = new CommandHandler(eventStore, gameState);
+        disableLogging();
+        ctx = createTestContext();
+    });
+
+    runner.afterEach(() => {
+        cleanupTestContext(ctx);
     });
 
     runner.it('should play multiple rounds correctly', () => {
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
         // Round 1 - respecting turn order
         for (let i = 0; i < 5; i++) {
-            let nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 10, 50);  // 3 points each
+            let nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 10, 50);  // 3 points each
 
-            nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 50, 50); // 1 point each
+            nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 50, 50); // 1 point each
         }
 
-        commands.endRound();
+        ctx.commands.endRound();
 
-        let state = gameState.getState();
+        let state = ctx.gameState.getState();
 
         // Round 2
-        commands.startNextRound();
+        ctx.commands.startNextRound();
 
         for (let i = 0; i < 5; i++) {
-            let nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 50, 50);  // 1 point each
+            let nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 50, 50);  // 1 point each
 
-            nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 10, 50); // 3 points each
+            nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 10, 50); // 3 points each
         }
 
-        commands.endRound();
+        ctx.commands.endRound();
 
-        state = gameState.getState();
+        state = ctx.gameState.getState();
         // Verify that rounds were played
         assert.lengthOf(state.rounds, 2);
         assert.ok(state.rounds[0].isComplete);
@@ -274,73 +277,74 @@ runner.describe('Integration - Multi-Round Game', () => {
     });
 
     runner.it('should determine winner correctly', () => {
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
         // Play rounds where red consistently scores higher
         // Red gets high-scoring poks (zone 3 = 3 points)
         // Blue gets low-scoring poks (zone 1 = 1 point)
         for (let round = 0; round < 15; round++) {
             if (round > 0) {
-                commands.startNextRound();
+                ctx.commands.startNextRound();
             }
 
             // Place all poks for this round
             for (let i = 0; i < 10; i++) {
-                const currentRound = gameState.getCurrentRound();
+                const currentRound = ctx.gameState.getCurrentRound();
                 if (currentRound.isComplete) break;
 
-                let nextPlayer = gameState.getNextPlayer();
+                let nextPlayer = ctx.gameState.getNextPlayer();
 
                 // Red plays in zone 3 (x=10), Blue plays in zone 1 (x=50)
                 // This creates consistent 10-point difference per round (15-5 = 10)
                 const position = nextPlayer === 'red' ? 10 : 50;
-                commands.placePok(nextPlayer, position, 50);
+                ctx.commands.placePok(nextPlayer, position, 50);
             }
 
-            commands.endRound();
+            ctx.commands.endRound();
 
-            if (gameState.hasWinner()) {
+            if (ctx.gameState.hasWinner()) {
                 break;
             }
         }
 
-        const state = gameState.getState();
+        const state = ctx.gameState.getState();
 
         // After enough rounds, red should have won
-        assert.ok(gameState.hasWinner());
+        assert.ok(ctx.gameState.hasWinner());
         const maxScore = Math.max(state.players.red.totalScore, state.players.blue.totalScore);
         assert.greaterThan(maxScore, CONFIG.WINNING_SCORE);
     });
 });
 
 runner.describe('Integration - Persistence', () => {
-    let eventStore, gameState, commands;
+    let ctx;
 
     runner.beforeEach(() => {
-        CONFIG.ENABLE_LOGGING = false;
-        localStorage.removeItem('pok-test-event-store'); // Clear test storage
-        eventStore = new EventStore('pok-test-event-store');
-        gameState = new GameStateProjection(eventStore);
-        commands = new CommandHandler(eventStore, gameState);
+        disableLogging();
+        ctx = createTestContext();
+    });
+
+    runner.afterEach(() => {
+        cleanupTestContext(ctx);
     });
 
     runner.it('should save and restore game state', () => {
         // Play some of the game
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
-        let nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 30, 50);
+        let nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 30, 50);
 
-        nextPlayer = gameState.getNextPlayer();
-        commands.placePok(nextPlayer, 10, 50);
+        nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 10, 50);
 
-        const stateBefore = gameState.getState();
+        const stateBefore = ctx.gameState.getState();
 
         // Save
-        eventStore.save();
+        ctx.eventStore.save();
 
         // Create new instances and load (use same test storage key)
-        const newEventStore = new EventStore('pok-test-event-store');
+        const newEventStore = new EventStore(TEST_STORAGE_KEY);
         const newGameState = new GameStateProjection(newEventStore);
 
         newEventStore.load();
@@ -352,27 +356,27 @@ runner.describe('Integration - Persistence', () => {
     });
 
     runner.it('should handle save/load with many events', () => {
-        commands.startGame('red');
+        ctx.commands.startGame('red');
 
         // Generate many events - respecting turn order
         for (let i = 0; i < 10; i++) {  // Reduced from 20 to 10 (each player has 5 poks)
-            const round = gameState.getCurrentRound();
+            const round = ctx.gameState.getCurrentRound();
             if (round.isComplete) break;
 
-            const nextPlayer = gameState.getNextPlayer();
-            commands.placePok(nextPlayer, 30 + i, 50);
+            const nextPlayer = ctx.gameState.getNextPlayer();
+            ctx.commands.placePok(nextPlayer, 30 + i, 50);
         }
 
-        eventStore.save();
+        ctx.eventStore.save();
 
-        const newEventStore = new EventStore('pok-test-event-store');
+        const newEventStore = new EventStore(TEST_STORAGE_KEY);
         const newGameState = new GameStateProjection(newEventStore);
         newEventStore.load();
 
         // Should have loaded all events
-        assert.lengthOf(newEventStore.events, eventStore.events.length);
+        assert.lengthOf(newEventStore.events, ctx.eventStore.events.length);
 
         // States should match
-        assert.deepEqual(newGameState.getState(), gameState.getState());
+        assert.deepEqual(newGameState.getState(), ctx.gameState.getState());
     });
 });

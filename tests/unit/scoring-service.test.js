@@ -3,11 +3,19 @@
 // ============================================
 
 import { ScoringService } from '../../js/scoring-service.js';
+import { restoreLogging } from '../lib/fixtures.js';
 
 const { describe, it, assert } = window;
 const runner = window.testRunner;
 
+// Note: ScoringService is stateless (all static methods), so no fixtures needed.
+// We still add afterEach for CONFIG restoration consistency.
+
 runner.describe('ScoringService - Zone Detection', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
     runner.it('should return zone 3 for x < 20', () => {
         const result = ScoringService.getZoneInfo(10, 50, false);
         assert.equal(result.zoneId, '3');
@@ -59,6 +67,10 @@ runner.describe('ScoringService - Zone Detection', () => {
 });
 
 runner.describe('ScoringService - Circular Zones', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
     runner.it('should detect circle zone 4 (top circle)', () => {
         const result = ScoringService.getZoneInfo(50, 19, false);
         assert.equal(result.zoneId, '4');
@@ -80,6 +92,10 @@ runner.describe('ScoringService - Circular Zones', () => {
 });
 
 runner.describe('ScoringService - Table Flip', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
     runner.it('should swap circle 4 and 5 when flipped', () => {
         const topNormal = ScoringService.getZoneInfo(50, 19, false);
         const topFlipped = ScoringService.getZoneInfo(50, 19, true);
@@ -107,6 +123,10 @@ runner.describe('ScoringService - Table Flip', () => {
 });
 
 runner.describe('ScoringService - Boundary Detection', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
     runner.it('should detect boundary between zone 3 and 2', () => {
         const result = ScoringService.getZoneInfo(19, 50, false);
         assert.notOk(result.isHigh, 'Should be on boundary');
@@ -140,6 +160,10 @@ runner.describe('ScoringService - Boundary Detection', () => {
 });
 
 runner.describe('ScoringService - Edge Cases', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
     runner.it('should handle exact boundary values', () => {
         const result = ScoringService.getZoneInfo(20, 50, false);
         assert.equal(result.zoneId, '2'); // Should be zone 2 (just past zone 3)
@@ -165,6 +189,10 @@ runner.describe('ScoringService - Edge Cases', () => {
 });
 
 runner.describe('ScoringService - Lookup Functions', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
     runner.it('should lookup score by zone ID', () => {
         assert.equal(ScoringService.lookupScore('0'), 0);
         assert.equal(ScoringService.lookupScore('1'), 1);

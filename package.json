@@ -1,0 +1,16 @@
+{
+  "name": "pok-scorer",
+  "version": "1.0.0",
+  "description": "POK Score Counter - A vanilla JavaScript scoring application",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-tests.js",
+    "test:install": "npx playwright install chromium --with-deps"
+  },
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
