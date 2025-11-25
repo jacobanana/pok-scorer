@@ -14,6 +14,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT_DIR = join(__dirname, '..');
 
+// ANSI color codes for terminal output
+const colors = {
+    reset: '\x1b[0m',
+    bright: '\x1b[1m',
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    cyan: '\x1b[36m',
+    gray: '\x1b[90m'
+};
+
 // Simple static file server
 function createStaticServer(rootDir, port) {
     const mimeTypes = {
@@ -64,17 +76,14 @@ function formatDuration(ms) {
 // Main test runner
 async function runTests() {
     const startTime = performance.now();
-    console.log('');
-    console.log('========================================');
-    console.log('  POK Score Counter - Test Suite');
-    console.log('========================================');
-    console.log('');
+    console.log(`\n${colors.bright}${colors.cyan}========================================${colors.reset}`);
+    console.log(`${colors.bright}  POK Score Counter - Test Suite${colors.reset}`);
+    console.log(`${colors.cyan}========================================${colors.reset}\n`);
 
     // Start local server
     const PORT = 3847;
     const server = await createStaticServer(ROOT_DIR, PORT);
-    console.log(`Starting test server on port ${PORT}...`);
-    console.log('');
+    console.log(`${colors.gray}Starting test server on port ${PORT}...${colors.reset}\n`);
 
     let browser;
     let exitCode = 0;
@@ -171,45 +180,45 @@ async function runTests() {
         const totalTests = results.passed + results.failed + results.skipped;
 
         for (const suite of results.suites) {
-            console.log(suite.name);
+            console.log(`${colors.bright}${colors.blue}${suite.name}${colors.reset}`);
 
             for (const test of suite.tests) {
                 if (test.status === 'pass') {
-                    console.log(`  [PASS] ${test.name}`);
+                    console.log(`  ${colors.green}✓${colors.reset} ${test.name}`);
                 } else if (test.status === 'fail') {
-                    console.log(`  [FAIL] ${test.name}`);
-                    console.log(`         ${test.error}`);
+                    console.log(`  ${colors.red}✗ ${test.name}${colors.reset}`);
+                    console.log(`    ${colors.red}${test.error}${colors.reset}`);
                 } else if (test.status === 'skip') {
-                    console.log(`  [SKIP] ${test.name}`);
+                    console.log(`  ${colors.yellow}○ ${test.name} (skipped)${colors.reset}`);
                 }
             }
-            console.log('');
+            console.log();
         }
 
         // Print summary
         const duration = performance.now() - startTime;
-        console.log('----------------------------------------');
+        console.log(`${colors.cyan}----------------------------------------${colors.reset}`);
 
         if (results.failed === 0) {
-            console.log('All tests passed!');
+            console.log(`${colors.green}${colors.bright}✓ All tests passed!${colors.reset}`);
         } else {
-            console.log('Some tests failed');
+            console.log(`${colors.red}${colors.bright}✗ Some tests failed${colors.reset}`);
             exitCode = 1;
         }
 
-        console.log('');
-        console.log(`  Passed:  ${results.passed}`);
-        console.log(`  Failed:  ${results.failed}`);
-        console.log(`  Skipped: ${results.skipped}`);
+        console.log();
+        console.log(`  ${colors.green}Passed:${colors.reset}  ${results.passed}`);
+        console.log(`  ${colors.red}Failed:${colors.reset}  ${results.failed}`);
+        console.log(`  ${colors.yellow}Skipped:${colors.reset} ${results.skipped}`);
         console.log(`  Total:   ${totalTests}`);
         console.log(`  Time:    ${formatDuration(duration)}`);
-        console.log('');
+        console.log();
 
     } catch (error) {
-        console.error('Error running tests:');
-        console.error(error.message);
+        console.error(`${colors.red}${colors.bright}Error running tests:${colors.reset}`);
+        console.error(`${colors.red}${error.message}${colors.reset}`);
         if (error.stack) {
-            console.error(error.stack);
+            console.error(`${colors.gray}${error.stack}${colors.reset}`);
         }
         exitCode = 1;
     } finally {
