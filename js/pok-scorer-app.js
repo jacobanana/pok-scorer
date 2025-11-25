@@ -381,6 +381,21 @@ export class PokScorerApp {
                     const pos = this.calculateTablePosition(e.touches[0]);
                     touchedElement.style.left = `${pos.x}%`;
                     touchedElement.style.top = `${pos.y}%`;
+
+                    // Show boundary zone highlighting
+                    const round = this.gameState.getCurrentRound();
+                    const isFlipped = round ? round.isFlipped : false;
+                    const zoneInfo = ScoringService.getZoneInfo(pos.x, pos.y, isFlipped);
+
+                    const zones = document.querySelectorAll('.zone, .circle-zone');
+                    zones.forEach(zone => {
+                        const zoneId = zone.getAttribute('data-zone');
+                        zone.classList.remove('boundary-highlight');
+
+                        if (zoneInfo.boundaryZone && zoneId === zoneInfo.boundaryZone) {
+                            zone.classList.add('boundary-highlight');
+                        }
+                    });
                 }
             }
         }, { passive: false });
@@ -407,6 +422,12 @@ export class PokScorerApp {
                         }
                     }
                 }
+
+                // Clear boundary highlights
+                const zones = document.querySelectorAll('.zone, .circle-zone');
+                zones.forEach(zone => {
+                    zone.classList.remove('boundary-highlight');
+                });
 
                 touchedPokId = null;
                 touchedElement = null;
