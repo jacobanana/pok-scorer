@@ -37,13 +37,13 @@ export class CommandHandler {
         return `pok-${maxId + 1}`;
     }
 
-    startGame(startingPlayerId) {
+    startGame(startingPlayerId, redName = 'Red', blueName = 'Blue') {
         const state = this.gameState.getState();
         if (state.isStarted) {
             throw new Error('Game already started');
         }
 
-        this.eventStore.append(new GameStartedEvent(startingPlayerId));
+        this.eventStore.append(new GameStartedEvent(startingPlayerId, redName, blueName));
     }
 
     placePok(playerId, x, y) {

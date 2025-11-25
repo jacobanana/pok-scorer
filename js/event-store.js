@@ -168,6 +168,19 @@ export class EventStore {
         return true;
     }
 
+    getPlayerNamesFromEvents() {
+        // Find the most recent GAME_STARTED event to get player names
+        const gameStartedEvents = this.events.filter(e => e.type === 'GAME_STARTED');
+        if (gameStartedEvents.length === 0) {
+            return { red: 'Red', blue: 'Blue' };
+        }
+        const lastGameStarted = gameStartedEvents[gameStartedEvents.length - 1];
+        return {
+            red: lastGameStarted.data.redName || 'Red',
+            blue: lastGameStarted.data.blueName || 'Blue'
+        };
+    }
+
     exportToFile() {
         const data = {
             events: this.events,
@@ -175,7 +188,22 @@ export class EventStore {
             exportedAt: new Date().toISOString()
         };
 
-        const filename = `pok-game-${Date.now()}.json`;
+        // Build filename with player names if non-default
+        const playerNames = this.getPlayerNamesFromEvents();
+        let filename = 'pok-game';
+
+        const hasCustomRedName = playerNames.red !== 'Red';
+        const hasCustomBlueName = playerNames.blue !== 'Blue';
+
+        if (hasCustomRedName || hasCustomBlueName) {
+            // Sanitize names for filename (remove special chars, limit length)
+            const sanitize = (name) => name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 15);
+            const redName = sanitize(playerNames.red);
+            const blueName = sanitize(playerNames.blue);
+            filename += `-${redName}-vs-${blueName}`;
+        }
+
+        filename += `-${Date.now()}.json`;
 
         if (this.enableLogging) {
             console.log(`%c[EventStore] Exporting ${this.events.length} events to ${filename}`,

@@ -47,6 +47,10 @@ export class UIProjection {
             modalTotalScores: document.getElementById('roundEndModalTotalScores'),
             modalRoundNumber: document.getElementById('roundEndModalRoundNumber'),
             historyTableBody: document.getElementById('roundsHistoryTableBody'),
+            historyHeaderRed: document.getElementById('historyHeaderRed'),
+            historyHeaderBlue: document.getElementById('historyHeaderBlue'),
+            historyModalHeaderRed: document.getElementById('historyModalHeaderRed'),
+            historyModalHeaderBlue: document.getElementById('historyModalHeaderBlue'),
             currentRoundScore: document.getElementById('currentRoundScoreDisplay'),
             turnNotification: document.getElementById('playerTurnNotification'),
             redScoreMarkers: document.getElementById('redScoreMarkers'),
@@ -67,8 +71,25 @@ export class UIProjection {
     onGameStarted(event) {
         this.hideStartSelector();
         this.updateScores();
+        this.updateHistoryHeaders();
         this.showTurnNotification(event.data.startingPlayerId);
         this.updateBodyClass(event.data.startingPlayerId);
+    }
+
+    updateHistoryHeaders() {
+        const playerNames = this.gameState.getPlayerNames();
+        if (this.dom.historyHeaderRed) {
+            this.dom.historyHeaderRed.textContent = playerNames.red;
+        }
+        if (this.dom.historyHeaderBlue) {
+            this.dom.historyHeaderBlue.textContent = playerNames.blue;
+        }
+        if (this.dom.historyModalHeaderRed) {
+            this.dom.historyModalHeaderRed.textContent = playerNames.red;
+        }
+        if (this.dom.historyModalHeaderBlue) {
+            this.dom.historyModalHeaderBlue.textContent = playerNames.blue;
+        }
     }
 
     onPokPlaced(event) {
@@ -261,6 +282,18 @@ export class UIProjection {
         // Reset body classes
         document.body.className = '';
 
+        // Clear player name inputs
+        const redNameInput = document.getElementById('redPlayerName');
+        const blueNameInput = document.getElementById('bluePlayerName');
+        if (redNameInput) redNameInput.value = '';
+        if (blueNameInput) blueNameInput.value = '';
+
+        // Reset history headers to defaults
+        if (this.dom.historyHeaderRed) this.dom.historyHeaderRed.textContent = 'Red';
+        if (this.dom.historyHeaderBlue) this.dom.historyHeaderBlue.textContent = 'Blue';
+        if (this.dom.historyModalHeaderRed) this.dom.historyModalHeaderRed.textContent = 'Red';
+        if (this.dom.historyModalHeaderBlue) this.dom.historyModalHeaderBlue.textContent = 'Blue';
+
         // Show start selector with updated button states
         this.showStartSelector();
     }
@@ -400,7 +433,7 @@ export class UIProjection {
     showTurnNotification(playerId) {
         if (!this.dom.turnNotification) return;
 
-        const playerName = playerId === 'red' ? 'Red' : 'Blue';
+        const playerName = this.gameState.getPlayerName(playerId);
         this.dom.turnNotification.textContent = `${playerName}'s turn`;
 
         this.dom.turnNotification.classList.remove('show', 'fade-out', 'red-player', 'blue-player');
@@ -428,13 +461,14 @@ export class UIProjection {
         const state = this.gameState.getState();
         const scores = { red: event.data.redScore, blue: event.data.blueScore };
         const diff = Math.abs(scores.red - scores.blue);
+        const playerNames = this.gameState.getPlayerNames();
 
         let winnerText, bgClass;
         if (scores.red > scores.blue) {
-            winnerText = 'RED WINS!';
+            winnerText = `${playerNames.red.toUpperCase()} WINS!`;
             bgClass = 'red-bg';
         } else if (scores.blue > scores.red) {
-            winnerText = 'BLUE WINS!';
+            winnerText = `${playerNames.blue.toUpperCase()} WINS!`;
             bgClass = 'blue-bg';
         } else {
             winnerText = 'TIE!';
@@ -447,7 +481,7 @@ export class UIProjection {
         this.dom.modalBlueScore.textContent = scores.blue;
         this.dom.modalScoreDiff.textContent = diff > 0 ? '+' + diff : '0';
         this.dom.modalTotalScores.textContent =
-            `Total: Red ${state.players.red.totalScore} - Blue ${state.players.blue.totalScore}`;
+            `Total: ${playerNames.red} ${state.players.red.totalScore} - ${playerNames.blue} ${state.players.blue.totalScore}`;
 
         this.dom.roundModal.classList.remove('red-bg', 'blue-bg', 'tie-bg');
         this.dom.roundModal.classList.add(bgClass, 'show');
@@ -461,6 +495,7 @@ export class UIProjection {
         if (!this.dom.historyTableBody) return;
 
         const state = this.gameState.getState();
+        const playerNames = this.gameState.getPlayerNames();
         this.dom.historyTableBody.innerHTML = '';
 
         state.rounds.forEach((round, index) => {
@@ -472,11 +507,11 @@ export class UIProjection {
             let winner, winnerClass, rowClass;
             if (round.isComplete) {
                 if (scores.red > scores.blue) {
-                    winner = 'Red';
+                    winner = playerNames.red;
                     winnerClass = 'red-winner';
                     rowClass = 'red-round-row';
                 } else if (scores.blue > scores.red) {
-                    winner = 'Blue';
+                    winner = playerNames.blue;
                     winnerClass = 'blue-winner';
                     rowClass = 'blue-round-row';
                 } else {

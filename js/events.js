@@ -11,10 +11,14 @@ export class GameEvent {
     }
 }
 
-// Only raw facts: who started
+// Only raw facts: who started, player names (optional)
 export class GameStartedEvent extends GameEvent {
-    constructor(startingPlayerId) {
-        super('GAME_STARTED', { startingPlayerId });
+    constructor(startingPlayerId, redName = 'Red', blueName = 'Blue') {
+        super('GAME_STARTED', {
+            startingPlayerId,
+            redName: redName || 'Red',
+            blueName: blueName || 'Blue'
+        });
     }
 }
 

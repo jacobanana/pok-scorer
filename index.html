@@ -28,10 +28,12 @@
         </div>
 
         <div class="start-half red">
-            RED
+            <input type="text" id="redPlayerName" class="player-name-input" placeholder="Red" maxlength="20" onclick="event.stopPropagation()">
+            <span class="start-label">TAP TO START</span>
         </div>
         <div class="start-half blue">
-            BLUE
+            <input type="text" id="bluePlayerName" class="player-name-input" placeholder="Blue" maxlength="20" onclick="event.stopPropagation()">
+            <span class="start-label">TAP TO START</span>
         </div>
     </div>
 
@@ -58,8 +60,8 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Red</th>
-                                    <th>Blue</th>
+                                    <th id="historyHeaderRed">Red</th>
+                                    <th id="historyHeaderBlue">Blue</th>
                                     <th>Winner</th>
                                     <th>Diff</th>
                                 </tr>
@@ -253,8 +255,8 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Red</th>
-                            <th>Blue</th>
+                            <th id="historyModalHeaderRed">Red</th>
+                            <th id="historyModalHeaderBlue">Blue</th>
                             <th>Winner</th>
                             <th>Diff</th>
                         </tr>

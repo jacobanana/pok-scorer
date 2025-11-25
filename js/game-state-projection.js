@@ -24,6 +24,10 @@ export class GameStateProjection {
                 red: { totalScore: 0 },
                 blue: { totalScore: 0 }
             },
+            playerNames: {
+                red: 'Red',
+                blue: 'Blue'
+            },
             rounds: [],
             currentRoundIndex: -1,
             isFlipped: false
@@ -83,6 +87,10 @@ export class GameStateProjection {
         return {
             ...state,
             isStarted: true,
+            playerNames: {
+                red: event.data.redName || 'Red',
+                blue: event.data.blueName || 'Blue'
+            },
             rounds: [...state.rounds, newRound],
             currentRoundIndex: 0
         };
@@ -380,5 +388,15 @@ export class GameStateProjection {
         const state = this.getState();
         return state.players.red.totalScore >= CONFIG.WINNING_SCORE ||
                state.players.blue.totalScore >= CONFIG.WINNING_SCORE;
+    }
+
+    getPlayerName(playerId) {
+        const state = this.getState();
+        return state.playerNames[playerId] || (playerId === 'red' ? 'Red' : 'Blue');
+    }
+
+    getPlayerNames() {
+        const state = this.getState();
+        return state.playerNames;
     }
 }
