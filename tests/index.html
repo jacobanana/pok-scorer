@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POK Score Counter - Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        #controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        #results {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .running {
+            text-align: center;
+            padding: 40px;
+            font-size: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .summary {
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 5px solid;
+        }
+
+        .summary.pass {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .summary.fail {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .summary h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 24px;
+            margin-top: 5px;
+        }
+
+        .suite {
+            background: #f8f9fa;
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            position: relative;
+        }
+
+        .suite h3 {
+            margin-bottom: 15px;
+            color: #495057;
+            font-size: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-button {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .copy-button:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .copy-button.copied {
+            background: #28a745;
+        }
+
+        .copy-button.copied::after {
+            content: ' ✓';
+        }
+
+        .tests {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .test {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0;
+            transition: all 0.2s;
+        }
+
+        .test:hover {
+            opacity: 0.8;
+            transform: translateX(2px);
+        }
+
+        .test .test-name {
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .test.pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 3px solid #28a745;
+        }
+
+        .test.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 3px solid #dc3545;
+        }
+
+        .test.skip {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 3px solid #ffc107;
+        }
+
+        .test .error {
+            margin-top: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            font-size: 11px;
+            overflow-x: auto;
+            width: 100%;
+            border: 1px solid #f5c6cb;
+        }
+
+        .test .test-code {
+            margin-top: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            color: #333;
+            border-radius: 4px;
+            font-size: 11px;
+            overflow-x: auto;
+            width: 100%;
+            border: 1px solid #dee2e6;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            line-height: 1.5;
+            white-space: pre;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 1000px;
+                padding-top: 15px;
+                padding-bottom: 15px;
+            }
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px;
+            color: #6c757d;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            #controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .running {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 POK Score Counter - Test Suite</h1>
+            <p class="subtitle">Vanilla JavaScript Testing Framework</p>
+        </header>
+
+        <div id="controls">
+            <button id="runAll">▶️ Run All Tests</button>
+            <button id="runUnit" class="secondary">🔬 Run Unit Tests</button>
+            <button id="runIntegration" class="secondary">🔗 Run Integration Tests</button>
+            <button id="clearResults" class="secondary">🗑️ Clear Results</button>
+        </div>
+
+        <div id="results">
+            <div class="empty">
+                <div class="empty-icon">🎯</div>
+                <p>Click "Run All Tests" to start testing</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { TestRunner, HTMLReporter, ConsoleReporter, assert } from './lib/mini-test.js';
+
+        // Create runner and reporters
+        const runner = new TestRunner();
+        const htmlReporter = new HTMLReporter(document.getElementById('results'));
+        const consoleReporter = new ConsoleReporter();
+
+        // Make globally accessible for test files
+        window.testRunner = runner;
+        window.assert = assert;
+
+        // Import test files - categorized
+        const testModules = {
+            unit: [
+                './unit/scoring-service.test.js',
+                './unit/game-state-projection.test.js',
+                './unit/event-store.test.js'
+            ],
+            integration: [
+                './integration/game-flow.test.js'
+            ]
+        };
+
+        let testsLoaded = false;
+
+        async function loadTests() {
+            if (testsLoaded) return;
+
+            const allModules = [...testModules.unit, ...testModules.integration];
+            for (const module of allModules) {
+                try {
+                    await import(module);
+                } catch (error) {
+                    console.warn(`Could not load ${module}:`, error.message);
+                }
+            }
+            testsLoaded = true;
+        }
+
+        async function runTests(category = 'all') {
+            // Load tests once
+            await loadTests();
+
+            // Create fresh runner for each run
+            const freshRunner = new TestRunner();
+            window.testRunner = freshRunner;
+
+            // Determine which modules to run
+            let modulesToRun = [];
+            if (category === 'unit') {
+                modulesToRun = testModules.unit;
+            } else if (category === 'integration') {
+                modulesToRun = testModules.integration;
+            } else {
+                modulesToRun = [...testModules.unit, ...testModules.integration];
+            }
+
+            // Re-import selected modules with cache busting
+            for (const module of modulesToRun) {
+                try {
+                    const timestamp = Date.now();
+                    await import(`${module}?t=${timestamp}`);
+                } catch (error) {
+                    console.warn(`Could not load ${module}:`, error.message);
+                }
+            }
+
+            // Run with HTML reporter
+            await freshRunner.run(htmlReporter);
+
+            // Log to console too
+            console.group(`🧪 Test Results - ${category}`);
+            console.log(`Passed: ${freshRunner.results.passed}`);
+            console.log(`Failed: ${freshRunner.results.failed}`);
+            console.log(`Skipped: ${freshRunner.results.skipped}`);
+            console.groupEnd();
+        }
+
+        // Button handlers
+        document.getElementById('runAll').addEventListener('click', async () => {
+            await runTests('all');
+        });
+
+        document.getElementById('runUnit').addEventListener('click', async () => {
+            await runTests('unit');
+        });
+
+        document.getElementById('runIntegration').addEventListener('click', async () => {
+            await runTests('integration');
+        });
+
+        document.getElementById('clearResults').addEventListener('click', () => {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="empty">
+                    <div class="empty-icon">🎯</div>
+                    <p>Click "Run All Tests" to start testing</p>
+                </div>
+            `;
+            console.clear();
+        });
+
+        // Auto-run on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Test runner loaded. Use window.testRunner and window.assert in console.');
+            // Uncomment to auto-run:
+            // runTests();
+        });
+    </script>
+</body>
+</html>
