@@ -10,7 +10,7 @@ POK is a tabletop game where two players (Red and Blue) take turns tossing disc-
 
 ## The Table Layout
 
-![POK Table Diagram](table-diagram.svg)
+![POK Table Diagram](docs/table-diagram.svg)
 
 ## Game Rules
 
