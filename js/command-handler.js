@@ -17,7 +17,24 @@ export class CommandHandler {
     constructor(eventStore, gameStateProjection) {
         this.eventStore = eventStore;
         this.gameState = gameStateProjection;
-        this.pokIdCounter = 0;
+    }
+
+    getNextPokId() {
+        // Calculate next POK ID by finding the highest existing ID in events
+        const pokPlacedEvents = this.eventStore.events.filter(e => e.type === 'POK_PLACED');
+
+        let maxId = -1;
+        pokPlacedEvents.forEach(event => {
+            const match = event.data.pokId.match(/^pok-(\d+)$/);
+            if (match) {
+                const pokNumber = parseInt(match[1], 10);
+                if (pokNumber > maxId) {
+                    maxId = pokNumber;
+                }
+            }
+        });
+
+        return `pok-${maxId + 1}`;
     }
 
     startGame(startingPlayerId) {
@@ -54,7 +71,7 @@ export class CommandHandler {
             throw new Error(`Not ${playerId}'s turn`);
         }
 
-        const pokId = `pok-${this.pokIdCounter++}`;
+        const pokId = this.getNextPokId();
         this.eventStore.append(new PokPlacedEvent(pokId, playerId, x, y));
     }
 
@@ -132,9 +149,6 @@ export class CommandHandler {
         // Clear all events and localStorage to completely reset the game
         this.eventStore.clear();
         localStorage.removeItem('pok-event-store');
-
-        // Reset the POK ID counter
-        this.pokIdCounter = 0;
 
         // Manually trigger a special reset event that won't be stored
         // This allows projections to reset their state properly

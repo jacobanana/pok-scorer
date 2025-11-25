@@ -50,7 +50,9 @@ export class UIProjection {
             currentRoundScore: document.getElementById('currentRoundScoreDisplay'),
             turnNotification: document.getElementById('playerTurnNotification'),
             redScoreMarkers: document.getElementById('redScoreMarkers'),
-            blueScoreMarkers: document.getElementById('blueScoreMarkers')
+            blueScoreMarkers: document.getElementById('blueScoreMarkers'),
+            loadingBar: document.getElementById('roundEndLoadingBar'),
+            loadingBarFill: document.querySelector('#roundEndLoadingBar .loading-bar-fill')
         };
 
         this.tableElement = this.dom.table;
@@ -315,6 +317,14 @@ export class UIProjection {
     }
 
     updateNextPlayerTurn() {
+        const round = this.gameState.getCurrentRound();
+
+        // Don't show turn notification if round is complete
+        if (round && round.isComplete) {
+            document.body.classList.remove('red-turn', 'blue-turn');
+            return;
+        }
+
         const nextPlayer = this.gameState.getNextPlayer();
         if (nextPlayer) {
             this.showTurnNotification(nextPlayer);

@@ -28,11 +28,27 @@ export class PokScorerApp {
         this.setupDOMEventListeners();
         this.setupEventHandlers();
 
+        // Flag to track if we're currently loading a game
+        this.isLoading = false;
+
         // Set up subscriptions BEFORE loading saved game
         // Auto-save on every event
         this.eventStore.subscribe('*', () => {
             this.eventStore.save();
-            this.checkRoundComplete();
+            // Only check round completion if we're not loading
+            // This prevents auto-end timers from starting during event replay
+            if (!this.isLoading) {
+                this.checkRoundComplete();
+            }
+        });
+
+        // Reset countdown timer when a POK is moved during round completion
+        this.eventStore.subscribe('POK_MOVED', () => {
+            if (!this.isLoading && this.autoEndTimer) {
+                // Clear and restart the countdown to allow adjustments
+                this.clearAutoEndTimer();
+                this.checkRoundComplete();
+            }
         });
 
         // Handle game reset to clear app state
@@ -40,9 +56,19 @@ export class PokScorerApp {
             this.clearAutoEndTimer();
             this.isDragging = false;
             this.draggedPokId = null;
+            this.isLoading = false;
+        });
+
+        // Handle game loaded to clear any auto-end timers and check round state
+        this.eventStore.subscribe('GAME_LOADED', () => {
+            this.clearAutoEndTimer();
+            this.isLoading = false;
+            // Now that loading is complete, check if we need to start countdown
+            this.checkRoundComplete();
         });
 
         // Try to load saved game (after all subscriptions are set up)
+        this.isLoading = true;
         const loaded = this.eventStore.load();
         if (loaded) {
             // Game was loaded - hide start selector and show the game board
@@ -55,7 +81,10 @@ export class PokScorerApp {
             if (round) {
                 this.ui.updateBodyClass(round.currentPlayerId);
             }
+            // isLoading flag will be cleared by GAME_LOADED event
         } else {
+            // No saved game found - clear loading flag immediately
+            this.isLoading = false;
             this.ui.showStartSelector();
         }
     }
@@ -470,14 +499,40 @@ export class PokScorerApp {
     startAutoEndCountdown() {
         this.countdownEndTime = Date.now() + CONFIG.AUTO_END_DELAY_MS;
 
-        // Update countdown display
-        this.countdownInterval = setInterval(() => {
-            const remaining = Math.max(0, this.countdownEndTime - Date.now()) / 1000;
-            this.ui.dom.turnNotification.textContent =
-                `All POKs played! Round ending in ${Math.ceil(remaining)}s...`;
-            this.ui.dom.turnNotification.classList.add('show', 'round-complete');
-            this.ui.dom.turnNotification.classList.remove('red-player', 'blue-player');
-        }, 100);
+        // Determine the winner's color
+        const round = this.gameState.getCurrentRound();
+        if (round) {
+            const redScore = round.poks
+                .filter(p => p.playerId === 'red')
+                .reduce((sum, p) => sum + p.points, 0);
+            const blueScore = round.poks
+                .filter(p => p.playerId === 'blue')
+                .reduce((sum, p) => sum + p.points, 0);
+
+            const winnerClass = redScore > blueScore ? 'red-winner' :
+                               blueScore > redScore ? 'blue-winner' : 'tie-game';
+
+            // Show loading bar and set up smooth animation
+            if (this.ui.dom.loadingBar && this.ui.dom.loadingBarFill) {
+                // Reset the bar
+                this.ui.dom.loadingBarFill.style.width = '0%';
+                this.ui.dom.loadingBarFill.style.transition = 'none';
+                this.ui.dom.loadingBarFill.classList.remove('red-winner', 'blue-winner', 'tie-game');
+
+                // Add winner class (or tie class)
+                this.ui.dom.loadingBarFill.classList.add(winnerClass);
+
+                // Force a reflow to ensure the reset takes effect
+                void this.ui.dom.loadingBarFill.offsetWidth;
+
+                // Show the loading bar
+                this.ui.dom.loadingBar.classList.add('show');
+
+                // Start the animation with a smooth transition
+                this.ui.dom.loadingBarFill.style.transition = `width ${CONFIG.AUTO_END_DELAY_MS}ms linear`;
+                this.ui.dom.loadingBarFill.style.width = '100%';
+            }
+        }
 
         // Auto-end after delay
         this.autoEndTimer = setTimeout(() => {
@@ -497,8 +552,13 @@ export class PokScorerApp {
         }
         this.countdownEndTime = null;
 
-        if (this.ui.dom.turnNotification) {
-            this.ui.dom.turnNotification.classList.remove('show', 'round-complete');
+        // Hide loading bar and clean up classes
+        if (this.ui.dom.loadingBar) {
+            this.ui.dom.loadingBar.classList.remove('show');
+        }
+        if (this.ui.dom.loadingBarFill) {
+            this.ui.dom.loadingBarFill.style.width = '0%';
+            this.ui.dom.loadingBarFill.classList.remove('red-winner', 'blue-winner', 'tie-game');
         }
     }
 
