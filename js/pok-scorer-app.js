@@ -350,6 +350,7 @@ export class PokScorerApp {
         const tableContainer = this.ui.dom.tableContainer;
         let touchStartPos = null;
         let touchedPokId = null;
+        let touchedElement = null;
         let hasMoved = false;
 
         tableContainer.addEventListener('touchstart', (e) => {
@@ -357,6 +358,7 @@ export class PokScorerApp {
             if (target) {
                 e.preventDefault();
                 touchedPokId = this.findPokIdByElement(target);
+                touchedElement = target;
                 touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
                 hasMoved = false;
                 this.isDragging = false;
@@ -364,7 +366,7 @@ export class PokScorerApp {
         }, { passive: false });
 
         tableContainer.addEventListener('touchmove', (e) => {
-            if (touchedPokId) {
+            if (touchedPokId && touchedElement) {
                 e.preventDefault();
 
                 const dx = Math.abs(e.touches[0].clientX - touchStartPos.x);
@@ -373,6 +375,27 @@ export class PokScorerApp {
                 if (dx > 5 || dy > 5) {
                     hasMoved = true;
                     this.isDragging = true;
+                    touchedElement.classList.add('dragging');
+
+                    // Update POK visual position during drag
+                    const pos = this.calculateTablePosition(e.touches[0]);
+                    touchedElement.style.left = `${pos.x}%`;
+                    touchedElement.style.top = `${pos.y}%`;
+
+                    // Show boundary zone highlighting
+                    const round = this.gameState.getCurrentRound();
+                    const isFlipped = round ? round.isFlipped : false;
+                    const zoneInfo = ScoringService.getZoneInfo(pos.x, pos.y, isFlipped);
+
+                    const zones = document.querySelectorAll('.zone, .circle-zone');
+                    zones.forEach(zone => {
+                        const zoneId = zone.getAttribute('data-zone');
+                        zone.classList.remove('boundary-highlight');
+
+                        if (zoneInfo.boundaryZone && zoneId === zoneInfo.boundaryZone) {
+                            zone.classList.add('boundary-highlight');
+                        }
+                    });
                 }
             }
         }, { passive: false });
@@ -382,8 +405,9 @@ export class PokScorerApp {
                 e.preventDefault();
 
                 if (hasMoved) {
-                    // Drag: move POK
+                    // Drag: move POK to final position
                     const pos = this.calculateTablePosition(e.changedTouches[0]);
+                    touchedElement.classList.remove('dragging');
                     this.commands.movePok(touchedPokId, pos.x, pos.y);
                 } else {
                     // Tap: undo if last placed
@@ -399,7 +423,14 @@ export class PokScorerApp {
                     }
                 }
 
+                // Clear boundary highlights
+                const zones = document.querySelectorAll('.zone, .circle-zone');
+                zones.forEach(zone => {
+                    zone.classList.remove('boundary-highlight');
+                });
+
                 touchedPokId = null;
+                touchedElement = null;
                 touchStartPos = null;
                 hasMoved = false;
                 this.isDragging = false;
