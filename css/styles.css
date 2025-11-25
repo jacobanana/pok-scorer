@@ -73,7 +73,7 @@ body.round-ending .pok:active {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    height: 95vh;
+    min-height: 95vh;
 }
 
 .top-section {
@@ -240,22 +240,41 @@ body.round-ending .pok:active {
     background: #429444;
 }
 
-.export-match-button {
+.save-game-button {
     position: absolute;
     top: 0;
-    left: 120px;
+    right: 100px;
     width: auto;
     padding: 8px 16px;
     font-size: 14px;
-    background: #2196f3;
+    background: #ff9800;
     color: white;
     border-radius: 6px;
     margin: 0;
     z-index: 100;
 }
 
-.export-match-button:hover {
-    background: #1976d2;
+.save-game-button:hover {
+    background: #f57c00;
+}
+
+.show-history-button {
+    position: absolute;
+    top: 0;
+    left: 120px;
+    width: auto;
+    padding: 8px 16px;
+    font-size: 14px;
+    background: #9c27b0;
+    color: white;
+    border-radius: 6px;
+    margin: 0;
+    z-index: 100;
+    display: none;
+}
+
+.show-history-button:hover {
+    background: #7b1fa2;
 }
 
 /* Game Board Container */
@@ -939,6 +958,156 @@ body.round-ending .pok:active {
 }
 
 /* ============================================ */
+/* HISTORY MODAL (Mobile)                      */
+/* ============================================ */
+
+.history-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+}
+
+.history-modal.show {
+    display: flex;
+}
+
+.history-modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.close-history-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    z-index: 1;
+}
+
+.close-history-button:hover {
+    background: #b71c1c;
+}
+
+.history-modal-content h2 {
+    margin-bottom: 15px;
+    padding-right: 50px;
+}
+
+.history-modal-table-container {
+    overflow-y: auto;
+    flex: 1;
+}
+
+#historyModalTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+#historyModalTable thead {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+}
+
+#historyModalTable th {
+    padding: 8px 4px;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 2px solid #ddd;
+    color: #666;
+}
+
+#historyModalTable td {
+    padding: 6px 4px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+#historyModalTable tbody tr:hover {
+    background: #f5f5f5;
+}
+
+/* Round Row Color Coding for History Modal */
+#historyModalTable .red-round-row {
+    background-color: rgba(211, 47, 47, 0.08);
+}
+
+#historyModalTable .red-round-row:hover {
+    background-color: rgba(211, 47, 47, 0.15);
+}
+
+#historyModalTable .blue-round-row {
+    background-color: rgba(25, 118, 210, 0.08);
+}
+
+#historyModalTable .blue-round-row:hover {
+    background-color: rgba(25, 118, 210, 0.15);
+}
+
+#historyModalTable .round-row-current {
+    background-color: rgba(255, 193, 7, 0.1);
+    font-style: italic;
+}
+
+#historyModalTable .round-row-current:hover {
+    background-color: rgba(255, 193, 7, 0.2);
+}
+
+/* Table Cell Styling for History Modal */
+#historyModalTable .round-number {
+    font-weight: bold;
+    color: #666;
+}
+
+#historyModalTable .red-winner {
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+#historyModalTable .blue-winner {
+    color: #1976d2;
+    font-weight: bold;
+}
+
+#historyModalTable .winner-tie {
+    color: #666;
+    font-style: italic;
+}
+
+#historyModalTable .winner-current {
+    color: #999;
+    font-style: italic;
+}
+
+/* ============================================ */
 /* TYPOGRAPHY                                  */
 /* ============================================ */
 
@@ -1175,6 +1344,10 @@ button:active {
     .table-container {
         width: 90%;
     }
+
+    .show-history-button {
+        display: block;
+    }
 }
 
 /* Mobile optimizations - fit everything vertically */
@@ -1182,11 +1355,13 @@ button:active {
        (max-width: 768px) {
     body {
         padding: 5px;
+        overflow-x: hidden;
     }
 
     .container {
         padding: 10px;
-        height: 98vh;
+        min-height: auto;
+        height: auto;
     }
 
     .top-section {
@@ -1207,14 +1382,19 @@ button:active {
 
     /* Scale down buttons */
     .flip-table-button,
-    .export-match-button,
+    .show-history-button,
+    .save-game-button,
     .new-game-button {
         padding: 6px 12px;
         font-size: 12px;
     }
 
-    .export-match-button {
+    .show-history-button {
         left: 90px;
+    }
+
+    .save-game-button {
+        right: 80px;
     }
 
     .current-round-score {
@@ -1307,12 +1487,14 @@ button:active {
 @media (max-height: 500px) and (orientation: landscape) {
     body {
         padding: 2px;
+        overflow-x: hidden;
     }
 
     .container {
         padding: 3px;
-        height: 100vh;
-        overflow: hidden;
+        min-height: auto;
+        height: auto;
+        overflow: visible;
     }
 
     .top-section {
@@ -1338,14 +1520,19 @@ button:active {
     }
 
     .flip-table-button,
-    .export-match-button,
+    .show-history-button,
+    .save-game-button,
     .new-game-button {
         padding: 3px 8px;
         font-size: 10px;
     }
 
-    .export-match-button {
+    .show-history-button {
         left: 65px;
+    }
+
+    .save-game-button {
+        right: 70px;
     }
 
     .current-round-score {
@@ -1423,11 +1610,13 @@ button:active {
 @media (max-width: 480px) {
     body {
         padding: 2px;
+        overflow-x: hidden;
     }
 
     .container {
         padding: 5px;
-        height: 99vh;
+        min-height: auto;
+        height: auto;
     }
 
     .table-container {
@@ -1435,14 +1624,19 @@ button:active {
     }
 
     .flip-table-button,
-    .export-match-button,
+    .show-history-button,
+    .save-game-button,
     .new-game-button {
         padding: 4px 8px;
         font-size: 10px;
     }
 
-    .export-match-button {
+    .show-history-button {
         left: 70px;
+    }
+
+    .save-game-button {
+        right: 75px;
     }
 
     .score-circle {

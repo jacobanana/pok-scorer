@@ -157,6 +157,32 @@ export class PokScorerApp {
             });
         }
 
+        // Show History button
+        const showHistoryButton = document.getElementById('showHistoryButton');
+        if (showHistoryButton) {
+            showHistoryButton.addEventListener('click', () => {
+                this.showHistoryModal();
+            });
+        }
+
+        // Close History button
+        const closeHistoryButton = document.getElementById('closeHistoryButton');
+        if (closeHistoryButton) {
+            closeHistoryButton.addEventListener('click', () => {
+                this.hideHistoryModal();
+            });
+        }
+
+        // Close history modal when clicking outside
+        const historyModal = document.getElementById('historyModal');
+        if (historyModal) {
+            historyModal.addEventListener('click', (e) => {
+                if (e.target === historyModal) {
+                    this.hideHistoryModal();
+                }
+            });
+        }
+
         // Game board - place POK
         const tableContainer = document.getElementById('gameBoardContainer');
         if (tableContainer) {
@@ -473,6 +499,98 @@ export class PokScorerApp {
 
         if (this.ui.dom.turnNotification) {
             this.ui.dom.turnNotification.classList.remove('show', 'round-complete');
+        }
+    }
+
+    showHistoryModal() {
+        const modal = document.getElementById('historyModal');
+        const tbody = document.getElementById('historyModalTableBody');
+
+        if (!modal || !tbody) return;
+
+        // Clear existing rows
+        tbody.innerHTML = '';
+
+        // Get rounds from game state
+        const state = this.gameState.getState();
+        const rounds = state.rounds;
+
+        // Populate table
+        rounds.forEach((round, index) => {
+            // Calculate scores
+            const redScore = round.poks
+                .filter(p => p.playerId === 'red')
+                .reduce((sum, p) => sum + p.points, 0);
+            const blueScore = round.poks
+                .filter(p => p.playerId === 'blue')
+                .reduce((sum, p) => sum + p.points, 0);
+
+            const scores = { red: redScore, blue: blueScore };
+            const diff = Math.abs(scores.red - scores.blue);
+
+            // Determine winner
+            let winner, winnerClass, rowClass;
+            if (round.isComplete) {
+                if (scores.red > scores.blue) {
+                    winner = 'Red';
+                    winnerClass = 'red-winner';
+                    rowClass = 'red-round-row';
+                } else if (scores.blue > scores.red) {
+                    winner = 'Blue';
+                    winnerClass = 'blue-winner';
+                    rowClass = 'blue-round-row';
+                } else {
+                    winner = 'Tie';
+                    winnerClass = 'winner-tie';
+                    rowClass = '';
+                }
+            } else {
+                winner = 'In Progress';
+                winnerClass = 'winner-current';
+                rowClass = 'round-row-current';
+            }
+
+            const row = document.createElement('tr');
+            row.className = rowClass;
+
+            // Round number
+            const roundCell = document.createElement('td');
+            roundCell.textContent = index + 1;
+            roundCell.className = 'round-number';
+            row.appendChild(roundCell);
+
+            // Red score
+            const redCell = document.createElement('td');
+            redCell.textContent = scores.red;
+            row.appendChild(redCell);
+
+            // Blue score
+            const blueCell = document.createElement('td');
+            blueCell.textContent = scores.blue;
+            row.appendChild(blueCell);
+
+            // Winner
+            const winnerCell = document.createElement('td');
+            winnerCell.textContent = winner;
+            winnerCell.className = winnerClass;
+            row.appendChild(winnerCell);
+
+            // Difference
+            const diffCell = document.createElement('td');
+            diffCell.textContent = round.isComplete ? diff : '-';
+            row.appendChild(diffCell);
+
+            tbody.appendChild(row);
+        });
+
+        // Show modal
+        modal.classList.add('show');
+    }
+
+    hideHistoryModal() {
+        const modal = document.getElementById('historyModal');
+        if (modal) {
+            modal.classList.remove('show');
         }
     }
 }

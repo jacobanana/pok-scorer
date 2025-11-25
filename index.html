@@ -78,10 +78,12 @@
 
                 <!-- Flip Table Button (Top Left) -->
                 <button id="flipTableButton" class="flip-table-button">Flip Table</button>
-                <!-- Export Match Button -->
-                <button id="exportMatchButton" class="export-match-button">Export JSON</button>
+                <!-- Show History Button (Mobile Only, Top Left) -->
+                <button id="showHistoryButton" class="show-history-button">Show History</button>
                 <!-- New Game Button (Top Right) -->
                 <button id="newGameButton" class="new-game-button">New Game</button>
+                <!-- Save Game Button (Top Right, below New Game) -->
+                <button id="exportMatchButton" class="save-game-button">Save Game</button>
 
 
                 <div class="table-container" id="gameBoardContainer">
@@ -229,6 +231,31 @@
                 </div>
             </div>
             <div class="total-scores" id="roundEndModalTotalScores"></div>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- HISTORY MODAL (Mobile)        -->
+    <!-- ============================= -->
+    <div id="historyModal" class="history-modal">
+        <div class="history-modal-content">
+            <button id="closeHistoryButton" class="close-history-button">✕</button>
+            <h2>Rounds History</h2>
+            <div class="history-modal-table-container">
+                <table id="historyModalTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Red</th>
+                            <th>Blue</th>
+                            <th>Winner</th>
+                            <th>Diff</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyModalTableBody">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
