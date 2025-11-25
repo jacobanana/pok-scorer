@@ -18,13 +18,12 @@ const ROOT_DIR = join(__dirname, '..');
 const colors = {
     reset: '\x1b[0m',
     bright: '\x1b[1m',
-    dim: '\x1b[2m',
     red: '\x1b[31m',
     green: '\x1b[32m',
     yellow: '\x1b[33m',
     blue: '\x1b[34m',
-    magenta: '\x1b[35m',
-    cyan: '\x1b[36m'
+    cyan: '\x1b[36m',
+    gray: '\x1b[90m'
 };
 
 // Simple static file server
@@ -84,7 +83,7 @@ async function runTests() {
     // Start local server
     const PORT = 3847;
     const server = await createStaticServer(ROOT_DIR, PORT);
-    console.log(`${colors.dim}Starting test server on port ${PORT}...${colors.reset}\n`);
+    console.log(`${colors.gray}Starting test server on port ${PORT}...${colors.reset}\n`);
 
     let browser;
     let exitCode = 0;
@@ -185,7 +184,7 @@ async function runTests() {
 
             for (const test of suite.tests) {
                 if (test.status === 'pass') {
-                    console.log(`  ${colors.green}✓${colors.reset} ${colors.dim}${test.name}${colors.reset}`);
+                    console.log(`  ${colors.green}✓${colors.reset} ${test.name}`);
                 } else if (test.status === 'fail') {
                     console.log(`  ${colors.red}✗ ${test.name}${colors.reset}`);
                     console.log(`    ${colors.red}${test.error}${colors.reset}`);
@@ -211,15 +210,15 @@ async function runTests() {
         console.log(`  ${colors.green}Passed:${colors.reset}  ${results.passed}`);
         console.log(`  ${colors.red}Failed:${colors.reset}  ${results.failed}`);
         console.log(`  ${colors.yellow}Skipped:${colors.reset} ${results.skipped}`);
-        console.log(`  ${colors.dim}Total:${colors.reset}   ${totalTests}`);
-        console.log(`  ${colors.dim}Time:${colors.reset}    ${formatDuration(duration)}`);
+        console.log(`  Total:   ${totalTests}`);
+        console.log(`  Time:    ${formatDuration(duration)}`);
         console.log();
 
     } catch (error) {
         console.error(`${colors.red}${colors.bright}Error running tests:${colors.reset}`);
         console.error(`${colors.red}${error.message}${colors.reset}`);
         if (error.stack) {
-            console.error(`${colors.dim}${error.stack}${colors.reset}`);
+            console.error(`${colors.gray}${error.stack}${colors.reset}`);
         }
         exitCode = 1;
     } finally {
