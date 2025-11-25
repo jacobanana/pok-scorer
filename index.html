@@ -85,6 +85,9 @@
 
 
                 <div class="table-container" id="gameBoardContainer">
+                    <!-- Player Turn Notification Overlay -->
+                    <div id="playerTurnNotification" class="player-turn-notification"></div>
+
                     <!-- Main Game Table -->
                     <div class="table">
                         <div class="table-inner">
@@ -163,12 +166,20 @@
                 </div>
 
                 <!-- ============================= -->
-                <!-- CURRENT ROUND SCORE DISPLAY   -->
+                <!-- SCORE VISUALIZER BOARD        -->
                 <!-- ============================= -->
-                <div class="current-round-score-container">
-                    <!-- Player Turn Notification -->
-                    <div id="playerTurnNotification" class="player-turn-notification"></div>
+                <div class="score-visualizer-container">
+                    <!-- Red score marbles (left) -->
+                    <div class="score-visualizer red-visualizer">
+                        <div class="score-bar">
+                            <div class="score-track"></div>
+                            <div class="score-markers" id="redScoreMarkers">
+                                <!-- 21 red marker positions will be generated here -->
+                            </div>
+                        </div>
+                    </div>
 
+                    <!-- Current round score (center) -->
                     <div class="current-round-score" id="currentRoundScoreDisplay">
                         <!-- Score circles showing current round points -->
                         <div class="score-row">
@@ -184,6 +195,16 @@
                         <!-- Remaining POKs counter -->
                         <div class="poks-remaining-info">
                             <span id="remainingPoksRed">5</span> - <span id="remainingPoksBlue">5</span>
+                        </div>
+                    </div>
+
+                    <!-- Blue score marbles (right) -->
+                    <div class="score-visualizer blue-visualizer">
+                        <div class="score-bar">
+                            <div class="score-track"></div>
+                            <div class="score-markers" id="blueScoreMarkers">
+                                <!-- 21 blue marker positions will be generated here -->
+                            </div>
                         </div>
                     </div>
                 </div>

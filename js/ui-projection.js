@@ -3,6 +3,7 @@
 // ============================================
 
 import { CONFIG } from './config.js';
+import { ScoreVisualizerService } from './score-visualizer-service.js';
 
 export class UIProjection {
     constructor(eventStore, gameStateProjection) {
@@ -11,6 +12,7 @@ export class UIProjection {
         this.dom = {};
         this.pokElements = new Map();
         this.tableElement = null;
+        this.scoreVisualizer = null;
 
         // Subscribe to events
         eventStore.subscribe('GAME_STARTED', (e) => this.onGameStarted(e));
@@ -46,10 +48,18 @@ export class UIProjection {
             modalRoundNumber: document.getElementById('roundEndModalRoundNumber'),
             historyTableBody: document.getElementById('roundsHistoryTableBody'),
             currentRoundScore: document.getElementById('currentRoundScoreDisplay'),
-            turnNotification: document.getElementById('playerTurnNotification')
+            turnNotification: document.getElementById('playerTurnNotification'),
+            redScoreMarkers: document.getElementById('redScoreMarkers'),
+            blueScoreMarkers: document.getElementById('blueScoreMarkers')
         };
 
         this.tableElement = this.dom.table;
+
+        // Initialize score visualizer service
+        this.scoreVisualizer = new ScoreVisualizerService(
+            this.dom.redScoreMarkers,
+            this.dom.blueScoreMarkers
+        );
     }
 
     onGameStarted(event) {
@@ -69,6 +79,12 @@ export class UIProjection {
         // Check if table element is initialized
         if (!this.tableElement) {
             console.error('Table element not initialized yet. Call ui.init() before loading events.');
+            return;
+        }
+
+        // Check if POK already exists (prevent duplicates during replay)
+        if (this.pokElements.has(pok.id)) {
+            console.warn('POK element already exists:', pok.id);
             return;
         }
 
@@ -143,7 +159,11 @@ export class UIProjection {
 
     onRoundStarted(event) {
         this.hideRoundModal();
+
+        // Clear the table BEFORE any new POKs might be added
         this.clearTable();
+
+        // Update UI state
         this.updateScores();
         this.showTurnNotification(event.data.startingPlayerId);
         this.updateBodyClass(event.data.startingPlayerId);
@@ -217,13 +237,20 @@ export class UIProjection {
     }
 
     onGameReset(event) {
-        // Clear all UI elements
+        // Clear all UI elements - this must happen first
         this.clearTable();
         this.hideRoundModal();
 
         // Reset table flip state
-        this.dom.tableContainer.classList.remove('flipped');
+        if (this.dom.tableContainer) {
+            this.dom.tableContainer.classList.remove('flipped');
+        }
         this.swapCircleZoneDOMPositions(false); // Reset to non-flipped state
+
+        // Reset score visualizer
+        if (this.scoreVisualizer) {
+            this.scoreVisualizer.reset();
+        }
 
         // Reset scores and history
         this.updateScores();
@@ -246,15 +273,23 @@ export class UIProjection {
 
     renderPoksForRound(round) {
         // Clear existing POKs
-        this.pokElements.forEach(el => el.remove());
+        this.pokElements.forEach(el => {
+            if (el && el.parentNode) {
+                el.remove();
+            }
+        });
         this.pokElements.clear();
 
         // Render all POKs from the round
-        round.poks.forEach(pok => {
-            const pokEl = this.createPokElement(pok);
-            this.pokElements.set(pok.id, pokEl);
-            this.tableElement.appendChild(pokEl);
-        });
+        if (round && round.poks) {
+            round.poks.forEach(pok => {
+                const pokEl = this.createPokElement(pok);
+                this.pokElements.set(pok.id, pokEl);
+                if (this.tableElement) {
+                    this.tableElement.appendChild(pokEl);
+                }
+            });
+        }
     }
 
     updateRoundScoreDisplay(round) {
@@ -317,6 +352,14 @@ export class UIProjection {
         this.dom.mainRedTotal.textContent = state.players.red.totalScore;
         this.dom.mainBlueTotal.textContent = state.players.blue.totalScore;
 
+        // Update score visualizer
+        if (this.scoreVisualizer) {
+            this.scoreVisualizer.updateScores(
+                state.players.red.totalScore,
+                state.players.blue.totalScore
+            );
+        }
+
         if (round) {
             const scores = this.gameState.getRoundScores();
 
@@ -353,9 +396,6 @@ export class UIProjection {
         this.dom.turnNotification.classList.remove('show', 'fade-out', 'red-player', 'blue-player');
         this.dom.turnNotification.classList.add(`${playerId}-player`);
 
-        // Hide score display
-        this.dom.currentRoundScore.classList.add('hidden');
-
         // Force reflow
         void this.dom.turnNotification.offsetWidth;
 
@@ -366,10 +406,6 @@ export class UIProjection {
         setTimeout(() => {
             this.dom.turnNotification.classList.remove('show');
             this.dom.turnNotification.classList.add('fade-out');
-
-            setTimeout(() => {
-                this.dom.currentRoundScore.classList.remove('hidden');
-            }, 300);
         }, CONFIG.TURN_NOTIFICATION_MS);
     }
 
@@ -534,7 +570,13 @@ export class UIProjection {
     }
 
     clearTable() {
-        this.pokElements.forEach(el => el.remove());
+        // Remove DOM elements first
+        this.pokElements.forEach(el => {
+            if (el && el.parentNode) {
+                el.remove();
+            }
+        });
+        // Clear the map
         this.pokElements.clear();
     }
 }

@@ -451,7 +451,6 @@ export class PokScorerApp {
                 `All POKs played! Round ending in ${Math.ceil(remaining)}s...`;
             this.ui.dom.turnNotification.classList.add('show', 'round-complete');
             this.ui.dom.turnNotification.classList.remove('red-player', 'blue-player');
-            this.ui.dom.currentRoundScore.classList.add('hidden');
         }, 100);
 
         // Auto-end after delay
