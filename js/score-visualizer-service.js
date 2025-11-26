@@ -27,8 +27,15 @@ export class ScoreVisualizerService {
             marker.dataset.position = i;
             marker.dataset.color = color;
 
-            // Position evenly across the bar (0% to 100%)
-            const position = (i / (this.totalMarkers - 1)) * 100;
+            // Position evenly across the bar
+            // Red: start from right (100%) and go left (towards center)
+            // Blue: start from left (0%) and go right (towards center)
+            let position;
+            if (color === 'red') {
+                position = 100 - (i / (this.totalMarkers - 1)) * 100;
+            } else {
+                position = (i / (this.totalMarkers - 1)) * 100;
+            }
             marker.style.left = `${position}%`;
 
             container.appendChild(marker);
