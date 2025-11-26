@@ -17,6 +17,7 @@ export class PokScorerApp {
 
         this.isDragging = false;
         this.draggedPokId = null;
+        this._dragImage = null;
     }
 
     init() {
@@ -228,20 +229,16 @@ export class PokScorerApp {
                 this.draggedPokId = this.findPokIdByElement(e.target);
                 e.target.classList.add('dragging');
 
-                // Create a cleaner drag image (clone the element)
-                const dragImage = e.target.cloneNode(true);
-                dragImage.style.opacity = '0.8';
-                dragImage.style.position = 'absolute';
-                dragImage.style.top = '-1000px';
-                document.body.appendChild(dragImage);
-                e.dataTransfer.setDragImage(dragImage,
+                // Create a custom drag image (clone positioned off-screen)
+                this._dragImage = e.target.cloneNode(true);
+                this._dragImage.style.opacity = '0.8';
+                this._dragImage.style.position = 'absolute';
+                this._dragImage.style.top = '-1000px';
+                document.body.appendChild(this._dragImage);
+                e.dataTransfer.setDragImage(this._dragImage,
                     e.target.offsetWidth / 2,
                     e.target.offsetHeight / 2);
 
-                // Clean up the drag image after a short delay
-                setTimeout(() => dragImage.remove(), 0);
-
-                // Set effect to move (not copy)
                 e.dataTransfer.effectAllowed = 'move';
             }
         });
@@ -252,6 +249,10 @@ export class PokScorerApp {
                 e.target.classList.remove('dragging');
                 this.isDragging = false;
                 this.draggedPokId = null;
+
+                // Clean up drag image
+                this._dragImage?.remove();
+                this._dragImage = null;
 
                 // Clear boundary highlights
                 const zones = document.querySelectorAll('.zone, .circle-zone');
