@@ -47,15 +47,18 @@ export class LoadingBar extends Component {
 
         const duration = this.props.duration || 3000;
 
-        // Reset
-        this.reset();
-        this.addClass('show');
+        // Reset to 0% without transition
+        this.stop();
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
 
-        // Animate
+        // Force reflow to ensure browser registers the 0% state
+        void fill.offsetWidth;
+
+        // Show the bar and start animation
+        this.addClass('show');
         fill.style.transition = `width ${duration}ms linear`;
-        requestAnimationFrame(() => {
-            fill.style.width = '100%';
-        });
+        fill.style.width = '100%';
 
         // Handle completion
         if (onComplete) {
