@@ -1,5 +1,5 @@
 // ============================================
-// COMPONENT CLASS UNIT TESTS
+// COMPONENT CLASS UNIT TESTS (Slim Version)
 // ============================================
 
 import { Component } from '../../js/components/core/Component.js';
@@ -74,7 +74,7 @@ runner.describe('Component - Initialization', () => {
 
     runner.it('should not be mounted initially', () => {
         const component = new Component();
-        assert.notOk(component.isMounted());
+        assert.notOk(component._mounted);
     });
 });
 
@@ -133,14 +133,14 @@ runner.describe('Component - Mounting', () => {
     runner.it('should mount to parent element', () => {
         const component = new TestComponent();
         component.mount(testContainer);
-        assert.ok(component.isMounted());
+        assert.ok(component._mounted);
         assert.equal(testContainer.children.length, 1);
     });
 
     runner.it('should mount using selector string', () => {
         const component = new TestComponent();
         component.mount('#test-container');
-        assert.ok(component.isMounted());
+        assert.ok(component._mounted);
         assert.equal(testContainer.children.length, 1);
     });
 
@@ -211,7 +211,7 @@ runner.describe('Component - Unmounting', () => {
 
         component.unmount();
         assert.equal(testContainer.children.length, 0);
-        assert.notOk(component.isMounted());
+        assert.notOk(component._mounted);
     });
 
     runner.it('should call onUnmount before removal', () => {
@@ -227,16 +227,6 @@ runner.describe('Component - Unmounting', () => {
         assert.ok(unmountCalled);
     });
 
-    runner.it('should clear event handlers on unmount', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.on('click', () => {});
-        component.on('mouseover', () => {});
-
-        component.unmount();
-        assert.equal(component._eventHandlers.size, 0);
-    });
-
     runner.it('should return this for chaining', () => {
         const component = new TestComponent();
         component.mount(testContainer);
@@ -245,7 +235,7 @@ runner.describe('Component - Unmounting', () => {
     });
 });
 
-runner.describe('Component - Update', () => {
+runner.describe('Component - bindTo', () => {
     runner.beforeEach(() => {
         createTestContainer();
     });
@@ -254,56 +244,38 @@ runner.describe('Component - Update', () => {
         cleanupTestContainer();
     });
 
-    runner.it('should update props', () => {
-        const component = new TestComponent({ text: 'Original' });
-        component.mount(testContainer);
+    runner.it('should bind to existing element', () => {
+        testContainer.innerHTML = '<div id="existing" class="target">Content</div>';
+        const component = new Component();
+        component.bindTo('#existing');
 
-        component.update({ text: 'Updated' });
-        assert.equal(component.props.text, 'Updated');
+        assert.ok(component.el);
+        assert.equal(component.el.id, 'existing');
+        assert.ok(component._mounted);
     });
 
-    runner.it('should merge props', () => {
-        const component = new TestComponent({ text: 'Hello', className: 'original' });
-        component.mount(testContainer);
+    runner.it('should call onCreate and onMount', () => {
+        testContainer.innerHTML = '<div id="existing"></div>';
+        let createCalled = false;
+        let mountCalled = false;
 
-        component.update({ text: 'Updated' });
-        assert.equal(component.props.text, 'Updated');
-        assert.equal(component.props.className, 'original');
-    });
-
-    runner.it('should re-render with updated props', () => {
-        const component = new TestComponent({ text: 'Original' });
-        component.mount(testContainer);
-        assert.equal(component.el.textContent, 'Original');
-
-        component.update({ text: 'Updated' });
-        assert.equal(component.el.textContent, 'Updated');
-    });
-
-    runner.it('should call onUpdate with previous props', () => {
-        let prevPropsReceived = null;
-        class TestUpdate extends TestComponent {
-            onUpdate(prevProps) {
-                prevPropsReceived = prevProps;
-            }
+        class TestBind extends Component {
+            onCreate() { createCalled = true; }
+            onMount() { mountCalled = true; }
         }
-        const component = new TestUpdate({ text: 'Original' });
-        component.mount(testContainer);
-        component.update({ text: 'Updated' });
 
-        assert.equal(prevPropsReceived.text, 'Original');
+        const component = new TestBind();
+        component.bindTo('#existing');
+
+        assert.ok(createCalled);
+        assert.ok(mountCalled);
     });
 
-    runner.it('should preserve event handlers after update', () => {
-        let clickCount = 0;
-        const component = new TestComponent({ text: 'Original' });
-        component.mount(testContainer);
-        component.on('click', () => clickCount++);
-
-        component.update({ text: 'Updated' });
-        component.el.click();
-
-        assert.equal(clickCount, 1);
+    runner.it('should return this for chaining', () => {
+        testContainer.innerHTML = '<div id="existing"></div>';
+        const component = new Component();
+        const result = component.bindTo('#existing');
+        assert.equal(result, component);
     });
 });
 
@@ -335,31 +307,6 @@ runner.describe('Component - Event Handling', () => {
 
         component.el.click();
         assert.equal(count, 2);
-    });
-
-    runner.it('should remove event listener with off()', () => {
-        let clicked = false;
-        const handler = () => { clicked = true; };
-
-        const component = new ButtonComponent();
-        component.mount(testContainer);
-        component.on('click', handler);
-        component.off('click', handler);
-
-        component.el.click();
-        assert.notOk(clicked);
-    });
-
-    runner.it('should remove all handlers for event when no handler specified', () => {
-        let count = 0;
-        const component = new ButtonComponent();
-        component.mount(testContainer);
-        component.on('click', () => count++);
-        component.on('click', () => count++);
-        component.off('click');
-
-        component.el.click();
-        assert.equal(count, 0);
     });
 
     runner.it('should emit custom events', () => {
@@ -472,29 +419,10 @@ runner.describe('Component - Content Methods', () => {
         assert.equal(component.el.textContent, 'New Text');
     });
 
-    runner.it('should get text content with getText()', () => {
-        const component = new TestComponent({ text: 'Original' });
-        component.mount(testContainer);
-        assert.equal(component.getText(), 'Original');
-    });
-
-    runner.it('should set HTML with setHTML()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.setHTML('<span>Inner HTML</span>');
-        assert.equal(component.el.innerHTML, '<span>Inner HTML</span>');
-    });
-
-    runner.it('should get HTML with getHTML()', () => {
-        const component = new TestComponent({ text: 'Plain' });
-        component.mount(testContainer);
-        assert.equal(component.getHTML(), 'Plain');
-    });
-
     runner.it('should return this for chaining', () => {
         const component = new TestComponent();
         component.mount(testContainer);
-        const result = component.setText('a').setHTML('b');
+        const result = component.setText('a');
         assert.equal(result, component);
     });
 });
@@ -508,14 +436,6 @@ runner.describe('Component - Style Methods', () => {
         cleanupTestContainer();
     });
 
-    runner.it('should set inline styles with setStyle()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.setStyle({ color: 'red', fontSize: '20px' });
-        assert.equal(component.el.style.color, 'red');
-        assert.equal(component.el.style.fontSize, '20px');
-    });
-
     runner.it('should set single style with css()', () => {
         const component = new TestComponent();
         component.mount(testContainer);
@@ -526,54 +446,8 @@ runner.describe('Component - Style Methods', () => {
     runner.it('should return this for chaining', () => {
         const component = new TestComponent();
         component.mount(testContainer);
-        const result = component.setStyle({ color: 'red' }).css('margin', '10px');
+        const result = component.css('margin', '10px');
         assert.equal(result, component);
-    });
-});
-
-runner.describe('Component - Attribute Methods', () => {
-    runner.beforeEach(() => {
-        createTestContainer();
-    });
-
-    runner.afterEach(() => {
-        cleanupTestContainer();
-    });
-
-    runner.it('should set attribute with setAttr()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.setAttr('data-id', '123');
-        assert.equal(component.el.getAttribute('data-id'), '123');
-    });
-
-    runner.it('should get attribute with getAttr()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.setAttr('title', 'Test Title');
-        assert.equal(component.getAttr('title'), 'Test Title');
-    });
-
-    runner.it('should remove attribute with removeAttr()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.setAttr('data-temp', 'value');
-        component.removeAttr('data-temp');
-        assert.equal(component.getAttr('data-temp'), null);
-    });
-
-    runner.it('should set data attribute with setData()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.setData('userId', '456');
-        assert.equal(component.el.dataset.userId, '456');
-    });
-
-    runner.it('should get data attribute with getData()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-        component.setData('status', 'active');
-        assert.equal(component.getData('status'), 'active');
     });
 });
 
@@ -601,61 +475,11 @@ runner.describe('Component - Visibility Methods', () => {
         assert.notEqual(component.el.style.display, 'none');
     });
 
-    runner.it('should toggle visibility with toggle()', () => {
+    runner.it('should return this for chaining', () => {
         const component = new TestComponent();
         component.mount(testContainer);
-
-        component.toggle();
-        assert.equal(component.el.style.display, 'none');
-
-        component.toggle();
-        assert.notEqual(component.el.style.display, 'none');
-    });
-
-    runner.it('should force visibility with toggle(boolean)', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-
-        component.toggle(false);
-        assert.equal(component.el.style.display, 'none');
-
-        component.toggle(true);
-        assert.notEqual(component.el.style.display, 'none');
-    });
-
-    runner.it('should check visibility with isVisible()', () => {
-        const component = new TestComponent();
-        component.mount(testContainer);
-
-        assert.ok(component.isVisible());
-        component.hide();
-        assert.notOk(component.isVisible());
-    });
-});
-
-runner.describe('Component - Enable/Disable', () => {
-    runner.beforeEach(() => {
-        createTestContainer();
-    });
-
-    runner.afterEach(() => {
-        cleanupTestContainer();
-    });
-
-    runner.it('should disable element with disable()', () => {
-        const component = new ButtonComponent();
-        component.mount(testContainer);
-        component.disable();
-        assert.ok(component.el.disabled);
-        assert.ok(component.el.hasAttribute('disabled'));
-    });
-
-    runner.it('should enable element with enable()', () => {
-        const component = new ButtonComponent({ disabled: true });
-        component.mount(testContainer);
-        component.enable();
-        assert.notOk(component.el.disabled);
-        assert.notOk(component.el.hasAttribute('disabled'));
+        const result = component.hide().show();
+        assert.equal(result, component);
     });
 });
 
@@ -696,7 +520,7 @@ runner.describe('Component - Query Methods', () => {
     });
 });
 
-runner.describe('Component - Child Management', () => {
+runner.describe('Component - Focus', () => {
     runner.beforeEach(() => {
         createTestContainer();
     });
@@ -705,92 +529,17 @@ runner.describe('Component - Child Management', () => {
         cleanupTestContainer();
     });
 
-    runner.it('should add child component with addChild()', () => {
-        const parent = new ContainerComponent();
-        const child = new TestComponent({ text: 'Child' });
-
-        parent.mount(testContainer);
-        parent.addChild('testChild', child, '.inner');
-
-        assert.ok(child.isMounted());
-        assert.equal(parent.find('.inner').children.length, 1);
-    });
-
-    runner.it('should get child component with getChild()', () => {
-        const parent = new ContainerComponent();
-        const child = new TestComponent({ text: 'Child' });
-
-        parent.mount(testContainer);
-        parent.addChild('testChild', child);
-
-        const retrieved = parent.getChild('testChild');
-        assert.equal(retrieved, child);
-    });
-
-    runner.it('should remove child component with removeChild()', () => {
-        const parent = new ContainerComponent();
-        const child = new TestComponent({ text: 'Child' });
-
-        parent.mount(testContainer);
-        parent.addChild('testChild', child, '.inner');
-
-        parent.removeChild('testChild');
-        assert.notOk(child.isMounted());
-        assert.equal(parent.getChild('testChild'), undefined);
-    });
-
-    runner.it('should clear all children with clearChildren()', () => {
-        const parent = new ContainerComponent();
-        const child1 = new TestComponent({ text: 'Child 1' });
-        const child2 = new TestComponent({ text: 'Child 2' });
-
-        parent.mount(testContainer);
-        parent.addChild('child1', child1, '.inner');
-        parent.addChild('child2', child2, '.inner');
-
-        parent.clearChildren();
-
-        assert.notOk(child1.isMounted());
-        assert.notOk(child2.isMounted());
-        assert.equal(parent.getChild('child1'), undefined);
-    });
-
-    runner.it('should unmount children when parent unmounts', () => {
-        const parent = new ContainerComponent();
-        const child = new TestComponent({ text: 'Child' });
-
-        parent.mount(testContainer);
-        parent.addChild('child', child, '.inner');
-        assert.ok(child.isMounted());
-
-        parent.unmount();
-        assert.notOk(child.isMounted());
-    });
-});
-
-runner.describe('Component - Utility Methods', () => {
-    runner.beforeEach(() => {
-        createTestContainer();
-    });
-
-    runner.afterEach(() => {
-        cleanupTestContainer();
-    });
-
-    runner.it('should return element with getElement()', () => {
-        const component = new TestComponent();
+    runner.it('should focus element with focus()', () => {
+        const component = new ButtonComponent();
         component.mount(testContainer);
-        assert.equal(component.getElement(), component.el);
+        component.focus();
+        assert.equal(document.activeElement, component.el);
     });
 
-    runner.it('should return mounted state with isMounted()', () => {
-        const component = new TestComponent();
-        assert.notOk(component.isMounted());
-
+    runner.it('should return this for chaining', () => {
+        const component = new ButtonComponent();
         component.mount(testContainer);
-        assert.ok(component.isMounted());
-
-        component.unmount();
-        assert.notOk(component.isMounted());
+        const result = component.focus();
+        assert.equal(result, component);
     });
 });
