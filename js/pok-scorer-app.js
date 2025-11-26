@@ -86,26 +86,14 @@ export class PokScorerApp {
         const continueGameButton = document.getElementById('continueGameButton');
         if (continueGameButton) {
             continueGameButton.addEventListener('click', () => {
-                // Load the saved game
+                // Load the saved game - UI updates happen via GAME_LOADED event
                 this.isLoading = true;
                 const loaded = this.eventStore.load();
-                if (loaded) {
-                    // Game was loaded - hide start selector and show the game board
-                    this.ui.hideStartSelector();
-                    this.ui.updateScores();
-                    this.ui.updateRoundsHistory();
-                    this.ui.updateHistoryHeaders();
-
-                    // Update body class for current player
-                    const round = this.gameState.getCurrentRound();
-                    if (round) {
-                        this.ui.updateBodyClass(round.currentPlayerId);
-                    }
-                    // isLoading flag will be cleared by GAME_LOADED event
-                } else {
+                if (!loaded) {
                     alert('Failed to load saved game');
                     this.isLoading = false;
                 }
+                // isLoading flag will be cleared by GAME_LOADED event
             });
         }
 
@@ -126,11 +114,8 @@ export class PokScorerApp {
                     const file = e.target.files[0];
                     if (file) {
                         try {
+                            // UI updates happen via GAME_LOADED event
                             await this.eventStore.importFromFile(file);
-                            this.ui.hideStartSelector();
-                            this.ui.updateScores();
-                            this.ui.updateRoundsHistory();
-                            this.ui.updateHistoryHeaders();
                         } catch (error) {
                             alert('Failed to import game: ' + error.message);
                         }

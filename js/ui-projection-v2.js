@@ -23,6 +23,18 @@ import {
     StartSelector
 } from './components/index.js';
 
+// Event categories for automatic UI updates
+const EVENT_CATEGORIES = {
+    // Events that affect score display
+    SCORE: ['POK_PLACED', 'POK_MOVED', 'POK_REMOVED', 'ROUND_ENDED', 'ROUND_STARTED', 'TABLE_FLIPPED', 'GAME_RESET', 'GAME_STARTED', 'GAME_LOADED'],
+    // Events that affect round history
+    HISTORY: ['POK_PLACED', 'POK_MOVED', 'POK_REMOVED', 'ROUND_ENDED', 'ROUND_STARTED', 'TABLE_FLIPPED', 'GAME_RESET', 'GAME_STARTED', 'GAME_LOADED'],
+    // Events that affect turn indicator
+    TURN: ['POK_PLACED', 'POK_MOVED', 'POK_REMOVED'],
+    // Events that affect history table headers (player names)
+    HEADERS: ['GAME_STARTED', 'GAME_LOADED']
+};
+
 /**
  * UIProjection V2 - Refactored to use the component system
  *
@@ -74,8 +86,9 @@ export class UIProjection {
         // DOM container references (minimal)
         this.containers = {};
 
-        // Subscribe to events
+        // Subscribe to specific event handlers
         eventStore.subscribe('GAME_STARTED', (e) => this.onGameStarted(e));
+        eventStore.subscribe('GAME_LOADED', (e) => this.onGameLoaded(e));
         eventStore.subscribe('POK_PLACED', (e) => this.onPokPlaced(e));
         eventStore.subscribe('POK_MOVED', (e) => this.onPokMoved(e));
         eventStore.subscribe('POK_REMOVED', (e) => this.onPokRemoved(e));
@@ -83,6 +96,31 @@ export class UIProjection {
         eventStore.subscribe('ROUND_STARTED', (e) => this.onRoundStarted(e));
         eventStore.subscribe('TABLE_FLIPPED', (e) => this.onTableFlipped(e));
         eventStore.subscribe('GAME_RESET', (e) => this.onGameReset(e));
+
+        // Subscribe to category-based automatic updates
+        this._subscribeToCategories(eventStore);
+    }
+
+    /**
+     * Subscribe to event categories for automatic UI updates
+     * @private
+     */
+    _subscribeToCategories(eventStore) {
+        EVENT_CATEGORIES.SCORE.forEach(eventType => {
+            eventStore.subscribe(eventType, () => this.updateScores());
+        });
+
+        EVENT_CATEGORIES.HISTORY.forEach(eventType => {
+            eventStore.subscribe(eventType, () => this.updateRoundsHistory());
+        });
+
+        EVENT_CATEGORIES.TURN.forEach(eventType => {
+            eventStore.subscribe(eventType, () => this.updateNextPlayerTurn());
+        });
+
+        EVENT_CATEGORIES.HEADERS.forEach(eventType => {
+            eventStore.subscribe(eventType, () => this.updateHistoryHeaders());
+        });
     }
 
     /**
@@ -284,11 +322,17 @@ export class UIProjection {
 
     onGameStarted(event) {
         this.hideStartSelector();
-        this.updateScores();
-        this.updateHistoryHeaders();
-        this.updateRoundsHistory();
         this.showTurnNotification(event.data.startingPlayerId);
         this.updateBodyClass(event.data.startingPlayerId);
+    }
+
+    onGameLoaded(event) {
+        this.hideStartSelector();
+        // Update body class for current player
+        const round = this.gameState.getCurrentRound();
+        if (round) {
+            this.updateBodyClass(round.currentPlayerId);
+        }
     }
 
     onPokPlaced(event) {
@@ -318,11 +362,6 @@ export class UIProjection {
             pokComponent.mount(this.containers.table);
         }
         this.pokComponents.set(pok.id, pokComponent);
-
-        // Update UI
-        this.updateScores();
-        this.updateRoundsHistory();
-        this.updateNextPlayerTurn();
     }
 
     onPokMoved(event) {
@@ -339,10 +378,6 @@ export class UIProjection {
             isHigh: pok.isHigh,
             boundaryZone: pok.boundaryZone
         });
-
-        this.updateScores();
-        this.updateRoundsHistory();
-        this.updateNextPlayerTurn();
     }
 
     onPokRemoved(event) {
@@ -354,25 +389,17 @@ export class UIProjection {
 
         // Highlight new last placed
         this._updateLastPlacedHighlight();
-
-        this.updateScores();
-        this.updateRoundsHistory();
-        this.updateNextPlayerTurn();
     }
 
     onRoundEnded(event) {
         this.showRoundModal(event);
-        this.updateScores();
-        this.updateRoundsHistory();
     }
 
     onRoundStarted(event) {
         this.hideRoundModal();
         this.clearTable();
-        this.updateScores();
         this.showTurnNotification(event.data.startingPlayerId);
         this.updateBodyClass(event.data.startingPlayerId);
-        this.updateRoundsHistory();
     }
 
     onTableFlipped(event) {
@@ -393,9 +420,6 @@ export class UIProjection {
                 }
             });
         }
-
-        this.updateScores();
-        this.updateRoundsHistory();
     }
 
     onGameReset(event) {
@@ -409,9 +433,6 @@ export class UIProjection {
         // Reset score markers
         this.components.redScoreMarkers?.reset();
         this.components.blueScoreMarkers?.reset();
-
-        this.updateScores();
-        this.updateRoundsHistory();
 
         // Reset body classes
         document.body.className = '';
