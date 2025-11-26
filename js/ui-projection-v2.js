@@ -34,6 +34,18 @@ export class UIProjection {
         this.eventStore = eventStore;
         this.gameState = gameStateProjection;
 
+        // Event handlers (set by main app via setHandlers)
+        this.handlers = {
+            onGameStart: null,
+            onContinueGame: null,
+            onSaveLatest: null,
+            onImport: null,
+            onFlipTable: null,
+            onShowHistory: null,
+            onNewGame: null,
+            onExportMatch: null
+        };
+
         // Component references
         this.components = {
             startSelector: null,
@@ -99,15 +111,17 @@ export class UIProjection {
     _createComponents() {
         // Start Selector
         this.components.startSelector = new StartSelector({
-            id: 'gameStartSelector',
-            onStart: (playerId) => this._handleGameStart(playerId),
-            onContinue: () => this._handleContinueGame(),
-            onSaveLatest: () => this._handleSaveLatest(),
-            onImport: () => this._handleImport()
+            id: 'gameStartSelector'
         });
 
         if (this.containers.startSelector) {
             this.components.startSelector.mount(this.containers.startSelector);
+            // Listen to component events
+            this.components.startSelector
+                .on('start', (e) => this._handleGameStart(e.detail.playerId))
+                .on('continue', () => this._handleContinueGame())
+                .on('saveLatest', () => this._handleSaveLatest())
+                .on('import', () => this._handleImport());
         }
 
         // History Table (main panel)
@@ -115,14 +129,16 @@ export class UIProjection {
             id: 'roundsHistoryTable',
             bodyId: 'roundsHistoryTableBody',
             redHeaderId: 'historyHeaderRed',
-            blueHeaderId: 'historyHeaderBlue',
-            onRowHover: (index) => this.showRoundPreview(index),
-            onRowLeave: () => this.hideRoundPreview()
+            blueHeaderId: 'historyHeaderBlue'
         });
 
         const historyContainer = this.containers.leftPanel?.querySelector('.history-table-container');
         if (historyContainer) {
             this.components.historyTable.mount(historyContainer);
+            // Listen to component events
+            this.components.historyTable
+                .on('rowHover', (e) => this.showRoundPreview(e.detail.index))
+                .on('rowLeave', () => this.hideRoundPreview());
         }
 
         // Turn Notification
@@ -767,40 +783,47 @@ export class UIProjection {
     }
 
     // ==========================================
-    // Button Handlers (to be wired up by app)
+    // Event Handlers - call registered handlers
     // ==========================================
 
+    /**
+     * Register event handlers from main app
+     * @param {Object} handlers - Handler functions
+     */
+    setHandlers(handlers) {
+        Object.assign(this.handlers, handlers);
+    }
+
     _handleGameStart(playerId) {
-        // This will be wired up by the main app
-        this.emit?.('game:start', { playerId });
+        this.handlers.onGameStart?.(playerId);
     }
 
     _handleContinueGame() {
-        this.emit?.('game:continue');
+        this.handlers.onContinueGame?.();
     }
 
     _handleSaveLatest() {
-        this.emit?.('game:saveLatest');
+        this.handlers.onSaveLatest?.();
     }
 
     _handleImport() {
-        this.emit?.('game:import');
+        this.handlers.onImport?.();
     }
 
     _handleFlipTable() {
-        this.emit?.('table:flip');
+        this.handlers.onFlipTable?.();
     }
 
     _handleShowHistory() {
-        this.emit?.('history:show');
+        this.handlers.onShowHistory?.();
     }
 
     _handleNewGame() {
-        this.emit?.('game:new');
+        this.handlers.onNewGame?.();
     }
 
     _handleExportMatch() {
-        this.emit?.('game:export');
+        this.handlers.onExportMatch?.();
     }
 
     // ==========================================

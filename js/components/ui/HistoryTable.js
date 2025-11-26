@@ -3,6 +3,10 @@ import { Component } from '../core/Component.js';
 /**
  * HistoryTable component - Rounds history table
  *
+ * Events emitted:
+ * - 'rowHover' - When mouse enters a row, detail: { index }
+ * - 'rowLeave' - When mouse leaves a row
+ *
  * Props:
  * - id: string - Table ID
  * - bodyId: string - Table body ID
@@ -10,9 +14,6 @@ import { Component } from '../core/Component.js';
  * - blueHeaderId: string - Blue header ID
  * - redPlayerName: string - Red player display name
  * - bluePlayerName: string - Blue player display name
- * - rounds: Array - Rounds data
- * - onRowHover: Function - Callback for row hover (index)
- * - onRowLeave: Function - Callback for row leave
  */
 export class HistoryTable extends Component {
     template() {
@@ -118,13 +119,9 @@ export class HistoryTable extends Component {
             <td>${diff}</td>
         `;
 
-        // Add hover events if callbacks provided
-        if (this.props.onRowHover) {
-            row.addEventListener('mouseenter', () => this.props.onRowHover(index));
-        }
-        if (this.props.onRowLeave) {
-            row.addEventListener('mouseleave', () => this.props.onRowLeave());
-        }
+        // Emit events on hover
+        row.addEventListener('mouseenter', () => this.emit('rowHover', { index }));
+        row.addEventListener('mouseleave', () => this.emit('rowLeave'));
 
         return row;
     }

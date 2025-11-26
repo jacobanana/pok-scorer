@@ -3,6 +3,10 @@ import { Component } from '../core/Component.js';
 /**
  * PlayerInput component - Player name input with start functionality
  *
+ * Events emitted:
+ * - 'start' - When the start area (not input) is clicked, detail: { playerId }
+ * - 'change' - When input value changes, detail: { value, playerId }
+ *
  * Props:
  * - playerId: string - 'red' or 'blue'
  * - placeholder: string - Input placeholder
@@ -40,88 +44,62 @@ export class PlayerInput extends Component {
     }
 
     onCreate() {
-        // Prevent click propagation on input to allow typing
         const input = this.find('input');
         if (input) {
+            // Prevent click propagation on input to allow typing
             input.addEventListener('click', (e) => e.stopPropagation());
+            // Emit change event on input
+            input.addEventListener('input', () => {
+                this.emit('change', { value: this.getValue(), playerId: this.props.playerId });
+            });
         }
+
+        // Emit start event when clicking outside the input
+        this.on('click', (e) => {
+            if (!e.target.matches('input')) {
+                this.emit('start', { playerId: this.props.playerId });
+            }
+        });
     }
 
-    /**
-     * Get the input element
-     * @returns {HTMLInputElement|null}
-     */
+    /** Get the input element */
     getInput() {
         return this.find('input');
     }
 
-    /**
-     * Get the input value
-     * @returns {string}
-     */
+    /** Get the input value */
     getValue() {
         const input = this.getInput();
         return input ? input.value : '';
     }
 
-    /**
-     * Set the input value
-     * @param {string} value
-     * @returns {PlayerInput} this for chaining
-     */
+    /** Set the input value */
     setValue(value) {
         const input = this.getInput();
-        if (input) {
-            input.value = value;
-        }
+        if (input) input.value = value;
         return this;
     }
 
-    /**
-     * Get the player name (value or placeholder)
-     * @returns {string}
-     */
+    /** Get the player name (value or placeholder) */
     getPlayerName() {
         const value = this.getValue().trim();
         return value || this.props.placeholder || this.props.playerId;
     }
 
-    /**
-     * Focus the input
-     * @returns {PlayerInput} this for chaining
-     */
+    /** Focus the input */
     focusInput() {
         const input = this.getInput();
-        if (input) {
-            input.focus();
-        }
+        if (input) input.focus();
         return this;
     }
 
-    /**
-     * Add change handler
-     * @param {Function} handler
-     * @returns {PlayerInput} this for chaining
-     */
-    onChange(handler) {
-        const input = this.getInput();
-        if (input) {
-            input.addEventListener('input', handler);
-        }
-        return this;
-    }
-
-    /**
-     * Add click handler for the start area (not the input)
-     * @param {Function} handler
-     * @returns {PlayerInput} this for chaining
-     */
+    /** Convenience: add start handler (listens to 'start' event) */
     onStart(handler) {
-        return this.on('click', (e) => {
-            // Only trigger if not clicking the input
-            if (!e.target.matches('input')) {
-                handler(e, this.props.playerId);
-            }
-        });
+        return this.on('start', (e) => handler(e, e.detail.playerId));
+    }
+
+    /** Convenience: add change handler (listens to 'change' event) */
+    onChange(handler) {
+        return this.on('change', (e) => handler(e, e.detail));
     }
 }
