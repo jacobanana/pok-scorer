@@ -207,6 +207,54 @@ runner.describe('EventStore - Querying Events', () => {
     });
 });
 
+runner.describe('EventStore - Player Names', () => {
+    let eventStore;
+
+    runner.beforeEach(() => {
+        disableLogging();
+        eventStore = createEventStore();
+    });
+
+    runner.afterEach(() => {
+        cleanupTestContext({ eventStore, storageKey: TEST_STORAGE_KEY });
+    });
+
+    runner.it('should return default player names when no events', () => {
+        const names = eventStore.getPlayerNamesFromEvents();
+
+        assert.equal(names.red, 'Red');
+        assert.equal(names.blue, 'Blue');
+    });
+
+    runner.it('should return player names from GAME_STARTED event', () => {
+        eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
+
+        const names = eventStore.getPlayerNamesFromEvents();
+
+        assert.equal(names.red, 'Alice');
+        assert.equal(names.blue, 'Bob');
+    });
+
+    runner.it('should return default names when GAME_STARTED has no custom names', () => {
+        eventStore.append(new GameStartedEvent('red'));
+
+        const names = eventStore.getPlayerNamesFromEvents();
+
+        assert.equal(names.red, 'Red');
+        assert.equal(names.blue, 'Blue');
+    });
+
+    runner.it('should return names from most recent GAME_STARTED event', () => {
+        eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
+        eventStore.append(new GameStartedEvent('blue', 'Charlie', 'Diana'));
+
+        const names = eventStore.getPlayerNamesFromEvents();
+
+        assert.equal(names.red, 'Charlie');
+        assert.equal(names.blue, 'Diana');
+    });
+});
+
 runner.describe('EventStore - Clear', () => {
     let eventStore;
 

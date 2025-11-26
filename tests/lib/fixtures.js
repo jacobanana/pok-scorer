@@ -77,11 +77,14 @@ export function createTestContext(options = {}) {
  * Creates a test context with a game already started
  * @param {string} startingPlayer - 'red' or 'blue'
  * @param {Object} [options] - Configuration options (same as createTestContext)
+ * @param {string} [options.redName] - Custom name for red player (default: 'Red')
+ * @param {string} [options.blueName] - Custom name for blue player (default: 'Blue')
  * @returns {TestContext} Object containing eventStore, gameState, and commands
  */
 export function createStartedGameContext(startingPlayer = 'red', options = {}) {
-    const context = createTestContext(options);
-    context.commands.startGame(startingPlayer);
+    const { redName = 'Red', blueName = 'Blue', ...contextOptions } = options;
+    const context = createTestContext(contextOptions);
+    context.commands.startGame(startingPlayer, redName, blueName);
     return context;
 }
 
