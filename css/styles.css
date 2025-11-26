@@ -94,20 +94,6 @@ body.round-ending .pok:active {
     position: relative;
 }
 
-/* Overall Game Score Display */
-.main-score-center {
-    text-align: center;
-    font-size: 64px;
-    font-weight: bold;
-}
-
-.main-score-center .red {
-    color: #d32f2f;
-}
-
-.main-score-center .blue {
-    color: #1976d2;
-}
 
 /* Rounds History Section */
 .rounds-history {
@@ -704,12 +690,6 @@ body.round-ending .pok:active {
     background-color: #999;
 }
 
-/* Remaining POKs Counter */
-.poks-remaining-info {
-    font-size: 28px;
-    color: #999;
-    font-weight: normal;
-}
 
 /* ============================================ */
 /* GAME START SELECTOR                         */
@@ -978,6 +958,55 @@ body.round-ending .pok:active {
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* Modal Score Visualizer */
+.modal-score-visualizer-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: center;
+    padding: 20px 30px;
+    background: rgba(44, 24, 16, 0.6);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    margin: 40px auto 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.modal-score-visualizer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}
+
+.modal-center-pok-marker {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-center-pok-marker .pok-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.modal-center-pok-score {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 200;
+}
+
 /* ============================================ */
 /* HISTORY MODAL (Mobile)                      */
 /* ============================================ */
@@ -1234,8 +1263,7 @@ h2 {
 .score-visualizer-container {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 15px;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
     align-items: center;
     padding: 10px 15px;
     background: #2c1810;
@@ -1245,11 +1273,35 @@ h2 {
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
+/* Margins for 5-column symmetry */
+.score-visualizer-container > .end-pok-indicator.red {
+    margin-left: 10px;
+    margin-right: 15px;
+}
+
+.score-visualizer-container > .red-visualizer {
+    margin-right: 15px;
+}
+
+.score-visualizer-container > .current-round-score {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.score-visualizer-container > .blue-visualizer {
+    margin-left: 15px;
+}
+
+.score-visualizer-container > .end-pok-indicator.blue {
+    margin-left: 15px;
+    margin-right: 10px;
+}
+
 .score-visualizer {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 5px;
+    position: relative;
 }
 
 .score-bar {
@@ -1258,7 +1310,7 @@ h2 {
     height: 20px;
     display: flex;
     align-items: center;
-    padding: 0 10px; /* Add horizontal padding to account for marker overflow */
+    padding: 0 10px;
     box-sizing: border-box;
 }
 
@@ -1312,6 +1364,82 @@ h2 {
 .blue-visualizer .score-marker.scored {
     background: radial-gradient(circle at 30% 30%, #4dabf7, #1976d2);
     border-color: #0d47a1;
+}
+
+/* End POK Indicators (show total score at ends of marble tracks) */
+.end-pok-indicator {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    align-self: center;
+    justify-self: center;
+}
+
+.end-pok-indicator.red {
+    background: #d32f2f;
+}
+
+.end-pok-indicator.blue {
+    background: #1976d2;
+}
+
+/* Center POK Marker */
+.center-pok-marker {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.center-pok-marker .pok-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.center-pok-score {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 200;
+}
+
+/* POK-styled numbers in center marker */
+.pok-style-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.pok-style-number.red {
+    background: #d32f2f;
+}
+
+.pok-style-number.blue {
+    background: #1976d2;
 }
 
 /* ============================================ */
@@ -1470,10 +1598,6 @@ button:active {
         font-size: 14px;
     }
 
-    .poks-remaining-info {
-        font-size: 20px;
-    }
-
     .current-round-score .score-row {
         gap: 10px;
         margin-bottom: 5px;
@@ -1542,6 +1666,48 @@ button:active {
     .modal-content .total-scores {
         font-size: 24px;
         margin-top: 20px;
+    }
+
+    .modal-score-visualizer-container {
+        padding: 10px 15px;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .modal-center-pok-marker {
+        width: 60px;
+        height: 60px;
+    }
+
+    .modal-score-visualizer {
+        padding: 4px;
+    }
+
+    .pok-style-number {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+
+    .modal-center-pok-score {
+        gap: 6px;
+    }
+
+    .end-pok-indicator {
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+    }
+
+
+    .score-bar {
+        padding: 0 8px;
+    }
+
+    .score-track {
+        left: 8px;
+        right: 8px;
+        width: calc(100% - 16px);
     }
 }
 
@@ -1613,10 +1779,6 @@ button:active {
         font-size: 11px;
     }
 
-    .poks-remaining-info {
-        font-size: 12px;
-    }
-
     .current-round-score .score-row {
         gap: 5px;
         margin-bottom: 2px;
@@ -1642,12 +1804,30 @@ button:active {
     /* Score visualizer - ultra compact for landscape */
     .score-visualizer-container {
         padding: 5px 8px;
-        gap: 8px;
-        grid-template-columns: 1fr auto 1fr;
+        grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
     }
 
-    .score-visualizer {
-        padding: 2px;
+    .score-visualizer-container > .end-pok-indicator.red {
+        margin-left: 5px;
+        margin-right: 8px;
+    }
+
+    .score-visualizer-container > .red-visualizer {
+        margin-right: 8px;
+    }
+
+    .score-visualizer-container > .current-round-score {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .score-visualizer-container > .blue-visualizer {
+        margin-left: 8px;
+    }
+
+    .score-visualizer-container > .end-pok-indicator.blue {
+        margin-left: 8px;
+        margin-right: 5px;
     }
 
     .score-bar {
@@ -1661,6 +1841,54 @@ button:active {
 
     .score-track {
         height: 3px;
+    }
+
+    .center-pok-marker {
+        width: 50px;
+        height: 50px;
+    }
+
+    .center-pok-score {
+        gap: 5px;
+    }
+
+    .pok-style-number {
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
+        border-width: 1.5px;
+    }
+
+    .modal-score-visualizer-container {
+        padding: 8px 12px;
+        gap: 8px;
+        margin-top: 15px;
+    }
+
+    .modal-center-pok-marker {
+        width: 50px;
+        height: 50px;
+    }
+
+    .modal-center-pok-score {
+        gap: 5px;
+    }
+
+    .end-pok-indicator {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+
+    .score-bar {
+        height: 15px;
+        padding: 0 8px;
+    }
+
+    .score-track {
+        left: 8px;
+        right: 8px;
+        width: calc(100% - 16px);
     }
 }
 
@@ -1725,15 +1953,35 @@ button:active {
         font-size: 12px;
     }
 
-    .poks-remaining-info {
-        font-size: 16px;
-    }
-
     /* Score visualizer - compact for mobile */
     .score-visualizer-container {
         padding: 8px 10px;
-        gap: 10px;
+        grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
     }
+
+    .score-visualizer-container > .end-pok-indicator.red {
+        margin-left: 5px;
+        margin-right: 10px;
+    }
+
+    .score-visualizer-container > .red-visualizer {
+        margin-right: 10px;
+    }
+
+    .score-visualizer-container > .current-round-score {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .score-visualizer-container > .blue-visualizer {
+        margin-left: 10px;
+    }
+
+    .score-visualizer-container > .end-pok-indicator.blue {
+        margin-left: 10px;
+        margin-right: 5px;
+    }
+
 
     .score-marker {
         width: 8px;
@@ -1742,5 +1990,52 @@ button:active {
 
     .score-bar {
         height: 15px;
+    }
+
+    .center-pok-marker {
+        width: 60px;
+        height: 60px;
+    }
+
+    .center-pok-score {
+        gap: 6px;
+    }
+
+    .pok-style-number {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+        border-width: 1.5px;
+    }
+
+    .modal-score-visualizer-container {
+        padding: 10px 15px;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .modal-center-pok-marker {
+        width: 60px;
+        height: 60px;
+    }
+
+    .modal-center-pok-score {
+        gap: 6px;
+    }
+
+    .end-pok-indicator {
+        width: 25px;
+        height: 25px;
+        font-size: 12px;
+    }
+
+    .score-bar {
+        padding: 0 8px;
+    }
+
+    .score-track {
+        left: 8px;
+        right: 8px;
+        width: calc(100% - 16px);
     }
 }

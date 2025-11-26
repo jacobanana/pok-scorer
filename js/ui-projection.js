@@ -13,6 +13,7 @@ export class UIProjection {
         this.pokElements = new Map();
         this.tableElement = null;
         this.scoreVisualizer = null;
+        this.modalScoreVisualizer = null;
 
         // Subscribe to events
         eventStore.subscribe('GAME_STARTED', (e) => this.onGameStarted(e));
@@ -32,13 +33,9 @@ export class UIProjection {
             saveLatestButton: document.getElementById('saveLatestGameButton'),
             tableContainer: document.getElementById('gameBoardContainer'),
             table: document.querySelector('.table'),
-            mainRedTotal: document.getElementById('totalScoreRed'),
-            mainBlueTotal: document.getElementById('totalScoreBlue'),
             redRound: document.getElementById('currentRoundScoreRed'),
             blueRound: document.getElementById('currentRoundScoreBlue'),
             scoreDiff: document.getElementById('currentRoundScoreDifference'),
-            redPoksInfo: document.getElementById('remainingPoksRed'),
-            bluePoksInfo: document.getElementById('remainingPoksBlue'),
             roundModal: document.getElementById('roundEndModal'),
             modalWinner: document.getElementById('roundEndModalWinner'),
             modalRedScore: document.getElementById('roundEndModalRedScore'),
@@ -56,7 +53,13 @@ export class UIProjection {
             redScoreMarkers: document.getElementById('redScoreMarkers'),
             blueScoreMarkers: document.getElementById('blueScoreMarkers'),
             loadingBar: document.getElementById('roundEndLoadingBar'),
-            loadingBarFill: document.querySelector('#roundEndLoadingBar .loading-bar-fill')
+            loadingBarFill: document.querySelector('#roundEndLoadingBar .loading-bar-fill'),
+            endPokScoreRed: document.getElementById('endPokScoreRed'),
+            endPokScoreBlue: document.getElementById('endPokScoreBlue'),
+            modalRedScoreMarkers: document.getElementById('modalRedScoreMarkers'),
+            modalBlueScoreMarkers: document.getElementById('modalBlueScoreMarkers'),
+            modalCenterPokScoreRed: document.getElementById('modalCenterPokScoreRed'),
+            modalCenterPokScoreBlue: document.getElementById('modalCenterPokScoreBlue')
         };
 
         this.tableElement = this.dom.table;
@@ -66,12 +69,19 @@ export class UIProjection {
             this.dom.redScoreMarkers,
             this.dom.blueScoreMarkers
         );
+
+        // Initialize modal score visualizer service
+        this.modalScoreVisualizer = new ScoreVisualizerService(
+            this.dom.modalRedScoreMarkers,
+            this.dom.modalBlueScoreMarkers
+        );
     }
 
     onGameStarted(event) {
         this.hideStartSelector();
         this.updateScores();
         this.updateHistoryHeaders();
+        this.updateRoundsHistory();
         this.showTurnNotification(event.data.startingPlayerId);
         this.updateBodyClass(event.data.startingPlayerId);
     }
@@ -332,8 +342,6 @@ export class UIProjection {
 
         this.dom.redRound.textContent = scores.red;
         this.dom.blueRound.textContent = scores.blue;
-        this.dom.redPoksInfo.textContent = round.redPoksRemaining;
-        this.dom.bluePoksInfo.textContent = round.bluePoksRemaining;
 
         const diff = Math.abs(scores.red - scores.blue);
         this.dom.scoreDiff.textContent = diff > 0 ? '+' + diff : '0';
@@ -391,9 +399,13 @@ export class UIProjection {
         const state = this.gameState.getState();
         const round = this.gameState.getCurrentRound();
 
-        // Total scores
-        this.dom.mainRedTotal.textContent = state.players.red.totalScore;
-        this.dom.mainBlueTotal.textContent = state.players.blue.totalScore;
+        // Update end POK indicators with total scores
+        if (this.dom.endPokScoreRed) {
+            this.dom.endPokScoreRed.textContent = state.players.red.totalScore;
+        }
+        if (this.dom.endPokScoreBlue) {
+            this.dom.endPokScoreBlue.textContent = state.players.blue.totalScore;
+        }
 
         // Update score visualizer
         if (this.scoreVisualizer) {
@@ -409,10 +421,6 @@ export class UIProjection {
             // Round scores
             this.dom.redRound.textContent = scores.red;
             this.dom.blueRound.textContent = scores.blue;
-
-            // POKs remaining
-            this.dom.redPoksInfo.textContent = round.redPoksRemaining;
-            this.dom.bluePoksInfo.textContent = round.bluePoksRemaining;
 
             // Score difference
             const diff = Math.abs(scores.red - scores.blue);
@@ -434,7 +442,15 @@ export class UIProjection {
         if (!this.dom.turnNotification) return;
 
         const playerName = this.gameState.getPlayerName(playerId);
-        this.dom.turnNotification.textContent = `${playerName}'s turn`;
+        const round = this.gameState.getCurrentRound();
+
+        let message = `${playerName}'s turn`;
+        if (round) {
+            const poksRemaining = playerId === 'red' ? round.redPoksRemaining : round.bluePoksRemaining;
+            message = `${playerName}'s turn (${poksRemaining} POKs left)`;
+        }
+
+        this.dom.turnNotification.textContent = message;
 
         this.dom.turnNotification.classList.remove('show', 'fade-out', 'red-player', 'blue-player');
         this.dom.turnNotification.classList.add(`${playerId}-player`);
@@ -480,8 +496,28 @@ export class UIProjection {
         this.dom.modalRedScore.textContent = scores.red;
         this.dom.modalBlueScore.textContent = scores.blue;
         this.dom.modalScoreDiff.textContent = diff > 0 ? '+' + diff : '0';
-        this.dom.modalTotalScores.textContent =
-            `Total: ${playerNames.red} ${state.players.red.totalScore} - ${playerNames.blue} ${state.players.blue.totalScore}`;
+
+        // Legacy text-based total scores (optional, for backward compatibility)
+        if (this.dom.modalTotalScores) {
+            this.dom.modalTotalScores.textContent =
+                `Total: ${playerNames.red} ${state.players.red.totalScore} - ${playerNames.blue} ${state.players.blue.totalScore}`;
+        }
+
+        // Update modal scoreboard visualizer with total scores
+        if (this.modalScoreVisualizer) {
+            this.modalScoreVisualizer.updateScores(
+                state.players.red.totalScore,
+                state.players.blue.totalScore
+            );
+        }
+
+        // Update modal center POK marker with total scores
+        if (this.dom.modalCenterPokScoreRed) {
+            this.dom.modalCenterPokScoreRed.textContent = state.players.red.totalScore;
+        }
+        if (this.dom.modalCenterPokScoreBlue) {
+            this.dom.modalCenterPokScoreBlue.textContent = state.players.blue.totalScore;
+        }
 
         this.dom.roundModal.classList.remove('red-bg', 'blue-bg', 'tie-bg');
         this.dom.roundModal.classList.add(bgClass, 'show');
