@@ -1,39 +1,31 @@
 import { Component } from '../core/Component.js';
 
 /**
- * ScoreCircle component - Circular score display
+ * ScoreCircle component - Base circular score display
  *
  * Props:
  * - color: string - 'red' or 'blue'
  * - score: number - Score to display
- * - variant: string - 'default', 'modal', 'pok-style'
  * - id: string - Optional ID for the score span
  */
 export class ScoreCircle extends Component {
-    template() {
-        const { color = 'red', score = 0, variant = 'default', id } = this.props;
+    /** Base CSS class for the circle */
+    get baseClass() {
+        return 'score-circle';
+    }
 
-        const colorClass = `${color}-circle`;
+    /** Whether to use color as class directly (vs color-circle) */
+    get useColorDirectly() {
+        return false;
+    }
+
+    template() {
+        const { color = 'red', score = 0, id } = this.props;
+        const colorClass = this.useColorDirectly ? color : `${color}-circle`;
         const idAttr = id ? `id="${id}"` : '';
 
-        if (variant === 'modal') {
-            return `
-                <div class="modal-score-circle ${colorClass}">
-                    <span ${idAttr}>${score}</span>
-                </div>
-            `.trim();
-        }
-
-        if (variant === 'pok-style') {
-            return `
-                <div class="pok-style-number ${color}">
-                    <span ${idAttr}>${score}</span>
-                </div>
-            `.trim();
-        }
-
         return `
-            <div class="score-circle ${colorClass}">
+            <div class="${this.baseClass} ${colorClass}">
                 <span ${idAttr}>${score}</span>
             </div>
         `.trim();
@@ -89,5 +81,23 @@ export class ScoreCircle extends Component {
 
         requestAnimationFrame(animate);
         return this;
+    }
+}
+
+/** Modal variant of score circle */
+export class ModalScoreCircle extends ScoreCircle {
+    get baseClass() {
+        return 'modal-score-circle';
+    }
+}
+
+/** POK-style number display */
+export class PokStyleScore extends ScoreCircle {
+    get baseClass() {
+        return 'pok-style-number';
+    }
+
+    get useColorDirectly() {
+        return true;
     }
 }

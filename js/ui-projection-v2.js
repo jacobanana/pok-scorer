@@ -5,11 +5,17 @@
 import { CONFIG } from './config.js';
 import {
     Component,
-    Button,
-    Modal,
+    FlipButton,
+    HistoryButton,
+    NewGameButton,
+    SaveButton,
+    RoundEndModal,
     ScoreCircle,
+    ModalScoreCircle,
     ScoreMarkers,
+    ModalScoreMarkers,
     ScoreDifference,
+    ModalScoreDifference,
     Pok,
     HistoryTable,
     Notification,
@@ -177,28 +183,24 @@ export class UIProjection {
         const buttonContainer = this.containers.gameBoard?.querySelector('.control-buttons');
         if (!buttonContainer) return;
 
-        this.components.buttons.flip = new Button({
+        this.components.buttons.flip = new FlipButton({
             id: 'flipTableButton',
-            text: 'Flip Table',
-            variant: 'flip'
+            text: 'Flip Table'
         }).onClick(() => this._handleFlipTable());
 
-        this.components.buttons.history = new Button({
+        this.components.buttons.history = new HistoryButton({
             id: 'showHistoryButton',
-            text: 'Show History',
-            variant: 'history'
+            text: 'Show History'
         }).onClick(() => this._handleShowHistory());
 
-        this.components.buttons.newGame = new Button({
+        this.components.buttons.newGame = new NewGameButton({
             id: 'newGameButton',
-            text: 'New Game',
-            variant: 'new-game'
+            text: 'New Game'
         }).onClick(() => this._handleNewGame());
 
-        this.components.buttons.save = new Button({
+        this.components.buttons.save = new SaveButton({
             id: 'exportMatchButton',
-            text: 'Save Game',
-            variant: 'save'
+            text: 'Save Game'
         }).onClick(() => this._handleExportMatch());
 
         // Mount all buttons
@@ -212,9 +214,8 @@ export class UIProjection {
      * @private
      */
     _createRoundModal() {
-        this.components.roundModal = new Modal({
+        this.components.roundModal = new RoundEndModal({
             id: 'roundEndModal',
-            variant: 'round-end',
             content: `
                 <div class="modal-round-number" id="roundEndModalRoundNumber">Round 1</div>
                 <div class="winner" id="roundEndModalWinner"></div>
@@ -241,23 +242,21 @@ export class UIProjection {
             // Create modal score components
             const modalScoreContainer = this.components.roundModal.find('.modal-score-container');
             if (modalScoreContainer) {
-                new ScoreCircle({ color: 'red', variant: 'modal', id: 'roundEndModalRedScore' })
+                new ModalScoreCircle({ color: 'red', id: 'roundEndModalRedScore' })
                     .mount(modalScoreContainer);
-                new ScoreDifference({ variant: 'modal', id: 'roundEndModalScoreDiff' })
+                new ModalScoreDifference({ id: 'roundEndModalScoreDiff' })
                     .mount(modalScoreContainer);
-                new ScoreCircle({ color: 'blue', variant: 'modal', id: 'roundEndModalBlueScore' })
+                new ModalScoreCircle({ color: 'blue', id: 'roundEndModalBlueScore' })
                     .mount(modalScoreContainer);
             }
 
             // Create modal score markers
-            this.components.modalRedMarkers = new ScoreMarkers({
+            this.components.modalRedMarkers = new ModalScoreMarkers({
                 color: 'red',
-                variant: 'modal',
                 id: 'modalRedScoreMarkers'
             });
-            this.components.modalBlueMarkers = new ScoreMarkers({
+            this.components.modalBlueMarkers = new ModalScoreMarkers({
                 color: 'blue',
-                variant: 'modal',
                 id: 'modalBlueScoreMarkers'
             });
 

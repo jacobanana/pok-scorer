@@ -8,19 +8,19 @@ import { Component } from '../core/Component.js';
  * - score: number - Current score (0-21)
  * - totalMarkers: number - Total markers to display (default 21)
  * - id: string - Optional ID for the markers container
- * - variant: string - 'default' or 'modal'
  */
 export class ScoreMarkers extends Component {
-    template() {
-        const { color = 'red', id, variant = 'default' } = this.props;
+    /** CSS class for the container */
+    get containerClass() {
+        return 'score-visualizer';
+    }
 
+    template() {
+        const { color = 'red', id } = this.props;
         const idAttr = id ? `id="${id}"` : '';
-        const containerClass = variant === 'modal'
-            ? 'modal-score-visualizer'
-            : 'score-visualizer';
 
         return `
-            <div class="${containerClass} ${color}-visualizer">
+            <div class="${this.containerClass} ${color}-visualizer">
                 <div class="score-bar">
                     <div class="score-track"></div>
                     <div class="score-markers" ${idAttr}></div>
@@ -124,7 +124,6 @@ export class ScoreMarkers extends Component {
 
         if (diff === 0) return this;
 
-        const startTime = performance.now();
         const step = diff > 0 ? 1 : -1;
         const stepDuration = duration / Math.abs(diff);
         let currentStep = 0;
@@ -141,5 +140,12 @@ export class ScoreMarkers extends Component {
 
         animate();
         return this;
+    }
+}
+
+/** Modal variant of score markers */
+export class ModalScoreMarkers extends ScoreMarkers {
+    get containerClass() {
+        return 'modal-score-visualizer';
     }
 }

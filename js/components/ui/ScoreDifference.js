@@ -6,15 +6,18 @@ import { Component } from '../core/Component.js';
  * Props:
  * - id: string - Element ID
  * - difference: number - Score difference value
- * - variant: string - 'default' or 'modal'
  */
 export class ScoreDifference extends Component {
-    template() {
-        const { id, difference = 0, variant = 'default' } = this.props;
-        const idAttr = id ? `id="${id}"` : '';
-        const className = variant === 'modal' ? 'modal-score-difference' : 'score-difference';
+    /** CSS class for the difference display */
+    get differenceClass() {
+        return 'score-difference';
+    }
 
-        return `<div class="${className}" ${idAttr}>${difference}</div>`;
+    template() {
+        const { id, difference = 0 } = this.props;
+        const idAttr = id ? `id="${id}"` : '';
+
+        return `<div class="${this.differenceClass}" ${idAttr}>${difference}</div>`;
     }
 
     /**
@@ -45,5 +48,12 @@ export class ScoreDifference extends Component {
     updateFromScores(redScore, blueScore) {
         const diff = Math.abs(redScore - blueScore);
         return this.setDifference(diff);
+    }
+}
+
+/** Modal variant of score difference */
+export class ModalScoreDifference extends ScoreDifference {
+    get differenceClass() {
+        return 'modal-score-difference';
     }
 }

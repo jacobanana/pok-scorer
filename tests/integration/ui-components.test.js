@@ -5,10 +5,15 @@
 import {
     Component,
     Button,
+    PrimaryButton,
+    FlipButton,
     Modal,
     ScoreCircle,
+    ModalScoreCircle,
     ScoreMarkers,
+    ModalScoreMarkers,
     ScoreDifference,
+    ModalScoreDifference,
     Pok,
     HistoryTable,
     Notification,
@@ -47,8 +52,8 @@ runner.describe('Button Component - Integration', () => {
         cleanupTestContainer();
     });
 
-    runner.it('should render with text and variant', () => {
-        const button = new Button({ text: 'Click Me', variant: 'primary' });
+    runner.it('should render PrimaryButton with correct class', () => {
+        const button = new PrimaryButton({ text: 'Click Me' });
         button.mount(testContainer);
 
         const btnEl = testContainer.querySelector('button');
@@ -57,8 +62,8 @@ runner.describe('Button Component - Integration', () => {
         assert.ok(btnEl.classList.contains('primary-button'));
     });
 
-    runner.it('should render flip table variant', () => {
-        const button = new Button({ text: 'Flip', variant: 'flip' });
+    runner.it('should render FlipButton with correct class', () => {
+        const button = new FlipButton({ text: 'Flip' });
         button.mount(testContainer);
 
         const btnEl = testContainer.querySelector('button');
@@ -206,8 +211,8 @@ runner.describe('ScoreCircle Component - Integration', () => {
         assert.ok(testContainer.querySelector('.score-circle.blue-circle'));
     });
 
-    runner.it('should render modal variant', () => {
-        const circle = new ScoreCircle({ color: 'red', score: 5, variant: 'modal' });
+    runner.it('should render ModalScoreCircle with correct class', () => {
+        const circle = new ModalScoreCircle({ color: 'red', score: 5 });
         circle.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.modal-score-circle'));
@@ -332,8 +337,8 @@ runner.describe('ScoreDifference Component - Integration', () => {
         assert.equal(diff.getDifference(), 7);
     });
 
-    runner.it('should render modal variant', () => {
-        const diff = new ScoreDifference({ variant: 'modal' });
+    runner.it('should render ModalScoreDifference with correct class', () => {
+        const diff = new ModalScoreDifference();
         diff.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.modal-score-difference'));

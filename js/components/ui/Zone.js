@@ -1,25 +1,24 @@
 import { Component } from '../core/Component.js';
 
 /**
- * Zone component - Game scoring zone
+ * Zone component - Base game scoring zone
  *
  * Props:
  * - zone: number - Zone number (0-5)
- * - variant: string - 'rectangle' or 'circle'
- * - position: string - For circle zones: 'top' or 'bottom'
  * - showLabel: boolean - Whether to show the zone label (default true)
  */
 export class Zone extends Component {
-    template() {
-        const { zone = 0, variant = 'rectangle', position, showLabel = true } = this.props;
+    /** CSS class for the zone */
+    get zoneClass() {
+        return 'zone';
+    }
 
-        const isCircle = variant === 'circle';
-        const baseClass = isCircle ? 'circle-zone' : 'zone';
-        const positionClass = position ? ` ${position}` : '';
+    template() {
+        const { zone = 0, showLabel = true } = this.props;
         const label = showLabel && zone > 0 ? `<div class="zone-label">${zone}</div>` : '';
 
         return `
-            <div class="${baseClass}${positionClass}" data-zone="${zone}">
+            <div class="${this.zoneClass}" data-zone="${zone}">
                 ${label}
             </div>
         `.trim();
@@ -67,6 +66,21 @@ export class Zone extends Component {
      */
     getZoneNumber() {
         return this.props.zone;
+    }
+}
+
+/**
+ * CircleZone component - Circular scoring zone
+ *
+ * Props:
+ * - zone: number - Zone number (4 or 5)
+ * - position: string - 'top' or 'bottom'
+ * - showLabel: boolean - Whether to show the zone label (default true)
+ */
+export class CircleZone extends Zone {
+    get zoneClass() {
+        const { position } = this.props;
+        return position ? `circle-zone ${position}` : 'circle-zone';
     }
 }
 

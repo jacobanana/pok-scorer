@@ -1,35 +1,25 @@
 import { Component } from '../core/Component.js';
 
 /**
- * Button component - A reusable button with variants
+ * Button component - Base button class
  *
  * Props:
  * - text: string - Button text
- * - variant: string - Button variant ('primary', 'flip', 'history', 'new-game', 'save', 'import', 'continue', 'close')
  * - id: string - Optional ID
  * - disabled: boolean - Disabled state
  */
 export class Button extends Component {
+    /** CSS class for this button type */
+    get buttonClass() {
+        return 'button';
+    }
+
     template() {
-        const { text = '', variant = 'primary', id, disabled } = this.props;
-
-        const variantClasses = {
-            'primary': 'primary-button',
-            'flip': 'flip-table-button',
-            'history': 'show-history-button',
-            'new-game': 'new-game-button',
-            'save': 'save-game-button',
-            'import': 'import-match-button',
-            'continue': 'continue-game-top-button',
-            'save-latest': 'save-latest-game-button',
-            'close': 'close-history-button'
-        };
-
-        const className = variantClasses[variant] || 'primary-button';
+        const { text = '', id, disabled } = this.props;
         const idAttr = id ? `id="${id}"` : '';
         const disabledAttr = disabled ? 'disabled' : '';
 
-        return `<button class="${className}" ${idAttr} ${disabledAttr}>${text}</button>`;
+        return `<button class="${this.buttonClass}" ${idAttr} ${disabledAttr}>${text}</button>`;
     }
 
     /**
@@ -72,5 +62,68 @@ export class Button extends Component {
      */
     onClick(handler) {
         return this.on('click', handler);
+    }
+}
+
+/** Primary action button */
+export class PrimaryButton extends Button {
+    get buttonClass() {
+        return 'primary-button';
+    }
+}
+
+/** Flip table button */
+export class FlipButton extends Button {
+    get buttonClass() {
+        return 'flip-table-button';
+    }
+}
+
+/** Show history button */
+export class HistoryButton extends Button {
+    get buttonClass() {
+        return 'show-history-button';
+    }
+}
+
+/** New game button */
+export class NewGameButton extends Button {
+    get buttonClass() {
+        return 'new-game-button';
+    }
+}
+
+/** Save game button */
+export class SaveButton extends Button {
+    get buttonClass() {
+        return 'save-game-button';
+    }
+}
+
+/** Import match button */
+export class ImportButton extends Button {
+    get buttonClass() {
+        return 'import-match-button';
+    }
+}
+
+/** Continue game button */
+export class ContinueButton extends Button {
+    get buttonClass() {
+        return 'continue-game-top-button';
+    }
+}
+
+/** Save latest game button */
+export class SaveLatestButton extends Button {
+    get buttonClass() {
+        return 'save-latest-game-button';
+    }
+}
+
+/** Close button */
+export class CloseButton extends Button {
+    get buttonClass() {
+        return 'close-history-button';
     }
 }

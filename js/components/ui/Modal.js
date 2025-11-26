@@ -1,40 +1,31 @@
 import { Component } from '../core/Component.js';
 
 /**
- * Modal component - A reusable modal dialog
+ * Modal component - Base modal dialog
  *
  * Props:
  * - id: string - Modal ID
- * - variant: string - Modal variant ('default', 'round-end', 'history')
  * - content: string - HTML content for the modal body
  * - closable: boolean - Whether clicking backdrop closes modal
  */
 export class Modal extends Component {
+    /** CSS class for the modal wrapper */
+    get modalClass() {
+        return 'modal';
+    }
+
+    /** CSS class for the content wrapper */
+    get contentClass() {
+        return 'modal-content';
+    }
+
     template() {
-        const { id, variant = 'default', content = '' } = this.props;
-
-        const variantClasses = {
-            'default': 'modal',
-            'round-end': 'modal',
-            'history': 'history-modal'
-        };
-
-        const className = variantClasses[variant] || 'modal';
+        const { id, content = '' } = this.props;
         const idAttr = id ? `id="${id}"` : '';
 
-        if (variant === 'history') {
-            return `
-                <div class="${className}" ${idAttr}>
-                    <div class="history-modal-content">
-                        ${content}
-                    </div>
-                </div>
-            `.trim();
-        }
-
         return `
-            <div class="${className}" ${idAttr}>
-                <div class="modal-content">
+            <div class="${this.modalClass}" ${idAttr}>
+                <div class="${this.contentClass}">
                     ${content}
                 </div>
             </div>
@@ -99,7 +90,7 @@ export class Modal extends Component {
      * @returns {Modal} this for chaining
      */
     setContent(html) {
-        const contentEl = this.find('.modal-content') || this.find('.history-modal-content');
+        const contentEl = this.find(`.${this.contentClass}`);
         if (contentEl) {
             contentEl.innerHTML = html;
         }
@@ -111,6 +102,24 @@ export class Modal extends Component {
      * @returns {HTMLElement|null}
      */
     getContentElement() {
-        return this.find('.modal-content') || this.find('.history-modal-content');
+        return this.find(`.${this.contentClass}`);
+    }
+}
+
+/** History modal with different styling */
+export class HistoryModal extends Modal {
+    get modalClass() {
+        return 'history-modal';
+    }
+
+    get contentClass() {
+        return 'history-modal-content';
+    }
+}
+
+/** Round end modal */
+export class RoundEndModal extends Modal {
+    get modalClass() {
+        return 'modal';
     }
 }
