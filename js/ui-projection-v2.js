@@ -278,7 +278,8 @@ export class UIProjection {
      * @private
      */
     _createControlButtons() {
-        const buttonContainer = this.containers.gameBoard?.querySelector('.control-buttons');
+        // Control buttons are siblings of gameBoardContainer, inside right-panel
+        const buttonContainer = document.querySelector('.right-panel .control-buttons');
         if (!buttonContainer) return;
 
         this.components.buttons.flip = new FlipButton({
