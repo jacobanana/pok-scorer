@@ -131,7 +131,7 @@ export class UIProjection {
             this.components.notification.mount(this.containers.gameBoard, 'prepend');
         }
 
-        // Score Markers
+        // Score Markers - bind to existing DOM elements (already in HTML)
         this.components.redScoreMarkers = new ScoreMarkers({
             color: 'red',
             id: 'redScoreMarkers'
@@ -142,11 +142,12 @@ export class UIProjection {
             id: 'blueScoreMarkers'
         });
 
-        const redMarkersContainer = this.containers.scoreVisualizer?.querySelector('.red-markers-container');
-        const blueMarkersContainer = this.containers.scoreVisualizer?.querySelector('.blue-markers-container');
+        // Bind to existing score visualizer elements in the HTML
+        const redVisualizer = this.containers.scoreVisualizer?.querySelector('.red-visualizer');
+        const blueVisualizer = this.containers.scoreVisualizer?.querySelector('.blue-visualizer');
 
-        if (redMarkersContainer) this.components.redScoreMarkers.mount(redMarkersContainer);
-        if (blueMarkersContainer) this.components.blueScoreMarkers.mount(blueMarkersContainer);
+        if (redVisualizer) this.components.redScoreMarkers.bindTo(redVisualizer);
+        if (blueVisualizer) this.components.blueScoreMarkers.bindTo(blueVisualizer);
 
         // Current Round Score Display
         this.components.currentRedScore = new ScoreCircle({
@@ -171,15 +172,15 @@ export class UIProjection {
             this.components.currentBlueScore.mount(scoreRow);
         }
 
-        // Loading Bar
+        // Loading Bar - bind to existing DOM element
         this.components.loadingBar = new LoadingBar({
             id: 'roundEndLoadingBar'
         });
 
-        // Mount loading bar
-        const loadingBarContainer = this.containers.scoreVisualizer?.querySelector('.loading-bar-container');
-        if (loadingBarContainer) {
-            this.components.loadingBar.mount(loadingBarContainer);
+        // Bind to existing loading bar element in HTML
+        const loadingBarEl = this.containers.scoreVisualizer?.querySelector('.round-end-loading-bar');
+        if (loadingBarEl) {
+            this.components.loadingBar.bindTo(loadingBarEl);
         }
 
         // Control Buttons

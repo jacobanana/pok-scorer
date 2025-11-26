@@ -75,17 +75,40 @@
                         </div>
                     </div>
 
-                    <!-- Score Visualizer Container -->
+                    <!-- Score Visualizer Container (5-column grid) -->
                     <div class="score-visualizer-container" id="scoreVisualizerContainer">
-                        <div class="loading-bar-container"></div>
+                        <!-- Loading bar - absolutely positioned overlay -->
+                        <div id="roundEndLoadingBar" class="round-end-loading-bar">
+                            <div class="loading-bar-fill"></div>
+                        </div>
+
+                        <!-- Column 1: Red total score POK indicator -->
                         <div class="end-pok-indicator red"><span id="endPokScoreRed">0</span></div>
-                        <div class="red-markers-container"></div>
+
+                        <!-- Column 2: Red score marbles -->
+                        <div class="score-visualizer red-visualizer">
+                            <div class="score-bar">
+                                <div class="score-track"></div>
+                                <div class="score-markers" id="redScoreMarkers"></div>
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Current round score (center) -->
                         <div class="current-round-score" id="currentRoundScoreDisplay">
                             <div class="score-row">
                                 <!-- Score circles mounted by components -->
                             </div>
                         </div>
-                        <div class="blue-markers-container"></div>
+
+                        <!-- Column 4: Blue score marbles -->
+                        <div class="score-visualizer blue-visualizer">
+                            <div class="score-bar">
+                                <div class="score-track"></div>
+                                <div class="score-markers" id="blueScoreMarkers"></div>
+                            </div>
+                        </div>
+
+                        <!-- Column 5: Blue total score POK indicator -->
                         <div class="end-pok-indicator blue"><span id="endPokScoreBlue">0</span></div>
                     </div>
                 </div>

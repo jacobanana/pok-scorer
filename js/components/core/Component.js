@@ -68,6 +68,30 @@ export class Component {
     }
 
     /**
+     * Bind to an existing DOM element instead of creating from template.
+     * Useful when the HTML structure already exists in the page.
+     * @param {HTMLElement|string} element - Existing element or selector to bind to
+     * @returns {Component} this for chaining
+     */
+    bindTo(element) {
+        const el = typeof element === 'string'
+            ? document.querySelector(element)
+            : element;
+
+        if (!el) {
+            console.warn('Component.bindTo: element not found');
+            return this;
+        }
+
+        this.el = el;
+        this._mounted = true;
+        this._parent = el.parentNode;
+        this.onCreate();
+        this.onMount();
+        return this;
+    }
+
+    /**
      * Mount the component to a parent element
      * @param {HTMLElement|string} parent - Parent element or selector
      * @param {string} position - 'append' | 'prepend' | 'replace' | 'before' | 'after'
