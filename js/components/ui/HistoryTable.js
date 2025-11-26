@@ -107,11 +107,14 @@ export class HistoryTable extends Component {
         row.className = this._getRowClass(round, winner);
         row.dataset.roundIndex = index;
 
+        // Determine winner cell class
+        const winnerClass = winner ? `winner-${winner}` : (round.isComplete ? '' : 'winner-current');
+
         row.innerHTML = `
             <td class="round-number">${index + 1}</td>
             <td>${scores.red}</td>
             <td>${scores.blue}</td>
-            <td class="${winner ? `winner-${winner}` : ''}">${winner ? winner.charAt(0).toUpperCase() + winner.slice(1) : '-'}</td>
+            <td class="${winnerClass}">${winner ? winner.charAt(0).toUpperCase() + winner.slice(1) : '-'}</td>
             <td>${diff}</td>
         `;
 
@@ -145,7 +148,7 @@ export class HistoryTable extends Component {
         const classes = [];
 
         if (!round.isComplete) {
-            classes.push('current-round-row');
+            classes.push('round-row-current');
         } else if (winner === 'red') {
             classes.push('red-round-row');
         } else if (winner === 'blue') {
