@@ -840,6 +840,15 @@ export class UIProjection {
             return;
         }
 
+        // Check if this round has already been ended (ROUND_ENDED event exists)
+        const events = this.eventStore.getAllEvents();
+        const roundAlreadyEnded = events.some(e =>
+            e.type === 'ROUND_ENDED' && e.data.roundNumber === round.roundNumber
+        );
+        if (roundAlreadyEnded) {
+            return; // Don't start countdown for already-ended round
+        }
+
         // Round just completed: start countdown
         if (!this._autoEndTimer) {
             this.startAutoEndCountdown();
