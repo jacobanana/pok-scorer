@@ -553,17 +553,19 @@ runner.describe('HistoryTable Component - Integration', () => {
         assert.equal(testContainer.querySelectorAll('tbody tr').length, 0);
     });
 
-    runner.it('should call hover callbacks', () => {
+    runner.it('should emit hover events', () => {
         let hoveredIndex = null;
         let leaveCallCount = 0;
 
         const table = new HistoryTable({
             redPlayerName: 'R',
-            bluePlayerName: 'B',
-            onRowHover: (idx) => { hoveredIndex = idx; },
-            onRowLeave: () => { leaveCallCount++; }
+            bluePlayerName: 'B'
         });
         table.mount(testContainer);
+
+        // Listen to events using the component's on() method
+        table.on('rowHover', (e) => { hoveredIndex = e.detail.index; });
+        table.on('rowLeave', () => { leaveCallCount++; });
 
         table.setRounds([
             { poks: [], isComplete: true }
@@ -603,10 +605,10 @@ runner.describe('Notification Component - Integration', () => {
         const notification = new Notification();
         notification.mount(testContainer);
 
-        notification.showMessage("Red's turn", 'red');
+        notification.showMessage("Red's turn", 'red-player');
 
         assert.equal(notification.el.textContent, "Red's turn");
-        assert.ok(notification.el.classList.contains('red'));
+        assert.ok(notification.el.classList.contains('red-player'));
         assert.ok(notification.el.classList.contains('fade-in'));
     });
 
@@ -614,12 +616,12 @@ runner.describe('Notification Component - Integration', () => {
         const notification = new Notification();
         notification.mount(testContainer);
 
-        notification.showMessage('Red', 'red');
-        assert.ok(notification.hasClass('red'));
+        notification.showMessage('Red', 'red-player');
+        assert.ok(notification.hasClass('red-player'));
 
-        notification.showMessage('Blue', 'blue');
-        assert.ok(notification.hasClass('blue'));
-        assert.notOk(notification.hasClass('red'));
+        notification.showMessage('Blue', 'blue-player');
+        assert.ok(notification.hasClass('blue-player'));
+        assert.notOk(notification.hasClass('red-player'));
     });
 });
 
