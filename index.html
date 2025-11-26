@@ -7,327 +7,95 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Game Start Selector: Choose First Player -->
-    <div id="gameStartSelector" class="start-selector">
-        <!-- Action Buttons Container -->
-        <div class="start-selector-buttons">
-            <!-- Continue Last Game Button (shown when saved game exists) -->
-            <button id="continueGameButton" class="continue-game-top-button">
-                Resume Last Game
-            </button>
+    <!-- App Root - Components will be mounted here -->
+    <div id="app">
+        <!-- Start Selector Container -->
+        <div id="startSelectorContainer"></div>
 
-            <!-- Save Latest Game Button (shown when saved game exists) -->
-            <button id="saveLatestGameButton" class="save-latest-game-button">
-                Save Latest Game
-            </button>
-
-            <!-- Import Match Button -->
-            <button id="importMatchButton" class="import-match-button">
-                Load from File
-            </button>
-        </div>
-
-        <div class="start-half red">
-            <input type="text" id="redPlayerName" class="player-name-input" placeholder="Red" maxlength="20" onclick="event.stopPropagation()">
-            <span class="start-label">TAP TO START</span>
-        </div>
-        <div class="start-half blue">
-            <input type="text" id="bluePlayerName" class="player-name-input" placeholder="Blue" maxlength="20" onclick="event.stopPropagation()">
-            <span class="start-label">TAP TO START</span>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- ============================= -->
-        <!-- MAIN CONTENT AREA             -->
-        <!-- ============================= -->
-        <div class="top-section">
-
-            <!-- ============================= -->
-            <!-- LEFT PANEL: Scores & History  -->
-            <!-- ============================= -->
-            <div class="left-panel">
-                <!-- Rounds History Table -->
-                <div class="rounds-history">
-                    <h1>Rounds History</h1>
-                    <div class="history-table-container">
-                        <table id="roundsHistoryTable">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th id="historyHeaderRed">Red</th>
-                                    <th id="historyHeaderBlue">Blue</th>
-                                    <th>Winner</th>
-                                    <th>Diff</th>
-                                </tr>
-                            </thead>
-                            <tbody id="roundsHistoryTableBody">
-                            </tbody>
-                        </table>
+        <!-- Main Container -->
+        <div class="container">
+            <div class="top-section">
+                <!-- Left Panel -->
+                <div class="left-panel" id="leftPanelContainer">
+                    <div class="rounds-history">
+                        <h1>Rounds History</h1>
+                        <div class="history-table-container"></div>
                     </div>
+                    <div class="next-player-indicator-container"></div>
                 </div>
 
-                <!-- Next Player Turn Indicator -->
-                <div id="nextPlayerIndicator" class="next-player-indicator"></div>
-            </div>
+                <!-- Right Panel: Game Board -->
+                <div class="right-panel">
+                    <!-- Control Buttons (created by components) -->
+                    <div class="control-buttons"></div>
 
-            <!-- ============================= -->
-            <!-- RIGHT PANEL: Game Board       -->
-            <!-- ============================= -->
-            <div class="right-panel">
+                    <!-- Game Board Container -->
+                    <div class="table-container" id="gameBoardContainer">
+                        <!-- Notification mounted here by component -->
 
-                <!-- Flip Table Button (Top Left) -->
-                <button id="flipTableButton" class="flip-table-button">Flip Table</button>
-                <!-- Show History Button (Mobile Only, Top Left) -->
-                <button id="showHistoryButton" class="show-history-button">Show History</button>
-                <!-- New Game Button (Top Right) -->
-                <button id="newGameButton" class="new-game-button">New Game</button>
-                <!-- Save Game Button (Top Right, below New Game) -->
-                <button id="exportMatchButton" class="save-game-button">Save Game</button>
-
-
-                <div class="table-container" id="gameBoardContainer">
-                    <!-- Player Turn Notification Overlay -->
-                    <div id="playerTurnNotification" class="player-turn-notification"></div>
-
-                    <!-- Main Game Table -->
-                    <div class="table">
-                        <div class="table-inner">
-
-                            <!-- ============================= -->
-                            <!-- LEFT SIDE: Scoring Zones      -->
-                            <!-- ============================= -->
-                            <div class="side left">
-                                <!-- Zone 3: Highest scoring rectangle zone -->
-                                <div class="column">
-                                    <div class="zone" data-zone="3">
-                                        <div class="zone-label">3</div>
+                        <!-- Game Table (static structure for zones) -->
+                        <div class="table">
+                            <div class="table-inner">
+                                <div class="side left">
+                                    <div class="column">
+                                        <div class="zone" data-zone="3"><div class="zone-label">3</div></div>
+                                    </div>
+                                    <div class="column">
+                                        <div class="zone" data-zone="2"><div class="zone-label">2</div></div>
+                                    </div>
+                                    <div class="column">
+                                        <div class="zone" data-zone="1"><div class="zone-label">1</div></div>
+                                        <div class="circle-zone top" data-zone="4"><div class="zone-label">4</div></div>
+                                        <div class="circle-zone bottom" data-zone="5"><div class="zone-label">5</div></div>
+                                    </div>
+                                    <div class="column zero-column">
+                                        <div class="zone" data-zone="0"></div>
                                     </div>
                                 </div>
-
-                                <!-- Zone 2: Middle scoring rectangle zone -->
-                                <div class="column">
-                                    <div class="zone" data-zone="2">
-                                        <div class="zone-label">2</div>
-                                    </div>
-                                </div>
-
-                                <!-- Zone 1: Inner rectangle zone + Circle zones 4 & 5 -->
-                                <div class="column">
-                                    <div class="zone" data-zone="1">
-                                        <div class="zone-label">1</div>
-                                    </div>
-
-                                    <!-- Zone 4: Top circle zone -->
-                                    <div class="circle-zone top" data-zone="4">
-                                        <div class="zone-label">4</div>
-                                    </div>
-
-                                    <!-- Zone 5: Bottom circle zone -->
-                                    <div class="circle-zone bottom" data-zone="5">
-                                        <div class="zone-label">5</div>
-                                    </div>
-                                </div>
-
-                                <!-- Zero Zone: Center column with no points -->
-                                <div class="column zero-column">
-                                    <div class="zone" data-zone="0">
-                                    </div>
+                                <div class="center-circle">
+                                    <svg viewBox="0 0 200 200">
+                                        <circle cx="100" cy="100" r="90" fill="none" stroke="#2c1810" stroke-width="2"/>
+                                        <circle cx="100" cy="40" r="4" fill="#2c1810"/>
+                                        <circle cx="130" cy="50" r="4" fill="#2c1810"/>
+                                        <circle cx="155" cy="75" r="4" fill="#2c1810"/>
+                                        <circle cx="160" cy="100" r="4" fill="#2c1810"/>
+                                        <circle cx="155" cy="125" r="4" fill="#2c1810"/>
+                                        <circle cx="130" cy="150" r="4" fill="#2c1810"/>
+                                        <circle cx="100" cy="160" r="4" fill="#2c1810"/>
+                                        <circle cx="70" cy="150" r="4" fill="#2c1810"/>
+                                        <circle cx="45" cy="125" r="4" fill="#2c1810"/>
+                                        <circle cx="40" cy="100" r="4" fill="#2c1810"/>
+                                        <circle cx="45" cy="75" r="4" fill="#2c1810"/>
+                                        <circle cx="70" cy="50" r="4" fill="#2c1810"/>
+                                        <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="2"/>
+                                        <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="2"/>
+                                    </svg>
                                 </div>
                             </div>
-
-                            <!-- ============================= -->
-                            <!-- CENTER: POK Logo              -->
-                            <!-- ============================= -->
-                            <div class="center-circle">
-                                <svg viewBox="0 0 200 200">
-                                    <!-- Outer circle border -->
-                                    <circle cx="100" cy="100" r="90" fill="none" stroke="#2c1810" stroke-width="2"/>
-
-                                    <!-- 12 dots around the circle (clock positions) -->
-                                    <circle cx="100" cy="40" r="4" fill="#2c1810"/>
-                                    <circle cx="130" cy="50" r="4" fill="#2c1810"/>
-                                    <circle cx="155" cy="75" r="4" fill="#2c1810"/>
-                                    <circle cx="160" cy="100" r="4" fill="#2c1810"/>
-                                    <circle cx="155" cy="125" r="4" fill="#2c1810"/>
-                                    <circle cx="130" cy="150" r="4" fill="#2c1810"/>
-                                    <circle cx="100" cy="160" r="4" fill="#2c1810"/>
-                                    <circle cx="70" cy="150" r="4" fill="#2c1810"/>
-                                    <circle cx="45" cy="125" r="4" fill="#2c1810"/>
-                                    <circle cx="40" cy="100" r="4" fill="#2c1810"/>
-                                    <circle cx="45" cy="75" r="4" fill="#2c1810"/>
-                                    <circle cx="70" cy="50" r="4" fill="#2c1810"/>
-
-                                    <!-- Center crosshair -->
-                                    <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="2"/>
-                                    <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="2"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ============================= -->
-                <!-- SCORE VISUALIZER BOARD        -->
-                <!-- ============================= -->
-                <div class="score-visualizer-container">
-                    <!-- Round End Loading Bar -->
-                    <div id="roundEndLoadingBar" class="round-end-loading-bar">
-                        <div class="loading-bar-fill"></div>
-                    </div>
-
-                    <!-- Column 1: Red total score POK indicator -->
-                    <div class="end-pok-indicator red">
-                        <span id="endPokScoreRed">0</span>
-                    </div>
-
-                    <!-- Column 2: Red score marbles -->
-                    <div class="score-visualizer red-visualizer">
-                        <div class="score-bar">
-                            <div class="score-track"></div>
-                            <div class="score-markers" id="redScoreMarkers">
-                                <!-- 21 red marker positions will be generated here -->
-                            </div>
                         </div>
                     </div>
 
-                    <!-- Column 3: Current round score (center) -->
-                    <div class="current-round-score" id="currentRoundScoreDisplay">
-                        <!-- Score circles showing current round points -->
-                        <div class="score-row">
-                            <div class="score-circle red-circle">
-                                <span id="currentRoundScoreRed">0</span>
-                            </div>
-                            <div class="score-difference" id="currentRoundScoreDifference">0</div>
-                            <div class="score-circle blue-circle">
-                                <span id="currentRoundScoreBlue">0</span>
+                    <!-- Score Visualizer Container -->
+                    <div class="score-visualizer-container" id="scoreVisualizerContainer">
+                        <div class="loading-bar-container"></div>
+                        <div class="end-pok-indicator red"><span id="endPokScoreRed">0</span></div>
+                        <div class="red-markers-container"></div>
+                        <div class="current-round-score" id="currentRoundScoreDisplay">
+                            <div class="score-row">
+                                <!-- Score circles mounted by components -->
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Column 4: Blue score marbles -->
-                    <div class="score-visualizer blue-visualizer">
-                        <div class="score-bar">
-                            <div class="score-track"></div>
-                            <div class="score-markers" id="blueScoreMarkers">
-                                <!-- 21 blue marker positions will be generated here -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 5: Blue total score POK indicator -->
-                    <div class="end-pok-indicator blue">
-                        <span id="endPokScoreBlue">0</span>
+                        <div class="blue-markers-container"></div>
+                        <div class="end-pok-indicator blue"><span id="endPokScoreBlue">0</span></div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Modals Container -->
+        <div id="modalsContainer"></div>
     </div>
 
-    <!-- ============================= -->
-    <!-- ROUND END MODAL               -->
-    <!-- ============================= -->
-    <div id="roundEndModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-round-number" id="roundEndModalRoundNumber">Round 1</div>
-            <div class="winner" id="roundEndModalWinner"></div>
-            <div class="modal-score-display">
-                <div class="modal-score-circle red-circle">
-                    <span id="roundEndModalRedScore">0</span>
-                </div>
-                <div class="modal-score-difference" id="roundEndModalScoreDiff">0</div>
-                <div class="modal-score-circle blue-circle">
-                    <span id="roundEndModalBlueScore">0</span>
-                </div>
-            </div>
-            <!-- Marble scoreboard showing total scores -->
-            <div class="modal-score-visualizer-container">
-                <!-- Red score marbles (left) -->
-                <div class="modal-score-visualizer red-visualizer">
-                    <div class="score-bar">
-                        <div class="score-track"></div>
-                        <div class="score-markers" id="modalRedScoreMarkers">
-                            <!-- 21 red marker positions will be generated here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Center POK marker showing total score -->
-                <div class="modal-center-pok-marker">
-                    <svg viewBox="0 0 200 200" class="pok-svg">
-                        <!-- Outer circle border -->
-                        <circle cx="100" cy="100" r="90" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
-
-                        <!-- 12 dots around the circle (clock positions) -->
-                        <circle cx="100" cy="40" r="5" fill="#2c1810"/>
-                        <circle cx="130" cy="50" r="5" fill="#2c1810"/>
-                        <circle cx="155" cy="75" r="5" fill="#2c1810"/>
-                        <circle cx="160" cy="100" r="5" fill="#2c1810"/>
-                        <circle cx="155" cy="125" r="5" fill="#2c1810"/>
-                        <circle cx="130" cy="150" r="5" fill="#2c1810"/>
-                        <circle cx="100" cy="160" r="5" fill="#2c1810"/>
-                        <circle cx="70" cy="150" r="5" fill="#2c1810"/>
-                        <circle cx="45" cy="125" r="5" fill="#2c1810"/>
-                        <circle cx="40" cy="100" r="5" fill="#2c1810"/>
-                        <circle cx="45" cy="75" r="5" fill="#2c1810"/>
-                        <circle cx="70" cy="50" r="5" fill="#2c1810"/>
-
-                        <!-- Center crosshair -->
-                        <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="3"/>
-                        <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="3"/>
-                    </svg>
-                    <!-- Score display in center of POK with POK-styled numbers -->
-                    <div class="modal-center-pok-score">
-                        <div class="pok-style-number red">
-                            <span id="modalCenterPokScoreRed">0</span>
-                        </div>
-                        <div class="pok-style-number blue">
-                            <span id="modalCenterPokScoreBlue">0</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Blue score marbles (right) -->
-                <div class="modal-score-visualizer blue-visualizer">
-                    <div class="score-bar">
-                        <div class="score-track"></div>
-                        <div class="score-markers" id="modalBlueScoreMarkers">
-                            <!-- 21 blue marker positions will be generated here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================= -->
-    <!-- HISTORY MODAL (Mobile)        -->
-    <!-- ============================= -->
-    <div id="historyModal" class="history-modal">
-        <div class="history-modal-content">
-            <button id="closeHistoryButton" class="close-history-button">✕</button>
-            <h2>Rounds History</h2>
-            <div class="history-modal-table-container">
-                <table id="historyModalTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th id="historyModalHeaderRed">Red</th>
-                            <th id="historyModalHeaderBlue">Blue</th>
-                            <th>Winner</th>
-                            <th>Diff</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyModalTableBody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================= -->
-    <!-- JAVASCRIPT                    -->
-    <!-- ============================= -->
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
