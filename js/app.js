@@ -10,6 +10,14 @@ const app = new PokScorerApp();
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 
+    // Hide loading screen
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+        loadingScreen.classList.add('hidden');
+        // Remove from DOM after transition
+        setTimeout(() => loadingScreen.remove(), 300);
+    }
+
     // Expose debug tools globally
     window.pokDebug = {
         app,

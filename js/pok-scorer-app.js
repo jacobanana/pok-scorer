@@ -2,10 +2,9 @@
 // MAIN APPLICATION
 // ============================================
 
-import { CONFIG } from './config.js';
 import { EventStore } from './event-store.js';
 import { GameStateProjection } from './game-state-projection.js';
-import { UIProjection } from './ui-projection.js';
+import { UIProjection } from './ui-projection-v2.js';
 import { CommandHandler } from './command-handler.js';
 import { ScoringService } from './scoring-service.js';
 
@@ -16,17 +15,63 @@ export class PokScorerApp {
         this.ui = new UIProjection(this.eventStore, this.gameState);
         this.commands = new CommandHandler(this.eventStore, this.gameState);
 
-        this.autoEndTimer = null;
-        this.countdownInterval = null;
-        this.countdownEndTime = null;
         this.isDragging = false;
         this.draggedPokId = null;
+        this._dragImage = null;
     }
 
     init() {
         this.ui.init();
         this.setupDOMEventListeners();
         this.setupEventHandlers();
+
+        // Set up all UI handlers
+        this.ui.setHandlers({
+            onGameStart: (playerId) => {
+                const names = this.ui.getPlayerNames();
+                this.commands.startGame(playerId, names.red, names.blue);
+            },
+            onContinueGame: () => {
+                this.isLoading = true;
+                const loaded = this.eventStore.load();
+                if (!loaded) {
+                    alert('Failed to load saved game');
+                    this.isLoading = false;
+                }
+            },
+            onSaveLatest: () => {
+                this.eventStore.exportToFile();
+            },
+            onImport: () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            await this.eventStore.importFromFile(file);
+                        } catch (error) {
+                            alert('Failed to import game: ' + error.message);
+                        }
+                    }
+                };
+                input.click();
+            },
+            onFlipTable: () => {
+                const state = this.gameState.getState();
+                this.commands.flipTable(!state.isFlipped);
+            },
+            onNewGame: () => {
+                if (confirm('Start a new game? Current progress will be lost.')) {
+                    this.commands.resetGame();
+                }
+            },
+            onExportMatch: () => {
+                this.eventStore.exportToFile();
+            },
+            onAutoEndRound: () => this.commands.endRound()
+        });
 
         // Flag to track if we're currently loading a game
         this.isLoading = false;
@@ -38,22 +83,22 @@ export class PokScorerApp {
             // Only check round completion if we're not loading
             // This prevents auto-end timers from starting during event replay
             if (!this.isLoading) {
-                this.checkRoundComplete();
+                this.ui.checkRoundComplete();
             }
         });
 
         // Reset countdown timer when a POK is moved during round completion
         this.eventStore.subscribe('POK_MOVED', () => {
-            if (!this.isLoading && this.autoEndTimer) {
+            if (!this.isLoading && this.ui.hasAutoEndTimer()) {
                 // Clear and restart the countdown to allow adjustments
-                this.clearAutoEndTimer();
-                this.checkRoundComplete();
+                this.ui.clearAutoEndTimer();
+                this.ui.checkRoundComplete();
             }
         });
 
         // Handle game reset to clear app state
         this.eventStore.subscribe('GAME_RESET', () => {
-            this.clearAutoEndTimer();
+            this.ui.clearAutoEndTimer();
             this.isDragging = false;
             this.draggedPokId = null;
             this.isLoading = false;
@@ -61,10 +106,10 @@ export class PokScorerApp {
 
         // Handle game loaded to clear any auto-end timers and check round state
         this.eventStore.subscribe('GAME_LOADED', () => {
-            this.clearAutoEndTimer();
+            this.ui.clearAutoEndTimer();
             this.isLoading = false;
             // Now that loading is complete, check if we need to start countdown
-            this.checkRoundComplete();
+            this.ui.checkRoundComplete();
         });
 
         // Check if there's a saved game and show appropriate UI
@@ -82,144 +127,20 @@ export class PokScorerApp {
     }
 
     setupDOMEventListeners() {
-        // Buttons
-        const continueGameButton = document.getElementById('continueGameButton');
-        if (continueGameButton) {
-            continueGameButton.addEventListener('click', () => {
-                // Load the saved game
-                this.isLoading = true;
-                const loaded = this.eventStore.load();
-                if (loaded) {
-                    // Game was loaded - hide start selector and show the game board
-                    this.ui.hideStartSelector();
-                    this.ui.updateScores();
-                    this.ui.updateRoundsHistory();
-                    this.ui.updateHistoryHeaders();
+        // Note: Most button event handlers are now set via ui.setHandlers()
+        // and handled through the component event system.
 
-                    // Update body class for current player
-                    const round = this.gameState.getCurrentRound();
-                    if (round) {
-                        this.ui.updateBodyClass(round.currentPlayerId);
-                    }
-                    // isLoading flag will be cleared by GAME_LOADED event
-                } else {
-                    alert('Failed to load saved game');
-                    this.isLoading = false;
-                }
-            });
-        }
-
-        const saveLatestGameButton = document.getElementById('saveLatestGameButton');
-        if (saveLatestGameButton) {
-            saveLatestGameButton.addEventListener('click', () => {
-                this.eventStore.exportToFile();
-            });
-        }
-
-        const importMatchButton = document.getElementById('importMatchButton');
-        if (importMatchButton) {
-            importMatchButton.addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'application/json';
-                input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        try {
-                            await this.eventStore.importFromFile(file);
-                            this.ui.hideStartSelector();
-                            this.ui.updateScores();
-                            this.ui.updateRoundsHistory();
-                            this.ui.updateHistoryHeaders();
-                        } catch (error) {
-                            alert('Failed to import game: ' + error.message);
-                        }
-                    }
-                };
-                input.click();
-            });
-        }
-
-        const flipTableButton = document.getElementById('flipTableButton');
-        if (flipTableButton) {
-            flipTableButton.addEventListener('click', () => {
-                const state = this.gameState.getState();
-                this.commands.flipTable(!state.isFlipped);
-            });
-        }
-
-        const exportMatchButton = document.getElementById('exportMatchButton');
-        if (exportMatchButton) {
-            exportMatchButton.addEventListener('click', () => {
-                this.eventStore.exportToFile();
-            });
-        }
-
-        const newGameButton = document.getElementById('newGameButton');
-        if (newGameButton) {
-            newGameButton.addEventListener('click', () => {
-                if (confirm('Start a new game? Current progress will be lost.')) {
-                    this.commands.resetGame();
-                }
-            });
-        }
-
-        // Start game buttons
-        const startRedButton = document.querySelector('.start-half.red');
-        if (startRedButton) {
-            startRedButton.addEventListener('click', () => {
-                const redName = document.getElementById('redPlayerName')?.value.trim() || 'Red';
-                const blueName = document.getElementById('bluePlayerName')?.value.trim() || 'Blue';
-                this.commands.startGame('red', redName, blueName);
-            });
-        }
-
-        const startBlueButton = document.querySelector('.start-half.blue');
-        if (startBlueButton) {
-            startBlueButton.addEventListener('click', () => {
-                const redName = document.getElementById('redPlayerName')?.value.trim() || 'Red';
-                const blueName = document.getElementById('bluePlayerName')?.value.trim() || 'Blue';
-                this.commands.startGame('blue', redName, blueName);
-            });
-        }
-
-        // Modal
+        // Round End Modal - clicking advances the game
         const roundEndModal = document.getElementById('roundEndModal');
         if (roundEndModal) {
             roundEndModal.addEventListener('click', () => {
-                this.clearAutoEndTimer();
+                this.ui.clearAutoEndTimer();
 
                 // Check if game is over
                 if (this.gameState.hasWinner()) {
                     this.commands.resetGame();
                 } else {
                     this.commands.startNextRound();
-                }
-            });
-        }
-
-        // Show History button
-        const showHistoryButton = document.getElementById('showHistoryButton');
-        if (showHistoryButton) {
-            showHistoryButton.addEventListener('click', () => {
-                this.showHistoryModal();
-            });
-        }
-
-        // Close History button
-        const closeHistoryButton = document.getElementById('closeHistoryButton');
-        if (closeHistoryButton) {
-            closeHistoryButton.addEventListener('click', () => {
-                this.hideHistoryModal();
-            });
-        }
-
-        // Close history modal when clicking outside
-        const historyModal = document.getElementById('historyModal');
-        if (historyModal) {
-            historyModal.addEventListener('click', (e) => {
-                if (e.target === historyModal) {
-                    this.hideHistoryModal();
                 }
             });
         }
@@ -268,20 +189,16 @@ export class PokScorerApp {
                 this.draggedPokId = this.findPokIdByElement(e.target);
                 e.target.classList.add('dragging');
 
-                // Create a cleaner drag image (clone the element)
-                const dragImage = e.target.cloneNode(true);
-                dragImage.style.opacity = '0.8';
-                dragImage.style.position = 'absolute';
-                dragImage.style.top = '-1000px';
-                document.body.appendChild(dragImage);
-                e.dataTransfer.setDragImage(dragImage,
+                // Create a custom drag image (clone positioned off-screen)
+                this._dragImage = e.target.cloneNode(true);
+                this._dragImage.style.opacity = '0.8';
+                this._dragImage.style.position = 'absolute';
+                this._dragImage.style.top = '-1000px';
+                document.body.appendChild(this._dragImage);
+                e.dataTransfer.setDragImage(this._dragImage,
                     e.target.offsetWidth / 2,
                     e.target.offsetHeight / 2);
 
-                // Clean up the drag image after a short delay
-                setTimeout(() => dragImage.remove(), 0);
-
-                // Set effect to move (not copy)
                 e.dataTransfer.effectAllowed = 'move';
             }
         });
@@ -292,6 +209,10 @@ export class PokScorerApp {
                 e.target.classList.remove('dragging');
                 this.isDragging = false;
                 this.draggedPokId = null;
+
+                // Clean up drag image
+                this._dragImage?.remove();
+                this._dragImage = null;
 
                 // Clear boundary highlights
                 const zones = document.querySelectorAll('.zone, .circle-zone');
@@ -524,177 +445,5 @@ export class PokScorerApp {
         );
 
         return pok?.id;
-    }
-
-    checkRoundComplete() {
-        const round = this.gameState.getCurrentRound();
-        if (!round || !round.isComplete) {
-            this.clearAutoEndTimer();
-            return;
-        }
-
-        // Round just completed: start countdown
-        if (!this.autoEndTimer) {
-            this.startAutoEndCountdown();
-        }
-    }
-
-    startAutoEndCountdown() {
-        this.countdownEndTime = Date.now() + CONFIG.AUTO_END_DELAY_MS;
-
-        // Determine the winner's color
-        const round = this.gameState.getCurrentRound();
-        if (round) {
-            const redScore = round.poks
-                .filter(p => p.playerId === 'red')
-                .reduce((sum, p) => sum + p.points, 0);
-            const blueScore = round.poks
-                .filter(p => p.playerId === 'blue')
-                .reduce((sum, p) => sum + p.points, 0);
-
-            const winnerClass = redScore > blueScore ? 'red-winner' :
-                               blueScore > redScore ? 'blue-winner' : 'tie-game';
-
-            // Show loading bar and set up smooth animation
-            if (this.ui.dom.loadingBar && this.ui.dom.loadingBarFill) {
-                // Reset the bar
-                this.ui.dom.loadingBarFill.style.width = '0%';
-                this.ui.dom.loadingBarFill.style.transition = 'none';
-                this.ui.dom.loadingBarFill.classList.remove('red-winner', 'blue-winner', 'tie-game');
-
-                // Add winner class (or tie class)
-                this.ui.dom.loadingBarFill.classList.add(winnerClass);
-
-                // Force a reflow to ensure the reset takes effect
-                void this.ui.dom.loadingBarFill.offsetWidth;
-
-                // Show the loading bar
-                this.ui.dom.loadingBar.classList.add('show');
-
-                // Start the animation with a smooth transition
-                this.ui.dom.loadingBarFill.style.transition = `width ${CONFIG.AUTO_END_DELAY_MS}ms linear`;
-                this.ui.dom.loadingBarFill.style.width = '100%';
-            }
-        }
-
-        // Auto-end after delay
-        this.autoEndTimer = setTimeout(() => {
-            this.commands.endRound();
-            this.clearAutoEndTimer();
-        }, CONFIG.AUTO_END_DELAY_MS);
-    }
-
-    clearAutoEndTimer() {
-        if (this.autoEndTimer) {
-            clearTimeout(this.autoEndTimer);
-            this.autoEndTimer = null;
-        }
-        if (this.countdownInterval) {
-            clearInterval(this.countdownInterval);
-            this.countdownInterval = null;
-        }
-        this.countdownEndTime = null;
-
-        // Hide loading bar and clean up classes
-        if (this.ui.dom.loadingBar) {
-            this.ui.dom.loadingBar.classList.remove('show');
-        }
-        if (this.ui.dom.loadingBarFill) {
-            this.ui.dom.loadingBarFill.style.width = '0%';
-            this.ui.dom.loadingBarFill.classList.remove('red-winner', 'blue-winner', 'tie-game');
-        }
-    }
-
-    showHistoryModal() {
-        const modal = document.getElementById('historyModal');
-        const tbody = document.getElementById('historyModalTableBody');
-
-        if (!modal || !tbody) return;
-
-        // Clear existing rows
-        tbody.innerHTML = '';
-
-        // Get rounds from game state
-        const state = this.gameState.getState();
-        const rounds = state.rounds;
-        const playerNames = this.gameState.getPlayerNames();
-
-        // Populate table
-        rounds.forEach((round, index) => {
-            // Calculate scores
-            const redScore = round.poks
-                .filter(p => p.playerId === 'red')
-                .reduce((sum, p) => sum + p.points, 0);
-            const blueScore = round.poks
-                .filter(p => p.playerId === 'blue')
-                .reduce((sum, p) => sum + p.points, 0);
-
-            const scores = { red: redScore, blue: blueScore };
-            const diff = Math.abs(scores.red - scores.blue);
-
-            // Determine winner
-            let winner, winnerClass, rowClass;
-            if (round.isComplete) {
-                if (scores.red > scores.blue) {
-                    winner = playerNames.red;
-                    winnerClass = 'red-winner';
-                    rowClass = 'red-round-row';
-                } else if (scores.blue > scores.red) {
-                    winner = playerNames.blue;
-                    winnerClass = 'blue-winner';
-                    rowClass = 'blue-round-row';
-                } else {
-                    winner = 'Tie';
-                    winnerClass = 'winner-tie';
-                    rowClass = '';
-                }
-            } else {
-                winner = 'In Progress';
-                winnerClass = 'winner-current';
-                rowClass = 'round-row-current';
-            }
-
-            const row = document.createElement('tr');
-            row.className = rowClass;
-
-            // Round number
-            const roundCell = document.createElement('td');
-            roundCell.textContent = index + 1;
-            roundCell.className = 'round-number';
-            row.appendChild(roundCell);
-
-            // Red score
-            const redCell = document.createElement('td');
-            redCell.textContent = scores.red;
-            row.appendChild(redCell);
-
-            // Blue score
-            const blueCell = document.createElement('td');
-            blueCell.textContent = scores.blue;
-            row.appendChild(blueCell);
-
-            // Winner
-            const winnerCell = document.createElement('td');
-            winnerCell.textContent = winner;
-            winnerCell.className = winnerClass;
-            row.appendChild(winnerCell);
-
-            // Difference
-            const diffCell = document.createElement('td');
-            diffCell.textContent = round.isComplete ? diff : '-';
-            row.appendChild(diffCell);
-
-            tbody.appendChild(row);
-        });
-
-        // Show modal
-        modal.classList.add('show');
-    }
-
-    hideHistoryModal() {
-        const modal = document.getElementById('historyModal');
-        if (modal) {
-            modal.classList.remove('show');
-        }
     }
 }

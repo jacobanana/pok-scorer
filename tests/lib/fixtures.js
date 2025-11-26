@@ -129,5 +129,38 @@ export function clearTestStorage(storageKey = TEST_STORAGE_KEY) {
     localStorage.removeItem(storageKey);
 }
 
+// ============================================
+// COMPONENT TESTING HELPERS
+// ============================================
+
+/**
+ * Creates a test container element for DOM testing
+ * @param {string} [id='test-container'] - Container ID
+ * @returns {HTMLElement} Test container element
+ */
+export function createTestContainer(id = 'test-container') {
+    // Remove existing container if present
+    const existing = document.getElementById(id);
+    if (existing) {
+        existing.parentNode.removeChild(existing);
+    }
+
+    const container = document.createElement('div');
+    container.id = id;
+    document.body.appendChild(container);
+    return container;
+}
+
+/**
+ * Removes the test container from DOM
+ * @param {string} [id='test-container'] - Container ID to remove
+ */
+export function cleanupTestContainer(id = 'test-container') {
+    const container = document.getElementById(id);
+    if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+    }
+}
+
 // Export constants for direct use
 export { TEST_STORAGE_KEY };

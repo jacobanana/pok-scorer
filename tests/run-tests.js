@@ -118,7 +118,9 @@ async function runTests() {
                 './unit/scoring-service.test.js',
                 './unit/game-state-projection.test.js',
                 './unit/event-store.test.js',
-                './integration/game-flow.test.js'
+                './unit/component.test.js',
+                './integration/game-flow.test.js',
+                './integration/ui-components.test.js'
             ];
 
             // Load all test modules with cache busting
