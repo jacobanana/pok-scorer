@@ -601,12 +601,44 @@ export class UIProjection {
         this.dom.startSelector.classList.remove('hidden');
 
         // Show continue button if saved game exists
-        if (localStorage.getItem('pok-event-store')) {
+        const savedData = localStorage.getItem('pok-event-store');
+        if (savedData) {
             this.dom.continueButton.classList.add('show');
             this.dom.saveLatestButton.classList.add('show');
+
+            // Prefill name inputs with saved player names
+            this.prefillPlayerNames(savedData);
         } else {
             this.dom.continueButton.classList.remove('show');
             this.dom.saveLatestButton.classList.remove('show');
+        }
+    }
+
+    prefillPlayerNames(savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            if (data && data.events) {
+                // Find the most recent GAME_STARTED event
+                const gameStartedEvents = data.events.filter(e => e.type === 'GAME_STARTED');
+                if (gameStartedEvents.length > 0) {
+                    const lastGameStarted = gameStartedEvents[gameStartedEvents.length - 1];
+                    const redName = lastGameStarted.data.redName;
+                    const blueName = lastGameStarted.data.blueName;
+
+                    // Only prefill if names are non-default
+                    const redNameInput = document.getElementById('redPlayerName');
+                    const blueNameInput = document.getElementById('bluePlayerName');
+
+                    if (redNameInput && redName && redName !== 'Red') {
+                        redNameInput.value = redName;
+                    }
+                    if (blueNameInput && blueName && blueName !== 'Blue') {
+                        blueNameInput.value = blueName;
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore parse errors
         }
     }
 
