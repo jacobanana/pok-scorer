@@ -47,6 +47,9 @@ export class UIProjection {
             blueScoreMarkers: null,
             modalRedMarkers: null,
             modalBlueMarkers: null,
+            modalRedScore: null,
+            modalBlueScore: null,
+            modalScoreDiff: null,
             currentRedScore: null,
             currentBlueScore: null,
             currentDiff: null,
@@ -255,12 +258,14 @@ export class UIProjection {
             // Create modal score components - mount directly to modal-score-display for proper flex layout
             const modalScoreDisplay = this.components.roundModal.find('.modal-score-display');
             if (modalScoreDisplay) {
-                new ModalScoreCircle({ color: 'red', id: 'roundEndModalRedScore' })
-                    .mount(modalScoreDisplay);
-                new ModalScoreDifference({ id: 'roundEndModalScoreDiff' })
-                    .mount(modalScoreDisplay);
-                new ModalScoreCircle({ color: 'blue', id: 'roundEndModalBlueScore' })
-                    .mount(modalScoreDisplay);
+                this.components.modalRedScore = new ModalScoreCircle({ color: 'red', id: 'roundEndModalRedScore' });
+                this.components.modalRedScore.mount(modalScoreDisplay);
+
+                this.components.modalScoreDiff = new ModalScoreDifference({ id: 'roundEndModalScoreDiff' });
+                this.components.modalScoreDiff.mount(modalScoreDisplay);
+
+                this.components.modalBlueScore = new ModalScoreCircle({ color: 'blue', id: 'roundEndModalBlueScore' });
+                this.components.modalBlueScore.mount(modalScoreDisplay);
             }
 
             // Create modal score markers

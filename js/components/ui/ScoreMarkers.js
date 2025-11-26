@@ -119,6 +119,9 @@ export class ScoreMarkers extends Component {
      * @returns {ScoreMarkers} this for chaining
      */
     animateScore(newScore, duration = 500) {
+        // Cancel any existing animation
+        this.cancelAnimation();
+
         const startScore = this.getScore();
         const diff = newScore - startScore;
 
@@ -134,12 +137,30 @@ export class ScoreMarkers extends Component {
             this.setScore(currentScore);
 
             if (currentStep < Math.abs(diff)) {
-                setTimeout(animate, stepDuration);
+                this._animationTimeout = setTimeout(animate, stepDuration);
+            } else {
+                this._animationTimeout = null;
             }
         };
 
         animate();
         return this;
+    }
+
+    /**
+     * Cancel any running animation
+     * @returns {ScoreMarkers} this for chaining
+     */
+    cancelAnimation() {
+        if (this._animationTimeout) {
+            clearTimeout(this._animationTimeout);
+            this._animationTimeout = null;
+        }
+        return this;
+    }
+
+    onUnmount() {
+        this.cancelAnimation();
     }
 }
 

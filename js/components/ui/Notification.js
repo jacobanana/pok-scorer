@@ -66,7 +66,7 @@ export class Notification extends Component {
         this.addClass('fade-out');
 
         // Hide after animation completes
-        setTimeout(() => {
+        this._fadeTimeout = setTimeout(() => {
             this.removeClass('show', 'fade-out', 'red-player', 'blue-player');
         }, 300);
 
@@ -74,14 +74,22 @@ export class Notification extends Component {
     }
 
     /**
-     * Clear any pending auto-hide
+     * Clear any pending timeouts
      * @returns {Notification} this for chaining
      */
-    clearTimeout() {
+    clearTimeouts() {
         if (this._hideTimeout) {
             clearTimeout(this._hideTimeout);
             this._hideTimeout = null;
         }
+        if (this._fadeTimeout) {
+            clearTimeout(this._fadeTimeout);
+            this._fadeTimeout = null;
+        }
         return this;
+    }
+
+    onUnmount() {
+        this.clearTimeouts();
     }
 }
