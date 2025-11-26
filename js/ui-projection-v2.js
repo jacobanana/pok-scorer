@@ -53,10 +53,13 @@ export class UIProjection {
             onSaveLatest: null,
             onImport: null,
             onFlipTable: null,
-            onShowHistory: null,
             onNewGame: null,
-            onExportMatch: null
+            onExportMatch: null,
+            onAutoEndRound: null  // Called when auto-end countdown completes
         };
+
+        // Auto-end timer state
+        this._autoEndTimer = null;
 
         // Component references
         this.components = {
@@ -245,6 +248,29 @@ export class UIProjection {
 
         // Round End Modal
         this._createRoundModal();
+
+        // History Modal event listeners
+        this._setupHistoryModal();
+    }
+
+    /**
+     * Set up history modal close handlers
+     * @private
+     */
+    _setupHistoryModal() {
+        const closeButton = document.getElementById('closeHistoryButton');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => this.hideHistoryModal());
+        }
+
+        const historyModal = document.getElementById('historyModal');
+        if (historyModal) {
+            historyModal.addEventListener('click', (e) => {
+                if (e.target === historyModal) {
+                    this.hideHistoryModal();
+                }
+            });
+        }
     }
 
     /**
@@ -786,7 +812,7 @@ export class UIProjection {
     }
 
     _handleShowHistory() {
-        this.handlers.onShowHistory?.();
+        this.showHistoryModal();
     }
 
     _handleNewGame() {
@@ -795,6 +821,160 @@ export class UIProjection {
 
     _handleExportMatch() {
         this.handlers.onExportMatch?.();
+    }
+
+    // ==========================================
+    // Auto-End Countdown
+    // ==========================================
+
+    /**
+     * Check if round is complete and start countdown if needed
+     */
+    checkRoundComplete() {
+        const round = this.gameState.getCurrentRound();
+        if (!round || !round.isComplete) {
+            this.clearAutoEndTimer();
+            return;
+        }
+
+        // Round just completed: start countdown
+        if (!this._autoEndTimer) {
+            this.startAutoEndCountdown();
+        }
+    }
+
+    /**
+     * Start the auto-end countdown with loading bar animation
+     */
+    startAutoEndCountdown() {
+        const round = this.gameState.getCurrentRound();
+        if (!round) return;
+
+        // Calculate winner for styling
+        const redScore = round.poks
+            .filter(p => p.playerId === 'red')
+            .reduce((sum, p) => sum + p.points, 0);
+        const blueScore = round.poks
+            .filter(p => p.playerId === 'blue')
+            .reduce((sum, p) => sum + p.points, 0);
+
+        const winnerClass = redScore > blueScore ? 'red-winner' :
+                           blueScore > redScore ? 'blue-winner' : 'tie-game';
+
+        // Start loading bar animation
+        const loadingBar = this.components.loadingBar;
+        if (loadingBar) {
+            loadingBar.setWinnerClass(winnerClass);
+            loadingBar.props.duration = CONFIG.AUTO_END_DELAY_MS;
+            loadingBar.start(() => {
+                // Animation complete - trigger auto-end
+                this._autoEndTimer = null;
+                this.handlers.onAutoEndRound?.();
+            });
+            // Track that we've started (the LoadingBar handles its own timeout)
+            this._autoEndTimer = true;
+        }
+    }
+
+    /**
+     * Clear the auto-end countdown timer
+     */
+    clearAutoEndTimer() {
+        if (this._autoEndTimer) {
+            this._autoEndTimer = null;
+        }
+        this.components.loadingBar?.reset();
+    }
+
+    /**
+     * Check if auto-end timer is currently running
+     * @returns {boolean}
+     */
+    hasAutoEndTimer() {
+        return !!this._autoEndTimer;
+    }
+
+    // ==========================================
+    // History Modal
+    // ==========================================
+
+    /**
+     * Show the history modal with all rounds
+     */
+    showHistoryModal() {
+        const modal = document.getElementById('historyModal');
+        const tbody = document.getElementById('historyModalTableBody');
+
+        if (!modal || !tbody) return;
+
+        // Clear existing rows
+        tbody.innerHTML = '';
+
+        // Get rounds from game state
+        const state = this.gameState.getState();
+        const rounds = state.rounds;
+        const playerNames = this.gameState.getPlayerNames();
+
+        // Populate table
+        rounds.forEach((round, index) => {
+            const redScore = round.poks
+                .filter(p => p.playerId === 'red')
+                .reduce((sum, p) => sum + p.points, 0);
+            const blueScore = round.poks
+                .filter(p => p.playerId === 'blue')
+                .reduce((sum, p) => sum + p.points, 0);
+
+            const scores = { red: redScore, blue: blueScore };
+            const diff = Math.abs(scores.red - scores.blue);
+
+            // Determine winner
+            let winner, winnerClass, rowClass;
+            if (round.isComplete) {
+                if (scores.red > scores.blue) {
+                    winner = playerNames.red;
+                    winnerClass = 'red-winner';
+                    rowClass = 'red-round-row';
+                } else if (scores.blue > scores.red) {
+                    winner = playerNames.blue;
+                    winnerClass = 'blue-winner';
+                    rowClass = 'blue-round-row';
+                } else {
+                    winner = 'Tie';
+                    winnerClass = 'winner-tie';
+                    rowClass = '';
+                }
+            } else {
+                winner = 'In Progress';
+                winnerClass = 'winner-current';
+                rowClass = 'round-row-current';
+            }
+
+            const row = document.createElement('tr');
+            row.className = rowClass;
+
+            row.innerHTML = `
+                <td class="round-number">${index + 1}</td>
+                <td>${scores.red}</td>
+                <td>${scores.blue}</td>
+                <td class="${winnerClass}">${winner}</td>
+                <td>${round.isComplete ? diff : '-'}</td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+        // Show modal
+        modal.classList.add('show');
+    }
+
+    /**
+     * Hide the history modal
+     */
+    hideHistoryModal() {
+        const modal = document.getElementById('historyModal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
     }
 
     // ==========================================

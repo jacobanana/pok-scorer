@@ -2,7 +2,6 @@
 // MAIN APPLICATION
 // ============================================
 
-import { CONFIG } from './config.js';
 import { EventStore } from './event-store.js';
 import { GameStateProjection } from './game-state-projection.js';
 import { UIProjection } from './ui-projection-v2.js';
@@ -16,9 +15,6 @@ export class PokScorerApp {
         this.ui = new UIProjection(this.eventStore, this.gameState);
         this.commands = new CommandHandler(this.eventStore, this.gameState);
 
-        this.autoEndTimer = null;
-        this.countdownInterval = null;
-        this.countdownEndTime = null;
         this.isDragging = false;
         this.draggedPokId = null;
     }
@@ -27,6 +23,11 @@ export class PokScorerApp {
         this.ui.init();
         this.setupDOMEventListeners();
         this.setupEventHandlers();
+
+        // Set up handler for auto-end countdown completion
+        this.ui.setHandlers({
+            onAutoEndRound: () => this.commands.endRound()
+        });
 
         // Flag to track if we're currently loading a game
         this.isLoading = false;
@@ -38,22 +39,22 @@ export class PokScorerApp {
             // Only check round completion if we're not loading
             // This prevents auto-end timers from starting during event replay
             if (!this.isLoading) {
-                this.checkRoundComplete();
+                this.ui.checkRoundComplete();
             }
         });
 
         // Reset countdown timer when a POK is moved during round completion
         this.eventStore.subscribe('POK_MOVED', () => {
-            if (!this.isLoading && this.autoEndTimer) {
+            if (!this.isLoading && this.ui.hasAutoEndTimer()) {
                 // Clear and restart the countdown to allow adjustments
-                this.clearAutoEndTimer();
-                this.checkRoundComplete();
+                this.ui.clearAutoEndTimer();
+                this.ui.checkRoundComplete();
             }
         });
 
         // Handle game reset to clear app state
         this.eventStore.subscribe('GAME_RESET', () => {
-            this.clearAutoEndTimer();
+            this.ui.clearAutoEndTimer();
             this.isDragging = false;
             this.draggedPokId = null;
             this.isLoading = false;
@@ -61,10 +62,10 @@ export class PokScorerApp {
 
         // Handle game loaded to clear any auto-end timers and check round state
         this.eventStore.subscribe('GAME_LOADED', () => {
-            this.clearAutoEndTimer();
+            this.ui.clearAutoEndTimer();
             this.isLoading = false;
             // Now that loading is complete, check if we need to start countdown
-            this.checkRoundComplete();
+            this.ui.checkRoundComplete();
         });
 
         // Check if there's a saved game and show appropriate UI
@@ -168,43 +169,17 @@ export class PokScorerApp {
             });
         }
 
-        // Modal
+        // Round End Modal - clicking advances the game
         const roundEndModal = document.getElementById('roundEndModal');
         if (roundEndModal) {
             roundEndModal.addEventListener('click', () => {
-                this.clearAutoEndTimer();
+                this.ui.clearAutoEndTimer();
 
                 // Check if game is over
                 if (this.gameState.hasWinner()) {
                     this.commands.resetGame();
                 } else {
                     this.commands.startNextRound();
-                }
-            });
-        }
-
-        // Show History button
-        const showHistoryButton = document.getElementById('showHistoryButton');
-        if (showHistoryButton) {
-            showHistoryButton.addEventListener('click', () => {
-                this.showHistoryModal();
-            });
-        }
-
-        // Close History button
-        const closeHistoryButton = document.getElementById('closeHistoryButton');
-        if (closeHistoryButton) {
-            closeHistoryButton.addEventListener('click', () => {
-                this.hideHistoryModal();
-            });
-        }
-
-        // Close history modal when clicking outside
-        const historyModal = document.getElementById('historyModal');
-        if (historyModal) {
-            historyModal.addEventListener('click', (e) => {
-                if (e.target === historyModal) {
-                    this.hideHistoryModal();
                 }
             });
         }
@@ -509,177 +484,5 @@ export class PokScorerApp {
         );
 
         return pok?.id;
-    }
-
-    checkRoundComplete() {
-        const round = this.gameState.getCurrentRound();
-        if (!round || !round.isComplete) {
-            this.clearAutoEndTimer();
-            return;
-        }
-
-        // Round just completed: start countdown
-        if (!this.autoEndTimer) {
-            this.startAutoEndCountdown();
-        }
-    }
-
-    startAutoEndCountdown() {
-        this.countdownEndTime = Date.now() + CONFIG.AUTO_END_DELAY_MS;
-
-        // Determine the winner's color
-        const round = this.gameState.getCurrentRound();
-        if (round) {
-            const redScore = round.poks
-                .filter(p => p.playerId === 'red')
-                .reduce((sum, p) => sum + p.points, 0);
-            const blueScore = round.poks
-                .filter(p => p.playerId === 'blue')
-                .reduce((sum, p) => sum + p.points, 0);
-
-            const winnerClass = redScore > blueScore ? 'red-winner' :
-                               blueScore > redScore ? 'blue-winner' : 'tie-game';
-
-            // Show loading bar and set up smooth animation
-            if (this.ui.dom.loadingBar && this.ui.dom.loadingBarFill) {
-                // Reset the bar
-                this.ui.dom.loadingBarFill.style.width = '0%';
-                this.ui.dom.loadingBarFill.style.transition = 'none';
-                this.ui.dom.loadingBarFill.classList.remove('red-winner', 'blue-winner', 'tie-game');
-
-                // Add winner class (or tie class)
-                this.ui.dom.loadingBarFill.classList.add(winnerClass);
-
-                // Force a reflow to ensure the reset takes effect
-                void this.ui.dom.loadingBarFill.offsetWidth;
-
-                // Show the loading bar
-                this.ui.dom.loadingBar.classList.add('show');
-
-                // Start the animation with a smooth transition
-                this.ui.dom.loadingBarFill.style.transition = `width ${CONFIG.AUTO_END_DELAY_MS}ms linear`;
-                this.ui.dom.loadingBarFill.style.width = '100%';
-            }
-        }
-
-        // Auto-end after delay
-        this.autoEndTimer = setTimeout(() => {
-            this.commands.endRound();
-            this.clearAutoEndTimer();
-        }, CONFIG.AUTO_END_DELAY_MS);
-    }
-
-    clearAutoEndTimer() {
-        if (this.autoEndTimer) {
-            clearTimeout(this.autoEndTimer);
-            this.autoEndTimer = null;
-        }
-        if (this.countdownInterval) {
-            clearInterval(this.countdownInterval);
-            this.countdownInterval = null;
-        }
-        this.countdownEndTime = null;
-
-        // Hide loading bar and clean up classes
-        if (this.ui.dom.loadingBar) {
-            this.ui.dom.loadingBar.classList.remove('show');
-        }
-        if (this.ui.dom.loadingBarFill) {
-            this.ui.dom.loadingBarFill.style.width = '0%';
-            this.ui.dom.loadingBarFill.classList.remove('red-winner', 'blue-winner', 'tie-game');
-        }
-    }
-
-    showHistoryModal() {
-        const modal = document.getElementById('historyModal');
-        const tbody = document.getElementById('historyModalTableBody');
-
-        if (!modal || !tbody) return;
-
-        // Clear existing rows
-        tbody.innerHTML = '';
-
-        // Get rounds from game state
-        const state = this.gameState.getState();
-        const rounds = state.rounds;
-        const playerNames = this.gameState.getPlayerNames();
-
-        // Populate table
-        rounds.forEach((round, index) => {
-            // Calculate scores
-            const redScore = round.poks
-                .filter(p => p.playerId === 'red')
-                .reduce((sum, p) => sum + p.points, 0);
-            const blueScore = round.poks
-                .filter(p => p.playerId === 'blue')
-                .reduce((sum, p) => sum + p.points, 0);
-
-            const scores = { red: redScore, blue: blueScore };
-            const diff = Math.abs(scores.red - scores.blue);
-
-            // Determine winner
-            let winner, winnerClass, rowClass;
-            if (round.isComplete) {
-                if (scores.red > scores.blue) {
-                    winner = playerNames.red;
-                    winnerClass = 'red-winner';
-                    rowClass = 'red-round-row';
-                } else if (scores.blue > scores.red) {
-                    winner = playerNames.blue;
-                    winnerClass = 'blue-winner';
-                    rowClass = 'blue-round-row';
-                } else {
-                    winner = 'Tie';
-                    winnerClass = 'winner-tie';
-                    rowClass = '';
-                }
-            } else {
-                winner = 'In Progress';
-                winnerClass = 'winner-current';
-                rowClass = 'round-row-current';
-            }
-
-            const row = document.createElement('tr');
-            row.className = rowClass;
-
-            // Round number
-            const roundCell = document.createElement('td');
-            roundCell.textContent = index + 1;
-            roundCell.className = 'round-number';
-            row.appendChild(roundCell);
-
-            // Red score
-            const redCell = document.createElement('td');
-            redCell.textContent = scores.red;
-            row.appendChild(redCell);
-
-            // Blue score
-            const blueCell = document.createElement('td');
-            blueCell.textContent = scores.blue;
-            row.appendChild(blueCell);
-
-            // Winner
-            const winnerCell = document.createElement('td');
-            winnerCell.textContent = winner;
-            winnerCell.className = winnerClass;
-            row.appendChild(winnerCell);
-
-            // Difference
-            const diffCell = document.createElement('td');
-            diffCell.textContent = round.isComplete ? diff : '-';
-            row.appendChild(diffCell);
-
-            tbody.appendChild(row);
-        });
-
-        // Show modal
-        modal.classList.add('show');
-    }
-
-    hideHistoryModal() {
-        const modal = document.getElementById('historyModal');
-        if (modal) {
-            modal.classList.remove('show');
-        }
     }
 }
