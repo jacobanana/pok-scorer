@@ -5,7 +5,7 @@
 import { CONFIG } from './config.js';
 import { EventStore } from './event-store.js';
 import { GameStateProjection } from './game-state-projection.js';
-import { UIProjection } from './ui-projection.js';
+import { UIProjection } from './ui-projection-v2.js';
 import { CommandHandler } from './command-handler.js';
 import { ScoringService } from './scoring-service.js';
 

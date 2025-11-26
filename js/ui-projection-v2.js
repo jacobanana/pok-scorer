@@ -803,8 +803,16 @@ export class UIProjection {
             roundModal: this.components.roundModal?.el,
             historyTableBody: this.components.historyTable?.getBody(),
             turnNotification: this.components.notification?.el,
-            loadingBar: this.components.loadingBar?.el
+            loadingBar: this.components.loadingBar?.el,
+            loadingBarFill: this.components.loadingBar?.getFill()
         };
+    }
+
+    /**
+     * Get table element (for backward compatibility)
+     */
+    get tableElement() {
+        return this.containers.table;
     }
 
     /**
