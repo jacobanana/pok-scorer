@@ -105,6 +105,13 @@ export class CommandHandler {
             throw new Error('Round not complete');
         }
 
+        // Check if ROUND_ENDED has already been fired for this round
+        const roundEndedEvents = this.eventStore.events.filter(e => e.type === 'ROUND_ENDED');
+        const alreadyEnded = roundEndedEvents.some(e => e.data.roundNumber === round.roundNumber);
+        if (alreadyEnded) {
+            return; // Round already ended, don't fire again
+        }
+
         const scores = this.gameState.getRoundScores();
         this.eventStore.append(new RoundEndedEvent(
             round.roundNumber,

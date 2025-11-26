@@ -419,6 +419,8 @@ export class UIProjection {
     }
 
     onRoundEnded(event) {
+        // Clear any auto-end timer/loading bar since the round has ended
+        this.clearAutoEndTimer();
         this.showRoundModal(event);
     }
 

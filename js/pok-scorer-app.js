@@ -78,11 +78,12 @@ export class PokScorerApp {
 
         // Set up subscriptions BEFORE loading saved game
         // Auto-save on every event
-        this.eventStore.subscribe('*', () => {
+        this.eventStore.subscribe('*', (event) => {
             this.eventStore.save();
             // Only check round completion if we're not loading
             // This prevents auto-end timers from starting during event replay
-            if (!this.isLoading) {
+            // Also skip on ROUND_ENDED - the round has already ended, no need to start another countdown
+            if (!this.isLoading && event.type !== 'ROUND_ENDED') {
                 this.ui.checkRoundComplete();
             }
         });
