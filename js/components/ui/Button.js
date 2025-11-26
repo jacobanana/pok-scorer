@@ -112,12 +112,34 @@ export class ContinueButton extends Button {
     get buttonClass() {
         return 'continue-game-top-button';
     }
+
+    // CSS uses .show class for visibility
+    show() {
+        this.addClass('show');
+        return this;
+    }
+
+    hide() {
+        this.removeClass('show');
+        return this;
+    }
 }
 
 /** Save latest game button */
 export class SaveLatestButton extends Button {
     get buttonClass() {
         return 'save-latest-game-button';
+    }
+
+    // CSS uses .show class for visibility
+    show() {
+        this.addClass('show');
+        return this;
+    }
+
+    hide() {
+        this.removeClass('show');
+        return this;
     }
 }
 
