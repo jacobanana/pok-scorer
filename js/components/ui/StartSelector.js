@@ -1,5 +1,5 @@
 import { Component } from '../core/Component.js';
-import { Button } from './Button.js';
+import { ContinueButton, SaveLatestButton, ImportButton } from './Button.js';
 import { PlayerInput } from './PlayerInput.js';
 
 /**
@@ -19,10 +19,10 @@ export class StartSelector extends Component {
         const { id } = this.props;
         const idAttr = id ? `id="${id}"` : '';
 
+        // Player inputs are mounted directly (not in a container) for proper CSS flex layout
         return `
             <div class="start-selector" ${idAttr}>
                 <div class="start-selector-buttons"></div>
-                <div class="player-inputs-container"></div>
             </div>
         `.trim();
     }
@@ -34,7 +34,7 @@ export class StartSelector extends Component {
         // Create action buttons
         this._createButtons();
 
-        // Create player inputs
+        // Create player inputs (mounted directly to start-selector for flex layout)
         this._createPlayerInputs();
     }
 
@@ -43,10 +43,9 @@ export class StartSelector extends Component {
         if (!buttonsContainer) return;
 
         // Continue button
-        this._buttons.continue = new Button({
+        this._buttons.continue = new ContinueButton({
             id: 'continueGameButton',
-            text: 'Resume Last Game',
-            variant: 'continue'
+            text: 'Resume Last Game'
         });
         if (this.props.onContinue) {
             this._buttons.continue.onClick(this.props.onContinue);
@@ -57,10 +56,9 @@ export class StartSelector extends Component {
         }
 
         // Save latest button
-        this._buttons.saveLatest = new Button({
+        this._buttons.saveLatest = new SaveLatestButton({
             id: 'saveLatestGameButton',
-            text: 'Save Latest Game',
-            variant: 'save-latest'
+            text: 'Save Latest Game'
         });
         if (this.props.onSaveLatest) {
             this._buttons.saveLatest.onClick(this.props.onSaveLatest);
@@ -71,10 +69,9 @@ export class StartSelector extends Component {
         }
 
         // Import button
-        this._buttons.import = new Button({
+        this._buttons.import = new ImportButton({
             id: 'importMatchButton',
-            text: 'Load from File',
-            variant: 'import'
+            text: 'Load from File'
         });
         if (this.props.onImport) {
             this._buttons.import.onClick(this.props.onImport);
@@ -83,8 +80,8 @@ export class StartSelector extends Component {
     }
 
     _createPlayerInputs() {
-        const inputsContainer = this.find('.player-inputs-container');
-        if (!inputsContainer) return;
+        // Mount directly to the start-selector element (this.el) for proper flex layout
+        // CSS expects .start-half to be direct children of .start-selector
 
         // Red player input
         this._playerInputs.red = new PlayerInput({
@@ -95,7 +92,7 @@ export class StartSelector extends Component {
         if (this.props.onStart) {
             this._playerInputs.red.onStart((e, playerId) => this.props.onStart(playerId));
         }
-        this._playerInputs.red.mount(inputsContainer);
+        this._playerInputs.red.mount(this.el);
 
         // Blue player input
         this._playerInputs.blue = new PlayerInput({
@@ -106,7 +103,7 @@ export class StartSelector extends Component {
         if (this.props.onStart) {
             this._playerInputs.blue.onStart((e, playerId) => this.props.onStart(playerId));
         }
-        this._playerInputs.blue.mount(inputsContainer);
+        this._playerInputs.blue.mount(this.el);
     }
 
     /**

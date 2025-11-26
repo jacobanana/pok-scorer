@@ -49,7 +49,7 @@ export class LoadingBar extends Component {
 
         // Reset
         this.reset();
-        this.show();
+        this.addClass('show');
 
         // Animate
         fill.style.transition = `width ${duration}ms linear`;
@@ -68,7 +68,7 @@ export class LoadingBar extends Component {
     }
 
     /**
-     * Stop the animation
+     * Stop the animation and hide
      * @returns {LoadingBar} this for chaining
      */
     stop() {
@@ -81,7 +81,7 @@ export class LoadingBar extends Component {
         if (fill) {
             // Freeze at current position
             const currentWidth = fill.offsetWidth;
-            const parentWidth = this.el.offsetWidth;
+            const parentWidth = this.el?.offsetWidth || 1;
             const percentage = (currentWidth / parentWidth) * 100;
 
             fill.style.transition = 'none';
@@ -97,11 +97,13 @@ export class LoadingBar extends Component {
      */
     reset() {
         this.stop();
+        this.removeClass('show');
 
         const fill = this.getFill();
         if (fill) {
             fill.style.transition = 'none';
             fill.style.width = '0%';
+            fill.classList.remove('red-winner', 'blue-winner', 'tie-game');
         }
 
         return this;
@@ -117,6 +119,22 @@ export class LoadingBar extends Component {
         if (fill) {
             fill.style.transition = 'width 0.1s ease';
             fill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+        }
+        return this;
+    }
+
+    /**
+     * Set the winner class on the fill element
+     * @param {string} winnerClass - 'red-winner', 'blue-winner', or 'tie-game'
+     * @returns {LoadingBar} this for chaining
+     */
+    setWinnerClass(winnerClass) {
+        const fill = this.getFill();
+        if (fill) {
+            fill.classList.remove('red-winner', 'blue-winner', 'tie-game');
+            if (winnerClass) {
+                fill.classList.add(winnerClass);
+            }
         }
         return this;
     }

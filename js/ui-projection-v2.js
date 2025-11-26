@@ -163,10 +163,24 @@ export class UIProjection {
             id: 'currentRoundScoreDifference'
         });
 
+        // Mount current round score components
+        const scoreRow = this.containers.scoreVisualizer?.querySelector('.score-row');
+        if (scoreRow) {
+            this.components.currentRedScore.mount(scoreRow);
+            this.components.currentDiff.mount(scoreRow);
+            this.components.currentBlueScore.mount(scoreRow);
+        }
+
         // Loading Bar
         this.components.loadingBar = new LoadingBar({
             id: 'roundEndLoadingBar'
         });
+
+        // Mount loading bar
+        const loadingBarContainer = this.containers.scoreVisualizer?.querySelector('.loading-bar-container');
+        if (loadingBarContainer) {
+            this.components.loadingBar.mount(loadingBarContainer);
+        }
 
         // Control Buttons
         this._createControlButtons();
@@ -219,9 +233,7 @@ export class UIProjection {
             content: `
                 <div class="modal-round-number" id="roundEndModalRoundNumber">Round 1</div>
                 <div class="winner" id="roundEndModalWinner"></div>
-                <div class="modal-score-display">
-                    <div class="modal-score-container"></div>
-                </div>
+                <div class="modal-score-display"></div>
                 <div class="modal-score-visualizer-container">
                     <div class="modal-red-markers"></div>
                     <div class="modal-center-pok-marker">
@@ -239,15 +251,15 @@ export class UIProjection {
         if (this.containers.modals) {
             this.components.roundModal.mount(this.containers.modals);
 
-            // Create modal score components
-            const modalScoreContainer = this.components.roundModal.find('.modal-score-container');
-            if (modalScoreContainer) {
+            // Create modal score components - mount directly to modal-score-display for proper flex layout
+            const modalScoreDisplay = this.components.roundModal.find('.modal-score-display');
+            if (modalScoreDisplay) {
                 new ModalScoreCircle({ color: 'red', id: 'roundEndModalRedScore' })
-                    .mount(modalScoreContainer);
+                    .mount(modalScoreDisplay);
                 new ModalScoreDifference({ id: 'roundEndModalScoreDiff' })
-                    .mount(modalScoreContainer);
+                    .mount(modalScoreDisplay);
                 new ModalScoreCircle({ color: 'blue', id: 'roundEndModalBlueScore' })
-                    .mount(modalScoreContainer);
+                    .mount(modalScoreDisplay);
             }
 
             // Create modal score markers

@@ -19,18 +19,18 @@ export class Notification extends Component {
     /**
      * Show the notification with a message
      * @param {string} message
-     * @param {string} playerClass - 'red' or 'blue' for styling
+     * @param {string} playerClass - 'red-player' or 'blue-player' for styling
      * @returns {Notification} this for chaining
      */
     showMessage(message, playerClass = '') {
         this.setText(message);
-        this.removeClass('red', 'blue', 'fade-in', 'fade-out');
+        this.removeClass('red-player', 'blue-player', 'fade-in', 'fade-out');
 
         if (playerClass) {
             this.addClass(playerClass);
         }
 
-        this.show();
+        this.addClass('show');
         this.addClass('fade-in');
 
         return this;
@@ -67,8 +67,7 @@ export class Notification extends Component {
 
         // Hide after animation completes
         setTimeout(() => {
-            this.hide();
-            this.removeClass('fade-out', 'red', 'blue');
+            this.removeClass('show', 'fade-out', 'red-player', 'blue-player');
         }, 300);
 
         return this;

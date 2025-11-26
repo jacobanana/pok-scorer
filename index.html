@@ -94,6 +94,28 @@
 
         <!-- Modals Container -->
         <div id="modalsContainer"></div>
+
+        <!-- History Modal (Mobile) -->
+        <div id="historyModal" class="history-modal">
+            <div class="history-modal-content">
+                <button id="closeHistoryButton" class="close-history-button">✕</button>
+                <h2>Rounds History</h2>
+                <div class="history-modal-table-container">
+                    <table id="historyModalTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th id="historyModalHeaderRed">Red</th>
+                                <th id="historyModalHeaderBlue">Blue</th>
+                                <th>Winner</th>
+                                <th>Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyModalTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="js/app.js"></script>
