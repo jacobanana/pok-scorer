@@ -5,14 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POK Score Counter</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Loading screen - inline to show immediately */
+        #loadingScreen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #2c1810 0%, #4a3728 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease-out;
+        }
+        #loadingScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #loadingScreen img {
+            width: 150px;
+            height: 150px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+    </style>
 </head>
 <body>
-    <!-- App Root - Components will be mounted here -->
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <img src="assets/pok-logo.svg" alt="Loading...">
+    </div>
+
+    <!-- App Root -->
     <div id="app">
-        <!-- Start Selector Container -->
         <div id="startSelectorContainer"></div>
 
-        <!-- Main Container -->
         <div class="container">
             <div class="top-section">
                 <!-- Left Panel -->
@@ -24,16 +53,11 @@
                     <div class="next-player-indicator-container"></div>
                 </div>
 
-                <!-- Right Panel: Game Board -->
+                <!-- Right Panel -->
                 <div class="right-panel">
-                    <!-- Control Buttons (created by components) -->
                     <div class="control-buttons"></div>
 
-                    <!-- Game Board Container -->
                     <div class="table-container" id="gameBoardContainer">
-                        <!-- Notification mounted here by component -->
-
-                        <!-- Game Table (static structure for zones) -->
                         <div class="table">
                             <div class="table-inner">
                                 <div class="side left">
@@ -53,75 +77,44 @@
                                     </div>
                                 </div>
                                 <div class="center-circle">
-                                    <svg viewBox="0 0 200 200">
-                                        <circle cx="100" cy="100" r="90" fill="none" stroke="#2c1810" stroke-width="2"/>
-                                        <circle cx="100" cy="40" r="4" fill="#2c1810"/>
-                                        <circle cx="130" cy="50" r="4" fill="#2c1810"/>
-                                        <circle cx="155" cy="75" r="4" fill="#2c1810"/>
-                                        <circle cx="160" cy="100" r="4" fill="#2c1810"/>
-                                        <circle cx="155" cy="125" r="4" fill="#2c1810"/>
-                                        <circle cx="130" cy="150" r="4" fill="#2c1810"/>
-                                        <circle cx="100" cy="160" r="4" fill="#2c1810"/>
-                                        <circle cx="70" cy="150" r="4" fill="#2c1810"/>
-                                        <circle cx="45" cy="125" r="4" fill="#2c1810"/>
-                                        <circle cx="40" cy="100" r="4" fill="#2c1810"/>
-                                        <circle cx="45" cy="75" r="4" fill="#2c1810"/>
-                                        <circle cx="70" cy="50" r="4" fill="#2c1810"/>
-                                        <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="2"/>
-                                        <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="2"/>
-                                    </svg>
+                                    <img src="assets/pok-logo.svg" alt="POK">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Score Visualizer Container (5-column grid) -->
                     <div class="score-visualizer-container" id="scoreVisualizerContainer">
-                        <!-- Loading bar - absolutely positioned overlay -->
                         <div id="roundEndLoadingBar" class="round-end-loading-bar">
                             <div class="loading-bar-fill"></div>
                         </div>
-
-                        <!-- Column 1: Red total score POK indicator -->
                         <div class="end-pok-indicator red"><span id="endPokScoreRed">0</span></div>
-
-                        <!-- Column 2: Red score marbles -->
                         <div class="score-visualizer red-visualizer">
                             <div class="score-bar">
                                 <div class="score-track"></div>
                                 <div class="score-markers" id="redScoreMarkers"></div>
                             </div>
                         </div>
-
-                        <!-- Column 3: Current round score (center) -->
                         <div class="current-round-score" id="currentRoundScoreDisplay">
-                            <div class="score-row">
-                                <!-- Score circles mounted by components -->
-                            </div>
+                            <div class="score-row"></div>
                         </div>
-
-                        <!-- Column 4: Blue score marbles -->
                         <div class="score-visualizer blue-visualizer">
                             <div class="score-bar">
                                 <div class="score-track"></div>
                                 <div class="score-markers" id="blueScoreMarkers"></div>
                             </div>
                         </div>
-
-                        <!-- Column 5: Blue total score POK indicator -->
                         <div class="end-pok-indicator blue"><span id="endPokScoreBlue">0</span></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Modals Container -->
         <div id="modalsContainer"></div>
 
-        <!-- History Modal (Mobile) -->
+        <!-- History Modal -->
         <div id="historyModal" class="history-modal">
             <div class="history-modal-content">
-                <button id="closeHistoryButton" class="close-history-button">✕</button>
+                <button id="closeHistoryButton" class="close-history-button">&#x2715;</button>
                 <h2>Rounds History</h2>
                 <div class="history-modal-table-container">
                     <table id="historyModalTable">

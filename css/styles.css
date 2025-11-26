@@ -390,7 +390,8 @@ body.round-ending .pok:active {
     z-index: 1;
 }
 
-.center-circle svg {
+.center-circle svg,
+.center-circle img {
     width: 100%;
     height: 100%;
 }
