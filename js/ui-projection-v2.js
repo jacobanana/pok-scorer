@@ -1033,4 +1033,12 @@ export class UIProjection {
     prefillPlayerNames(savedData) {
         this._prefillPlayerNames(savedData);
     }
+
+    /**
+     * Get player names from the start selector
+     * @returns {{red: string, blue: string}}
+     */
+    getPlayerNames() {
+        return this.components.startSelector?.getPlayerNames() || { red: 'Red', blue: 'Blue' };
+    }
 }

@@ -25,8 +25,51 @@ export class PokScorerApp {
         this.setupDOMEventListeners();
         this.setupEventHandlers();
 
-        // Set up handler for auto-end countdown completion
+        // Set up all UI handlers
         this.ui.setHandlers({
+            onGameStart: (playerId) => {
+                const names = this.ui.getPlayerNames();
+                this.commands.startGame(playerId, names.red, names.blue);
+            },
+            onContinueGame: () => {
+                this.isLoading = true;
+                const loaded = this.eventStore.load();
+                if (!loaded) {
+                    alert('Failed to load saved game');
+                    this.isLoading = false;
+                }
+            },
+            onSaveLatest: () => {
+                this.eventStore.exportToFile();
+            },
+            onImport: () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            await this.eventStore.importFromFile(file);
+                        } catch (error) {
+                            alert('Failed to import game: ' + error.message);
+                        }
+                    }
+                };
+                input.click();
+            },
+            onFlipTable: () => {
+                const state = this.gameState.getState();
+                this.commands.flipTable(!state.isFlipped);
+            },
+            onNewGame: () => {
+                if (confirm('Start a new game? Current progress will be lost.')) {
+                    this.commands.resetGame();
+                }
+            },
+            onExportMatch: () => {
+                this.eventStore.exportToFile();
+            },
             onAutoEndRound: () => this.commands.endRound()
         });
 
@@ -84,91 +127,8 @@ export class PokScorerApp {
     }
 
     setupDOMEventListeners() {
-        // Buttons
-        const continueGameButton = document.getElementById('continueGameButton');
-        if (continueGameButton) {
-            continueGameButton.addEventListener('click', () => {
-                // Load the saved game - UI updates happen via GAME_LOADED event
-                this.isLoading = true;
-                const loaded = this.eventStore.load();
-                if (!loaded) {
-                    alert('Failed to load saved game');
-                    this.isLoading = false;
-                }
-                // isLoading flag will be cleared by GAME_LOADED event
-            });
-        }
-
-        const saveLatestGameButton = document.getElementById('saveLatestGameButton');
-        if (saveLatestGameButton) {
-            saveLatestGameButton.addEventListener('click', () => {
-                this.eventStore.exportToFile();
-            });
-        }
-
-        const importMatchButton = document.getElementById('importMatchButton');
-        if (importMatchButton) {
-            importMatchButton.addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'application/json';
-                input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        try {
-                            // UI updates happen via GAME_LOADED event
-                            await this.eventStore.importFromFile(file);
-                        } catch (error) {
-                            alert('Failed to import game: ' + error.message);
-                        }
-                    }
-                };
-                input.click();
-            });
-        }
-
-        const flipTableButton = document.getElementById('flipTableButton');
-        if (flipTableButton) {
-            flipTableButton.addEventListener('click', () => {
-                const state = this.gameState.getState();
-                this.commands.flipTable(!state.isFlipped);
-            });
-        }
-
-        const exportMatchButton = document.getElementById('exportMatchButton');
-        if (exportMatchButton) {
-            exportMatchButton.addEventListener('click', () => {
-                this.eventStore.exportToFile();
-            });
-        }
-
-        const newGameButton = document.getElementById('newGameButton');
-        if (newGameButton) {
-            newGameButton.addEventListener('click', () => {
-                if (confirm('Start a new game? Current progress will be lost.')) {
-                    this.commands.resetGame();
-                }
-            });
-        }
-
-        // Start game buttons
-        const startRedButton = document.querySelector('.start-half.red');
-        if (startRedButton) {
-            startRedButton.addEventListener('click', () => {
-                const redName = document.getElementById('redPlayerName')?.value.trim() || 'Red';
-                const blueName = document.getElementById('bluePlayerName')?.value.trim() || 'Blue';
-                this.commands.startGame('red', redName, blueName);
-            });
-        }
-
-        const startBlueButton = document.querySelector('.start-half.blue');
-        if (startBlueButton) {
-            startBlueButton.addEventListener('click', () => {
-                const redName = document.getElementById('redPlayerName')?.value.trim() || 'Red';
-                const blueName = document.getElementById('bluePlayerName')?.value.trim() || 'Blue';
-                this.commands.startGame('blue', redName, blueName);
-            });
-        }
+        // Note: Most button event handlers are now set via ui.setHandlers()
+        // and handled through the component event system.
 
         // Round End Modal - clicking advances the game
         const roundEndModal = document.getElementById('roundEndModal');
