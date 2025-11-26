@@ -248,31 +248,13 @@ export class UIProjection {
      * @private
      */
     _createRoundModal() {
-        this.components.roundModal = new RoundEndModal({
-            id: 'roundEndModal',
-            content: `
-                <div class="modal-round-number" id="roundEndModalRoundNumber">Round 1</div>
-                <div class="winner" id="roundEndModalWinner"></div>
-                <div class="modal-score-display"></div>
-                <div class="modal-score-visualizer-container">
-                    <div class="modal-red-markers"></div>
-                    <div class="modal-center-pok-marker">
-                        ${this._getPokLogoSVG()}
-                        <div class="modal-center-pok-score">
-                            <div class="pok-style-number red"><span id="modalCenterPokScoreRed">0</span></div>
-                            <div class="pok-style-number blue"><span id="modalCenterPokScoreBlue">0</span></div>
-                        </div>
-                    </div>
-                    <div class="modal-blue-markers"></div>
-                </div>
-            `
-        });
+        this.components.roundModal = new RoundEndModal({ id: 'roundEndModal' });
 
         if (this.containers.modals) {
             this.components.roundModal.mount(this.containers.modals);
 
-            // Create modal score components - mount directly to modal-score-display for proper flex layout
-            const modalScoreDisplay = this.components.roundModal.find('.modal-score-display');
+            // Create modal score components
+            const modalScoreDisplay = this.components.roundModal.getScoreDisplay();
             if (modalScoreDisplay) {
                 this.components.modalRedScore = new ModalScoreCircle({ color: 'red', id: 'roundEndModalRedScore' });
                 this.components.modalRedScore.mount(modalScoreDisplay);
@@ -285,47 +267,15 @@ export class UIProjection {
             }
 
             // Create modal score markers
-            this.components.modalRedMarkers = new ModalScoreMarkers({
-                color: 'red',
-                id: 'modalRedScoreMarkers'
-            });
-            this.components.modalBlueMarkers = new ModalScoreMarkers({
-                color: 'blue',
-                id: 'modalBlueScoreMarkers'
-            });
+            this.components.modalRedMarkers = new ModalScoreMarkers({ color: 'red', id: 'modalRedScoreMarkers' });
+            this.components.modalBlueMarkers = new ModalScoreMarkers({ color: 'blue', id: 'modalBlueScoreMarkers' });
 
-            const modalRedContainer = this.components.roundModal.find('.modal-red-markers');
-            const modalBlueContainer = this.components.roundModal.find('.modal-blue-markers');
+            const redContainer = this.components.roundModal.getRedMarkersContainer();
+            const blueContainer = this.components.roundModal.getBlueMarkersContainer();
 
-            if (modalRedContainer) this.components.modalRedMarkers.mount(modalRedContainer);
-            if (modalBlueContainer) this.components.modalBlueMarkers.mount(modalBlueContainer);
+            if (redContainer) this.components.modalRedMarkers.mount(redContainer);
+            if (blueContainer) this.components.modalBlueMarkers.mount(blueContainer);
         }
-    }
-
-    /**
-     * Get POK logo SVG markup
-     * @private
-     */
-    _getPokLogoSVG() {
-        return `
-            <svg viewBox="0 0 200 200" class="pok-svg">
-                <circle cx="100" cy="100" r="90" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
-                <circle cx="100" cy="40" r="5" fill="#2c1810"/>
-                <circle cx="130" cy="50" r="5" fill="#2c1810"/>
-                <circle cx="155" cy="75" r="5" fill="#2c1810"/>
-                <circle cx="160" cy="100" r="5" fill="#2c1810"/>
-                <circle cx="155" cy="125" r="5" fill="#2c1810"/>
-                <circle cx="130" cy="150" r="5" fill="#2c1810"/>
-                <circle cx="100" cy="160" r="5" fill="#2c1810"/>
-                <circle cx="70" cy="150" r="5" fill="#2c1810"/>
-                <circle cx="45" cy="125" r="5" fill="#2c1810"/>
-                <circle cx="40" cy="100" r="5" fill="#2c1810"/>
-                <circle cx="45" cy="75" r="5" fill="#2c1810"/>
-                <circle cx="70" cy="50" r="5" fill="#2c1810"/>
-                <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="3"/>
-                <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="3"/>
-            </svg>
-        `;
     }
 
     // ==========================================

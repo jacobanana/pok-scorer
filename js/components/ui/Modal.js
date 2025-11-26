@@ -117,9 +117,73 @@ export class HistoryModal extends Modal {
     }
 }
 
-/** Round end modal */
+/** Round end modal with predefined structure */
 export class RoundEndModal extends Modal {
     get modalClass() {
         return 'modal';
+    }
+
+    template() {
+        const { id } = this.props;
+        const idAttr = id ? `id="${id}"` : '';
+
+        return `
+            <div class="${this.modalClass}" ${idAttr}>
+                <div class="${this.contentClass}">
+                    <div class="modal-round-number" id="roundEndModalRoundNumber">Round 1</div>
+                    <div class="winner" id="roundEndModalWinner"></div>
+                    <div class="modal-score-display"></div>
+                    <div class="modal-score-visualizer-container">
+                        <div class="modal-red-markers"></div>
+                        <div class="modal-center-pok-marker">
+                            <img src="assets/pok-logo.svg" class="pok-svg" alt="Pok">
+                            <div class="modal-center-pok-score">
+                                <div class="pok-style-number red"><span id="modalCenterPokScoreRed">0</span></div>
+                                <div class="pok-style-number blue"><span id="modalCenterPokScoreBlue">0</span></div>
+                            </div>
+                        </div>
+                        <div class="modal-blue-markers"></div>
+                    </div>
+                </div>
+            </div>
+        `.trim();
+    }
+
+    /** Get the score display container for mounting score components */
+    getScoreDisplay() {
+        return this.find('.modal-score-display');
+    }
+
+    /** Get the red markers container */
+    getRedMarkersContainer() {
+        return this.find('.modal-red-markers');
+    }
+
+    /** Get the blue markers container */
+    getBlueMarkersContainer() {
+        return this.find('.modal-blue-markers');
+    }
+
+    /** Set the round number text */
+    setRoundNumber(round) {
+        const el = this.find('#roundEndModalRoundNumber');
+        if (el) el.textContent = `Round ${round}`;
+        return this;
+    }
+
+    /** Set the winner text */
+    setWinner(text) {
+        const el = this.find('#roundEndModalWinner');
+        if (el) el.textContent = text;
+        return this;
+    }
+
+    /** Set the center pok scores */
+    setCenterPokScores(red, blue) {
+        const redEl = this.find('#modalCenterPokScoreRed');
+        const blueEl = this.find('#modalCenterPokScoreBlue');
+        if (redEl) redEl.textContent = red;
+        if (blueEl) blueEl.textContent = blue;
+        return this;
     }
 }
