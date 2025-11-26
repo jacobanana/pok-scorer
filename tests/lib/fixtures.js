@@ -8,7 +8,6 @@ import { EventStore } from '../../js/event-store.js';
 import { GameStateProjection } from '../../js/game-state-projection.js';
 import { CommandHandler } from '../../js/command-handler.js';
 import { CONFIG } from '../../js/config.js';
-import { ComponentRegistry, initializeRegistry } from '../../js/components/index.js';
 
 // Storage key used for all tests - isolated from production
 const TEST_STORAGE_KEY = 'pok-test-event-store';
@@ -135,19 +134,6 @@ export function clearTestStorage(storageKey = TEST_STORAGE_KEY) {
 // ============================================
 
 /**
- * Creates a fresh ComponentRegistry for testing
- * @param {boolean} [initialize=false] - Whether to initialize with all UI components
- * @returns {ComponentRegistry} Fresh ComponentRegistry instance
- */
-export function createComponentRegistry(initialize = false) {
-    const registry = new ComponentRegistry();
-    if (initialize) {
-        initializeRegistry(registry);
-    }
-    return registry;
-}
-
-/**
  * Creates a test container element for DOM testing
  * @param {string} [id='test-container'] - Container ID
  * @returns {HTMLElement} Test container element
@@ -174,32 +160,6 @@ export function cleanupTestContainer(id = 'test-container') {
     if (container && container.parentNode) {
         container.parentNode.removeChild(container);
     }
-}
-
-/**
- * Creates a component test context with container and registry
- * @param {Object} [options] - Configuration options
- * @param {boolean} [options.initializeRegistry=true] - Initialize registry with UI components
- * @param {string} [options.containerId='test-container'] - Test container ID
- * @returns {Object} Context with registry and container
- */
-export function createComponentTestContext(options = {}) {
-    const {
-        initializeRegistry: init = true,
-        containerId = 'test-container'
-    } = options;
-
-    const registry = createComponentRegistry(init);
-    const container = createTestContainer(containerId);
-
-    return {
-        registry,
-        container,
-        cleanup: () => {
-            registry.clear();
-            cleanupTestContainer(containerId);
-        }
-    };
 }
 
 // Export constants for direct use

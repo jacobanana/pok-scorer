@@ -4,7 +4,6 @@
 
 import {
     Component,
-    ComponentRegistry,
     Button,
     Modal,
     ScoreCircle,
@@ -13,8 +12,7 @@ import {
     Pok,
     HistoryTable,
     Notification,
-    LoadingBar,
-    initializeRegistry
+    LoadingBar
 } from '../../js/components/index.js';
 
 const { assert } = window;
@@ -668,74 +666,6 @@ runner.describe('LoadingBar Component - Integration', () => {
 
         bar.setProgress(-50);
         assert.equal(bar.getFill().style.width, '0%');
-    });
-});
-
-// ============================================
-// REGISTRY INTEGRATION TESTS
-// ============================================
-
-runner.describe('Component Registry - Full Integration', () => {
-    let registry;
-
-    runner.beforeEach(() => {
-        createTestContainer();
-        registry = new ComponentRegistry();
-        initializeRegistry(registry);
-    });
-
-    runner.afterEach(() => {
-        registry.clear();
-        cleanupTestContainer();
-    });
-
-    runner.it('should register all UI components', () => {
-        assert.ok(registry.has('button'));
-        assert.ok(registry.has('modal'));
-        assert.ok(registry.has('score-circle'));
-        assert.ok(registry.has('score-markers'));
-        assert.ok(registry.has('pok'));
-        assert.ok(registry.has('history-table'));
-        assert.ok(registry.has('notification'));
-        assert.ok(registry.has('loading-bar'));
-    });
-
-    runner.it('should create components via registry', () => {
-        const button = registry.create('button', { text: 'Test', variant: 'primary' });
-        assert.ok(button instanceof Button);
-
-        button.mount(testContainer);
-        assert.ok(testContainer.querySelector('button'));
-    });
-
-    runner.it('should manage multiple component instances', () => {
-        const pok1 = registry.create('pok', { playerId: 'red', points: 3, x: 10, y: 10 });
-        const pok2 = registry.create('pok', { playerId: 'blue', points: 4, x: 20, y: 20 });
-        const pok3 = registry.create('pok', { playerId: 'red', points: 5, x: 30, y: 30 });
-
-        pok1.mount(testContainer);
-        pok2.mount(testContainer);
-        pok3.mount(testContainer);
-
-        const poks = registry.getInstancesOf('pok');
-        assert.equal(poks.length, 3);
-
-        const pokEls = testContainer.querySelectorAll('.pok');
-        assert.equal(pokEls.length, 3);
-    });
-
-    runner.it('should destroy all instances of a type', () => {
-        const pok1 = registry.create('pok', { playerId: 'red', points: 1, x: 0, y: 0 }, 'pok-1');
-        const pok2 = registry.create('pok', { playerId: 'blue', points: 2, x: 0, y: 0 }, 'pok-2');
-
-        pok1.mount(testContainer);
-        pok2.mount(testContainer);
-
-        registry.destroyInstance('pok-1');
-        registry.destroyInstance('pok-2');
-
-        assert.equal(testContainer.querySelectorAll('.pok').length, 0);
-        assert.equal(registry.getInstancesOf('pok').length, 0);
     });
 });
 

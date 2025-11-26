@@ -5,7 +5,6 @@
 import { CONFIG } from './config.js';
 import {
     Component,
-    ComponentRegistry,
     Button,
     Modal,
     ScoreCircle,
@@ -28,9 +27,6 @@ export class UIProjection {
     constructor(eventStore, gameStateProjection) {
         this.eventStore = eventStore;
         this.gameState = gameStateProjection;
-
-        // Component registry for this UI
-        this.registry = new ComponentRegistry();
 
         // Component references
         this.components = {
