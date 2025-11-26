@@ -43,6 +43,13 @@ runner.describe('GameStateProjection - Initialization', () => {
         assert.equal(state.players.blue.totalScore, 0);
     });
 
+    runner.it('should have default player names initially', () => {
+        const state = ctx.gameState.getState();
+
+        assert.equal(state.playerNames.red, 'Red');
+        assert.equal(state.playerNames.blue, 'Blue');
+    });
+
     runner.it('should return null for current round when no game', () => {
         const round = ctx.gameState.getCurrentRound();
         assert.equal(round, null);
@@ -85,6 +92,37 @@ runner.describe('GameStateProjection - Game Started', () => {
         assert.equal(round.redPoksRemaining, CONFIG.POKS_PER_PLAYER);
         assert.equal(round.bluePoksRemaining, CONFIG.POKS_PER_PLAYER);
         assert.lengthOf(round.poks, 0);
+    });
+
+    runner.it('should set default player names when not provided', () => {
+        ctx.eventStore.append(new GameStartedEvent('red'));
+        const state = ctx.gameState.getState();
+
+        assert.equal(state.playerNames.red, 'Red');
+        assert.equal(state.playerNames.blue, 'Blue');
+    });
+
+    runner.it('should set custom player names when provided', () => {
+        ctx.eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
+        const state = ctx.gameState.getState();
+
+        assert.equal(state.playerNames.red, 'Alice');
+        assert.equal(state.playerNames.blue, 'Bob');
+    });
+
+    runner.it('should use getPlayerName helper correctly', () => {
+        ctx.eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
+
+        assert.equal(ctx.gameState.getPlayerName('red'), 'Alice');
+        assert.equal(ctx.gameState.getPlayerName('blue'), 'Bob');
+    });
+
+    runner.it('should use getPlayerNames helper correctly', () => {
+        ctx.eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
+        const names = ctx.gameState.getPlayerNames();
+
+        assert.equal(names.red, 'Alice');
+        assert.equal(names.blue, 'Bob');
     });
 });
 
@@ -437,5 +475,15 @@ runner.describe('GameStateProjection - Game Reset', () => {
         assert.equal(state.currentRoundIndex, -1);
         assert.equal(state.players.red.totalScore, 0);
         assert.equal(state.players.blue.totalScore, 0);
+    });
+
+    runner.it('should reset player names to defaults', () => {
+        ctx.eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
+        ctx.eventStore.append(new GameResetEvent());
+
+        const state = ctx.gameState.getState();
+
+        assert.equal(state.playerNames.red, 'Red');
+        assert.equal(state.playerNames.blue, 'Blue');
     });
 });

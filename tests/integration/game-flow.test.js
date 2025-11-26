@@ -36,6 +36,22 @@ runner.describe('Integration - Full Game Flow', () => {
         assert.equal(state.rounds[0].startingPlayerId, 'red');
     });
 
+    runner.it('should start game with custom player names', () => {
+        ctx.commands.startGame('red', 'Alice', 'Bob');
+        const state = ctx.gameState.getState();
+
+        assert.equal(state.playerNames.red, 'Alice');
+        assert.equal(state.playerNames.blue, 'Bob');
+    });
+
+    runner.it('should use default player names when not provided', () => {
+        ctx.commands.startGame('red');
+        const state = ctx.gameState.getState();
+
+        assert.equal(state.playerNames.red, 'Red');
+        assert.equal(state.playerNames.blue, 'Blue');
+    });
+
     runner.it('should place poks and update state', () => {
         ctx.commands.startGame('red');
         ctx.commands.placePok('red', 30, 50);
@@ -353,6 +369,29 @@ runner.describe('Integration - Persistence', () => {
 
         // Should have restored exactly
         assert.deepEqual(stateAfter, stateBefore);
+    });
+
+    runner.it('should save and restore player names', () => {
+        // Start game with custom names
+        ctx.commands.startGame('red', 'Alice', 'Bob');
+
+        let nextPlayer = ctx.gameState.getNextPlayer();
+        ctx.commands.placePok(nextPlayer, 30, 50);
+
+        // Save
+        ctx.eventStore.save();
+
+        // Create new instances and load
+        const newEventStore = new EventStore(TEST_STORAGE_KEY);
+        const newGameState = new GameStateProjection(newEventStore);
+
+        newEventStore.load();
+
+        const stateAfter = newGameState.getState();
+
+        // Player names should be preserved
+        assert.equal(stateAfter.playerNames.red, 'Alice');
+        assert.equal(stateAfter.playerNames.blue, 'Bob');
     });
 
     runner.it('should handle save/load with many events', () => {

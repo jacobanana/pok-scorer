@@ -13,6 +13,7 @@ export class UIProjection {
         this.pokElements = new Map();
         this.tableElement = null;
         this.scoreVisualizer = null;
+        this.modalScoreVisualizer = null;
 
         // Subscribe to events
         eventStore.subscribe('GAME_STARTED', (e) => this.onGameStarted(e));
@@ -32,13 +33,9 @@ export class UIProjection {
             saveLatestButton: document.getElementById('saveLatestGameButton'),
             tableContainer: document.getElementById('gameBoardContainer'),
             table: document.querySelector('.table'),
-            mainRedTotal: document.getElementById('totalScoreRed'),
-            mainBlueTotal: document.getElementById('totalScoreBlue'),
             redRound: document.getElementById('currentRoundScoreRed'),
             blueRound: document.getElementById('currentRoundScoreBlue'),
             scoreDiff: document.getElementById('currentRoundScoreDifference'),
-            redPoksInfo: document.getElementById('remainingPoksRed'),
-            bluePoksInfo: document.getElementById('remainingPoksBlue'),
             roundModal: document.getElementById('roundEndModal'),
             modalWinner: document.getElementById('roundEndModalWinner'),
             modalRedScore: document.getElementById('roundEndModalRedScore'),
@@ -47,12 +44,22 @@ export class UIProjection {
             modalTotalScores: document.getElementById('roundEndModalTotalScores'),
             modalRoundNumber: document.getElementById('roundEndModalRoundNumber'),
             historyTableBody: document.getElementById('roundsHistoryTableBody'),
+            historyHeaderRed: document.getElementById('historyHeaderRed'),
+            historyHeaderBlue: document.getElementById('historyHeaderBlue'),
+            historyModalHeaderRed: document.getElementById('historyModalHeaderRed'),
+            historyModalHeaderBlue: document.getElementById('historyModalHeaderBlue'),
             currentRoundScore: document.getElementById('currentRoundScoreDisplay'),
             turnNotification: document.getElementById('playerTurnNotification'),
             redScoreMarkers: document.getElementById('redScoreMarkers'),
             blueScoreMarkers: document.getElementById('blueScoreMarkers'),
             loadingBar: document.getElementById('roundEndLoadingBar'),
-            loadingBarFill: document.querySelector('#roundEndLoadingBar .loading-bar-fill')
+            loadingBarFill: document.querySelector('#roundEndLoadingBar .loading-bar-fill'),
+            endPokScoreRed: document.getElementById('endPokScoreRed'),
+            endPokScoreBlue: document.getElementById('endPokScoreBlue'),
+            modalRedScoreMarkers: document.getElementById('modalRedScoreMarkers'),
+            modalBlueScoreMarkers: document.getElementById('modalBlueScoreMarkers'),
+            modalCenterPokScoreRed: document.getElementById('modalCenterPokScoreRed'),
+            modalCenterPokScoreBlue: document.getElementById('modalCenterPokScoreBlue')
         };
 
         this.tableElement = this.dom.table;
@@ -62,13 +69,37 @@ export class UIProjection {
             this.dom.redScoreMarkers,
             this.dom.blueScoreMarkers
         );
+
+        // Initialize modal score visualizer service
+        this.modalScoreVisualizer = new ScoreVisualizerService(
+            this.dom.modalRedScoreMarkers,
+            this.dom.modalBlueScoreMarkers
+        );
     }
 
     onGameStarted(event) {
         this.hideStartSelector();
         this.updateScores();
+        this.updateHistoryHeaders();
+        this.updateRoundsHistory();
         this.showTurnNotification(event.data.startingPlayerId);
         this.updateBodyClass(event.data.startingPlayerId);
+    }
+
+    updateHistoryHeaders() {
+        const playerNames = this.gameState.getPlayerNames();
+        if (this.dom.historyHeaderRed) {
+            this.dom.historyHeaderRed.textContent = playerNames.red;
+        }
+        if (this.dom.historyHeaderBlue) {
+            this.dom.historyHeaderBlue.textContent = playerNames.blue;
+        }
+        if (this.dom.historyModalHeaderRed) {
+            this.dom.historyModalHeaderRed.textContent = playerNames.red;
+        }
+        if (this.dom.historyModalHeaderBlue) {
+            this.dom.historyModalHeaderBlue.textContent = playerNames.blue;
+        }
     }
 
     onPokPlaced(event) {
@@ -261,6 +292,18 @@ export class UIProjection {
         // Reset body classes
         document.body.className = '';
 
+        // Clear player name inputs
+        const redNameInput = document.getElementById('redPlayerName');
+        const blueNameInput = document.getElementById('bluePlayerName');
+        if (redNameInput) redNameInput.value = '';
+        if (blueNameInput) blueNameInput.value = '';
+
+        // Reset history headers to defaults
+        if (this.dom.historyHeaderRed) this.dom.historyHeaderRed.textContent = 'Red';
+        if (this.dom.historyHeaderBlue) this.dom.historyHeaderBlue.textContent = 'Blue';
+        if (this.dom.historyModalHeaderRed) this.dom.historyModalHeaderRed.textContent = 'Red';
+        if (this.dom.historyModalHeaderBlue) this.dom.historyModalHeaderBlue.textContent = 'Blue';
+
         // Show start selector with updated button states
         this.showStartSelector();
     }
@@ -299,8 +342,6 @@ export class UIProjection {
 
         this.dom.redRound.textContent = scores.red;
         this.dom.blueRound.textContent = scores.blue;
-        this.dom.redPoksInfo.textContent = round.redPoksRemaining;
-        this.dom.bluePoksInfo.textContent = round.bluePoksRemaining;
 
         const diff = Math.abs(scores.red - scores.blue);
         this.dom.scoreDiff.textContent = diff > 0 ? '+' + diff : '0';
@@ -358,9 +399,13 @@ export class UIProjection {
         const state = this.gameState.getState();
         const round = this.gameState.getCurrentRound();
 
-        // Total scores
-        this.dom.mainRedTotal.textContent = state.players.red.totalScore;
-        this.dom.mainBlueTotal.textContent = state.players.blue.totalScore;
+        // Update end POK indicators with total scores
+        if (this.dom.endPokScoreRed) {
+            this.dom.endPokScoreRed.textContent = state.players.red.totalScore;
+        }
+        if (this.dom.endPokScoreBlue) {
+            this.dom.endPokScoreBlue.textContent = state.players.blue.totalScore;
+        }
 
         // Update score visualizer
         if (this.scoreVisualizer) {
@@ -376,10 +421,6 @@ export class UIProjection {
             // Round scores
             this.dom.redRound.textContent = scores.red;
             this.dom.blueRound.textContent = scores.blue;
-
-            // POKs remaining
-            this.dom.redPoksInfo.textContent = round.redPoksRemaining;
-            this.dom.bluePoksInfo.textContent = round.bluePoksRemaining;
 
             // Score difference
             const diff = Math.abs(scores.red - scores.blue);
@@ -400,8 +441,16 @@ export class UIProjection {
     showTurnNotification(playerId) {
         if (!this.dom.turnNotification) return;
 
-        const playerName = playerId === 'red' ? 'Red' : 'Blue';
-        this.dom.turnNotification.textContent = `${playerName}'s turn`;
+        const playerName = this.gameState.getPlayerName(playerId);
+        const round = this.gameState.getCurrentRound();
+
+        let message = `${playerName}'s turn`;
+        if (round) {
+            const poksRemaining = playerId === 'red' ? round.redPoksRemaining : round.bluePoksRemaining;
+            message = `${playerName}'s turn (${poksRemaining} POKs left)`;
+        }
+
+        this.dom.turnNotification.textContent = message;
 
         this.dom.turnNotification.classList.remove('show', 'fade-out', 'red-player', 'blue-player');
         this.dom.turnNotification.classList.add(`${playerId}-player`);
@@ -428,13 +477,14 @@ export class UIProjection {
         const state = this.gameState.getState();
         const scores = { red: event.data.redScore, blue: event.data.blueScore };
         const diff = Math.abs(scores.red - scores.blue);
+        const playerNames = this.gameState.getPlayerNames();
 
         let winnerText, bgClass;
         if (scores.red > scores.blue) {
-            winnerText = 'RED WINS!';
+            winnerText = `${playerNames.red.toUpperCase()} WINS!`;
             bgClass = 'red-bg';
         } else if (scores.blue > scores.red) {
-            winnerText = 'BLUE WINS!';
+            winnerText = `${playerNames.blue.toUpperCase()} WINS!`;
             bgClass = 'blue-bg';
         } else {
             winnerText = 'TIE!';
@@ -446,8 +496,28 @@ export class UIProjection {
         this.dom.modalRedScore.textContent = scores.red;
         this.dom.modalBlueScore.textContent = scores.blue;
         this.dom.modalScoreDiff.textContent = diff > 0 ? '+' + diff : '0';
-        this.dom.modalTotalScores.textContent =
-            `Total: Red ${state.players.red.totalScore} - Blue ${state.players.blue.totalScore}`;
+
+        // Legacy text-based total scores (optional, for backward compatibility)
+        if (this.dom.modalTotalScores) {
+            this.dom.modalTotalScores.textContent =
+                `Total: ${playerNames.red} ${state.players.red.totalScore} - ${playerNames.blue} ${state.players.blue.totalScore}`;
+        }
+
+        // Update modal scoreboard visualizer with total scores
+        if (this.modalScoreVisualizer) {
+            this.modalScoreVisualizer.updateScores(
+                state.players.red.totalScore,
+                state.players.blue.totalScore
+            );
+        }
+
+        // Update modal center POK marker with total scores
+        if (this.dom.modalCenterPokScoreRed) {
+            this.dom.modalCenterPokScoreRed.textContent = state.players.red.totalScore;
+        }
+        if (this.dom.modalCenterPokScoreBlue) {
+            this.dom.modalCenterPokScoreBlue.textContent = state.players.blue.totalScore;
+        }
 
         this.dom.roundModal.classList.remove('red-bg', 'blue-bg', 'tie-bg');
         this.dom.roundModal.classList.add(bgClass, 'show');
@@ -461,6 +531,7 @@ export class UIProjection {
         if (!this.dom.historyTableBody) return;
 
         const state = this.gameState.getState();
+        const playerNames = this.gameState.getPlayerNames();
         this.dom.historyTableBody.innerHTML = '';
 
         state.rounds.forEach((round, index) => {
@@ -472,11 +543,11 @@ export class UIProjection {
             let winner, winnerClass, rowClass;
             if (round.isComplete) {
                 if (scores.red > scores.blue) {
-                    winner = 'Red';
+                    winner = playerNames.red;
                     winnerClass = 'red-winner';
                     rowClass = 'red-round-row';
                 } else if (scores.blue > scores.red) {
-                    winner = 'Blue';
+                    winner = playerNames.blue;
                     winnerClass = 'blue-winner';
                     rowClass = 'blue-round-row';
                 } else {
@@ -566,12 +637,44 @@ export class UIProjection {
         this.dom.startSelector.classList.remove('hidden');
 
         // Show continue button if saved game exists
-        if (localStorage.getItem('pok-event-store')) {
+        const savedData = localStorage.getItem('pok-event-store');
+        if (savedData) {
             this.dom.continueButton.classList.add('show');
             this.dom.saveLatestButton.classList.add('show');
+
+            // Prefill name inputs with saved player names
+            this.prefillPlayerNames(savedData);
         } else {
             this.dom.continueButton.classList.remove('show');
             this.dom.saveLatestButton.classList.remove('show');
+        }
+    }
+
+    prefillPlayerNames(savedData) {
+        try {
+            const data = JSON.parse(savedData);
+            if (data && data.events) {
+                // Find the most recent GAME_STARTED event
+                const gameStartedEvents = data.events.filter(e => e.type === 'GAME_STARTED');
+                if (gameStartedEvents.length > 0) {
+                    const lastGameStarted = gameStartedEvents[gameStartedEvents.length - 1];
+                    const redName = lastGameStarted.data.redName;
+                    const blueName = lastGameStarted.data.blueName;
+
+                    // Only prefill if names are non-default
+                    const redNameInput = document.getElementById('redPlayerName');
+                    const blueNameInput = document.getElementById('bluePlayerName');
+
+                    if (redNameInput && redName && redName !== 'Red') {
+                        redNameInput.value = redName;
+                    }
+                    if (blueNameInput && blueName && blueName !== 'Blue') {
+                        blueNameInput.value = blueName;
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore parse errors
         }
     }
 

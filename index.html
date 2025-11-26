@@ -28,10 +28,12 @@
         </div>
 
         <div class="start-half red">
-            RED
+            <input type="text" id="redPlayerName" class="player-name-input" placeholder="Red" maxlength="20" onclick="event.stopPropagation()">
+            <span class="start-label">TAP TO START</span>
         </div>
         <div class="start-half blue">
-            BLUE
+            <input type="text" id="bluePlayerName" class="player-name-input" placeholder="Blue" maxlength="20" onclick="event.stopPropagation()">
+            <span class="start-label">TAP TO START</span>
         </div>
     </div>
 
@@ -45,11 +47,6 @@
             <!-- LEFT PANEL: Scores & History  -->
             <!-- ============================= -->
             <div class="left-panel">
-                <!-- Overall Game Score Display -->
-                <div class="main-score-center">
-                    <span class="red" id="totalScoreRed">0</span> - <span class="blue" id="totalScoreBlue">0</span>
-                </div>
-
                 <!-- Rounds History Table -->
                 <div class="rounds-history">
                     <h1>Rounds History</h1>
@@ -58,8 +55,8 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Red</th>
-                                    <th>Blue</th>
+                                    <th id="historyHeaderRed">Red</th>
+                                    <th id="historyHeaderBlue">Blue</th>
                                     <th>Winner</th>
                                     <th>Diff</th>
                                 </tr>
@@ -178,7 +175,13 @@
                     <div id="roundEndLoadingBar" class="round-end-loading-bar">
                         <div class="loading-bar-fill"></div>
                     </div>
-                    <!-- Red score marbles (left) -->
+
+                    <!-- Column 1: Red total score POK indicator -->
+                    <div class="end-pok-indicator red">
+                        <span id="endPokScoreRed">0</span>
+                    </div>
+
+                    <!-- Column 2: Red score marbles -->
                     <div class="score-visualizer red-visualizer">
                         <div class="score-bar">
                             <div class="score-track"></div>
@@ -188,7 +191,7 @@
                         </div>
                     </div>
 
-                    <!-- Current round score (center) -->
+                    <!-- Column 3: Current round score (center) -->
                     <div class="current-round-score" id="currentRoundScoreDisplay">
                         <!-- Score circles showing current round points -->
                         <div class="score-row">
@@ -200,14 +203,9 @@
                                 <span id="currentRoundScoreBlue">0</span>
                             </div>
                         </div>
-
-                        <!-- Remaining POKs counter -->
-                        <div class="poks-remaining-info">
-                            <span id="remainingPoksRed">5</span> - <span id="remainingPoksBlue">5</span>
-                        </div>
                     </div>
 
-                    <!-- Blue score marbles (right) -->
+                    <!-- Column 4: Blue score marbles -->
                     <div class="score-visualizer blue-visualizer">
                         <div class="score-bar">
                             <div class="score-track"></div>
@@ -215,6 +213,11 @@
                                 <!-- 21 blue marker positions will be generated here -->
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Column 5: Blue total score POK indicator -->
+                    <div class="end-pok-indicator blue">
+                        <span id="endPokScoreBlue">0</span>
                     </div>
                 </div>
             </div>
@@ -237,7 +240,63 @@
                     <span id="roundEndModalBlueScore">0</span>
                 </div>
             </div>
-            <div class="total-scores" id="roundEndModalTotalScores"></div>
+            <!-- Marble scoreboard showing total scores -->
+            <div class="modal-score-visualizer-container">
+                <!-- Red score marbles (left) -->
+                <div class="modal-score-visualizer red-visualizer">
+                    <div class="score-bar">
+                        <div class="score-track"></div>
+                        <div class="score-markers" id="modalRedScoreMarkers">
+                            <!-- 21 red marker positions will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center POK marker showing total score -->
+                <div class="modal-center-pok-marker">
+                    <svg viewBox="0 0 200 200" class="pok-svg">
+                        <!-- Outer circle border -->
+                        <circle cx="100" cy="100" r="90" fill="#e4c9a0" stroke="#2c1810" stroke-width="3"/>
+
+                        <!-- 12 dots around the circle (clock positions) -->
+                        <circle cx="100" cy="40" r="5" fill="#2c1810"/>
+                        <circle cx="130" cy="50" r="5" fill="#2c1810"/>
+                        <circle cx="155" cy="75" r="5" fill="#2c1810"/>
+                        <circle cx="160" cy="100" r="5" fill="#2c1810"/>
+                        <circle cx="155" cy="125" r="5" fill="#2c1810"/>
+                        <circle cx="130" cy="150" r="5" fill="#2c1810"/>
+                        <circle cx="100" cy="160" r="5" fill="#2c1810"/>
+                        <circle cx="70" cy="150" r="5" fill="#2c1810"/>
+                        <circle cx="45" cy="125" r="5" fill="#2c1810"/>
+                        <circle cx="40" cy="100" r="5" fill="#2c1810"/>
+                        <circle cx="45" cy="75" r="5" fill="#2c1810"/>
+                        <circle cx="70" cy="50" r="5" fill="#2c1810"/>
+
+                        <!-- Center crosshair -->
+                        <line x1="70" y1="100" x2="130" y2="100" stroke="#2c1810" stroke-width="3"/>
+                        <line x1="100" y1="70" x2="100" y2="130" stroke="#2c1810" stroke-width="3"/>
+                    </svg>
+                    <!-- Score display in center of POK with POK-styled numbers -->
+                    <div class="modal-center-pok-score">
+                        <div class="pok-style-number red">
+                            <span id="modalCenterPokScoreRed">0</span>
+                        </div>
+                        <div class="pok-style-number blue">
+                            <span id="modalCenterPokScoreBlue">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Blue score marbles (right) -->
+                <div class="modal-score-visualizer blue-visualizer">
+                    <div class="score-bar">
+                        <div class="score-track"></div>
+                        <div class="score-markers" id="modalBlueScoreMarkers">
+                            <!-- 21 blue marker positions will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -253,8 +312,8 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Red</th>
-                            <th>Blue</th>
+                            <th id="historyModalHeaderRed">Red</th>
+                            <th id="historyModalHeaderBlue">Blue</th>
                             <th>Winner</th>
                             <th>Diff</th>
                         </tr>

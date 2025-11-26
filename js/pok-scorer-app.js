@@ -94,6 +94,7 @@ export class PokScorerApp {
                     this.ui.hideStartSelector();
                     this.ui.updateScores();
                     this.ui.updateRoundsHistory();
+                    this.ui.updateHistoryHeaders();
 
                     // Update body class for current player
                     const round = this.gameState.getCurrentRound();
@@ -129,6 +130,7 @@ export class PokScorerApp {
                             this.ui.hideStartSelector();
                             this.ui.updateScores();
                             this.ui.updateRoundsHistory();
+                            this.ui.updateHistoryHeaders();
                         } catch (error) {
                             alert('Failed to import game: ' + error.message);
                         }
@@ -166,14 +168,18 @@ export class PokScorerApp {
         const startRedButton = document.querySelector('.start-half.red');
         if (startRedButton) {
             startRedButton.addEventListener('click', () => {
-                this.commands.startGame('red');
+                const redName = document.getElementById('redPlayerName')?.value.trim() || 'Red';
+                const blueName = document.getElementById('bluePlayerName')?.value.trim() || 'Blue';
+                this.commands.startGame('red', redName, blueName);
             });
         }
 
         const startBlueButton = document.querySelector('.start-half.blue');
         if (startBlueButton) {
             startBlueButton.addEventListener('click', () => {
-                this.commands.startGame('blue');
+                const redName = document.getElementById('redPlayerName')?.value.trim() || 'Red';
+                const blueName = document.getElementById('bluePlayerName')?.value.trim() || 'Blue';
+                this.commands.startGame('blue', redName, blueName);
             });
         }
 
@@ -611,6 +617,7 @@ export class PokScorerApp {
         // Get rounds from game state
         const state = this.gameState.getState();
         const rounds = state.rounds;
+        const playerNames = this.gameState.getPlayerNames();
 
         // Populate table
         rounds.forEach((round, index) => {
@@ -629,11 +636,11 @@ export class PokScorerApp {
             let winner, winnerClass, rowClass;
             if (round.isComplete) {
                 if (scores.red > scores.blue) {
-                    winner = 'Red';
+                    winner = playerNames.red;
                     winnerClass = 'red-winner';
                     rowClass = 'red-round-row';
                 } else if (scores.blue > scores.red) {
-                    winner = 'Blue';
+                    winner = playerNames.blue;
                     winnerClass = 'blue-winner';
                     rowClass = 'blue-round-row';
                 } else {
