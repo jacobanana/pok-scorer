@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pok Detector Calibrator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: #2a2a4a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            background: #4a90d9;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .step-number.done {
+            background: #2ecc71;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #4a90d9;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #3a7bc8;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #27ae60;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        .btn-secondary {
+            background: #555;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #666;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-status {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .file-status.success {
+            color: #2ecc71;
+        }
+
+        .file-status.error {
+            color: #e74c3c;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .setting-group label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .setting-group input {
+            padding: 8px 12px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #eee;
+            font-size: 14px;
+        }
+
+        .progress-section {
+            margin-top: 15px;
+        }
+
+        .progress-bar-container {
+            background: #333;
+            border-radius: 4px;
+            height: 24px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4a90d9, #2ecc71);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-card {
+            background: #333;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .result-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a90d9;
+        }
+
+        .result-card .label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .result-card.highlight .value {
+            color: #2ecc71;
+        }
+
+        .params-output {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .per-image-results {
+            margin-top: 15px;
+        }
+
+        .per-image-results h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+
+        .image-result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #333;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .image-result-row .filename {
+            font-weight: 500;
+        }
+
+        .image-result-row .metrics {
+            display: flex;
+            gap: 15px;
+            color: #888;
+        }
+
+        .image-result-row .metric {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .image-result-row .metric-value {
+            color: #4a90d9;
+            font-weight: 500;
+        }
+
+        .buttons-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .info-box {
+            background: #333;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #aaa;
+        }
+
+        .info-box code {
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .info-box a {
+            color: #4a90d9;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .log-output {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-entry.best {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pok Detector Calibrator</h1>
+    <p class="subtitle">Auto-tune detection parameters using annotated images</p>
+
+    <div class="container">
+        <!-- Step 1: Load Dataset -->
+        <div class="panel">
+            <h2><span class="step-number" id="step1">1</span> Load Dataset</h2>
+
+            <div class="info-box" style="margin-bottom: 15px;">
+                Create a JSON file with annotated pok positions. See
+                <a href="example-dataset.json" target="_blank">example-dataset.json</a> for the format.
+                Each image needs: filename, and array of poks with x, y, color.
+            </div>
+
+            <div class="file-input-group">
+                <input type="file" id="datasetInput" accept=".json">
+                <button class="btn-primary" onclick="document.getElementById('datasetInput').click()">
+                    Load Dataset JSON
+                </button>
+                <span class="file-status" id="datasetStatus"></span>
+            </div>
+        </div>
+
+        <!-- Step 2: Load Images -->
+        <div class="panel">
+            <h2><span class="step-number" id="step2">2</span> Load Images</h2>
+
+            <p style="font-size: 13px; color: #888; margin-bottom: 15px;">
+                Select the image files referenced in your dataset.
+                Filenames must match exactly.
+            </p>
+
+            <div class="file-input-group">
+                <input type="file" id="imagesInput" accept="image/*" multiple>
+                <button class="btn-primary" id="loadImagesBtn" onclick="document.getElementById('imagesInput').click()" disabled>
+                    Load Images
+                </button>
+                <span class="file-status" id="imagesStatus"></span>
+            </div>
+        </div>
+
+        <!-- Step 3: Configure & Run -->
+        <div class="panel">
+            <h2><span class="step-number" id="step3">3</span> Configure & Run Optimization</h2>
+
+            <div class="settings-grid" style="margin-bottom: 20px;">
+                <div class="setting-group">
+                    <label>Random Search Iterations</label>
+                    <input type="number" id="randomIterations" value="50" min="10" max="500">
+                </div>
+                <div class="setting-group">
+                    <label>Local Search Iterations</label>
+                    <input type="number" id="localIterations" value="100" min="20" max="500">
+                </div>
+                <div class="setting-group">
+                    <label>Match Distance Threshold (px)</label>
+                    <input type="number" id="matchThreshold" value="50" min="10" max="200">
+                </div>
+            </div>
+
+            <div class="buttons-row">
+                <button class="btn-success" id="startBtn" onclick="startCalibration()" disabled>
+                    Start Calibration
+                </button>
+                <button class="btn-danger" id="stopBtn" onclick="stopCalibration()" disabled>
+                    Stop
+                </button>
+            </div>
+
+            <div class="progress-section hidden" id="progressSection">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+                </div>
+                <div class="progress-stats">
+                    <span id="phaseLabel">Phase: Random Search</span>
+                    <span id="iterationLabel">Iteration: 0/0</span>
+                    <span id="bestScoreLabel">Best Score: --</span>
+                </div>
+            </div>
+
+            <div class="log-output hidden" id="logOutput"></div>
+        </div>
+
+        <!-- Results -->
+        <div class="panel hidden" id="resultsPanel">
+            <h2><span class="step-number done">4</span> Results</h2>
+
+            <div class="results-grid" id="resultsGrid">
+                <!-- Filled dynamically -->
+            </div>
+
+            <div class="per-image-results" id="perImageResults">
+                <h3>Per-Image Breakdown</h3>
+                <!-- Filled dynamically -->
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px; color: #aaa;">
+                Best Parameters (copy to detector)
+            </h3>
+            <div class="params-output" id="paramsOutput"></div>
+
+            <div class="buttons-row" style="margin-top: 15px;">
+                <button class="btn-primary" onclick="copyParams()">Copy Parameters</button>
+                <button class="btn-secondary" onclick="applyToDetector()">Apply to Detector</button>
+                <button class="btn-secondary" onclick="downloadParams()">Download JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()" type="text/javascript"></script>
+    <script src="color-classifier.js"></script>
+    <script src="calibrator.js"></script>
+    <script>
+        // State
+        let cvReady = false;
+        let datasetLoaded = false;
+        let imagesLoaded = false;
+        let lastResults = null;
+
+        // DOM elements
+        const datasetInput = document.getElementById('datasetInput');
+        const imagesInput = document.getElementById('imagesInput');
+        const datasetStatus = document.getElementById('datasetStatus');
+        const imagesStatus = document.getElementById('imagesStatus');
+        const loadImagesBtn = document.getElementById('loadImagesBtn');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const phaseLabel = document.getElementById('phaseLabel');
+        const iterationLabel = document.getElementById('iterationLabel');
+        const bestScoreLabel = document.getElementById('bestScoreLabel');
+        const logOutput = document.getElementById('logOutput');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const perImageResults = document.getElementById('perImageResults');
+        const paramsOutput = document.getElementById('paramsOutput');
+
+        function onOpenCvReady() {
+            cv['onRuntimeInitialized'] = () => {
+                cvReady = true;
+                updateButtons();
+            };
+        }
+
+        function updateButtons() {
+            loadImagesBtn.disabled = !datasetLoaded;
+            startBtn.disabled = !cvReady || !datasetLoaded || !imagesLoaded || Calibrator.isRunning;
+            stopBtn.disabled = !Calibrator.isRunning;
+
+            // Update step indicators
+            document.getElementById('step1').classList.toggle('done', datasetLoaded);
+            document.getElementById('step2').classList.toggle('done', imagesLoaded);
+        }
+
+        // Load dataset JSON
+        datasetInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const result = Calibrator.loadDataset(text);
+
+                if (result.success) {
+                    datasetLoaded = true;
+                    datasetStatus.textContent = `Loaded: ${result.imageCount} images`;
+                    datasetStatus.className = 'file-status success';
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (err) {
+                datasetLoaded = false;
+                datasetStatus.textContent = `Error: ${err.message}`;
+                datasetStatus.className = 'file-status error';
+            }
+
+            updateButtons();
+        });
+
+        // Load image files
+        imagesInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            try {
+                imagesStatus.textContent = 'Loading images...';
+                imagesStatus.className = 'file-status';
+
+                const count = await Calibrator.loadImages(files);
+                imagesLoaded = true;
+                imagesStatus.textContent = `Loaded: ${count} images`;
+                imagesStatus.className = 'file-status success';
+            } catch (err) {
+                imagesLoaded = false;
+                imagesStatus.textContent = `Error: ${err.message}`;
+                imagesStatus.className = 'file-status error';
+            }
+
+            updateButtons();
+        });
+
+        // Start calibration
+        async function startCalibration() {
+            if (!cvReady || !datasetLoaded || !imagesLoaded) return;
+
+            const randomIter = parseInt(document.getElementById('randomIterations').value);
+            const localIter = parseInt(document.getElementById('localIterations').value);
+            const matchThreshold = parseInt(document.getElementById('matchThreshold').value);
+
+            Calibrator.matchDistanceThreshold = matchThreshold;
+
+            progressSection.classList.remove('hidden');
+            logOutput.classList.remove('hidden');
+            logOutput.innerHTML = '';
+            resultsPanel.classList.add('hidden');
+
+            updateButtons();
+
+            try {
+                const results = await Calibrator.optimize({
+                    randomIterations: randomIter,
+                    localIterations: localIter,
+                    onProgress: (progress) => {
+                        const total = progress.phase === 'random' ? randomIter : localIter;
+                        const offset = progress.phase === 'local' ? randomIter : 0;
+                        const pct = Math.round(((offset + progress.iteration) / (randomIter + localIter)) * 100);
+
+                        progressBar.style.width = pct + '%';
+                        progressBar.textContent = pct + '%';
+
+                        phaseLabel.textContent = `Phase: ${progress.phase === 'random' ? 'Random Search' : 'Local Refinement'}`;
+                        iterationLabel.textContent = `Iteration: ${progress.iteration}/${total}`;
+                        bestScoreLabel.textContent = `Best Score: ${progress.bestScore.toFixed(2)}`;
+                    },
+                    onBestFound: (best) => {
+                        const logEntry = document.createElement('div');
+                        logEntry.className = 'log-entry best';
+                        logEntry.textContent = `New best: ${best.score.toFixed(2)} (F1: ${(best.details.perImage[0]?.f1 * 100 || 0).toFixed(1)}%, Color: ${(best.details.perImage[0]?.colorAccuracy * 100 || 0).toFixed(1)}%)`;
+                        logOutput.appendChild(logEntry);
+                        logOutput.scrollTop = logOutput.scrollHeight;
+                    }
+                });
+
+                lastResults = results;
+                showResults(results);
+            } catch (err) {
+                console.error('Calibration error:', err);
+                alert('Calibration error: ' + err.message);
+            }
+
+            updateButtons();
+        }
+
+        // Stop calibration
+        function stopCalibration() {
+            Calibrator.stop();
+        }
+
+        // Show results
+        function showResults(results) {
+            if (!results.bestParams) {
+                alert('No valid parameters found');
+                return;
+            }
+
+            resultsPanel.classList.remove('hidden');
+
+            // Evaluate best params one more time for detailed results
+            const evaluation = Calibrator.evaluateParams(results.bestParams);
+
+            // Summary cards
+            const avgMetrics = {
+                f1: evaluation.perImage.reduce((s, r) => s + r.f1, 0) / evaluation.perImage.length,
+                colorAccuracy: evaluation.perImage.reduce((s, r) => s + r.colorAccuracy, 0) / evaluation.perImage.length,
+                precision: evaluation.perImage.reduce((s, r) => s + r.precision, 0) / evaluation.perImage.length,
+                recall: evaluation.perImage.reduce((s, r) => s + r.recall, 0) / evaluation.perImage.length,
+                avgPositionError: evaluation.perImage.reduce((s, r) => s + r.avgPositionError, 0) / evaluation.perImage.length
+            };
+
+            resultsGrid.innerHTML = `
+                <div class="result-card highlight">
+                    <div class="value">${(avgMetrics.f1 * 100).toFixed(1)}%</div>
+                    <div class="label">F1 Score</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${(avgMetrics.colorAccuracy * 100).toFixed(1)}%</div>
+                    <div class="label">Color Accuracy</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${(avgMetrics.precision * 100).toFixed(1)}%</div>
+                    <div class="label">Precision</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${(avgMetrics.recall * 100).toFixed(1)}%</div>
+                    <div class="label">Recall</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${avgMetrics.avgPositionError.toFixed(1)}px</div>
+                    <div class="label">Avg Position Error</div>
+                </div>
+                <div class="result-card">
+                    <div class="value">${results.iterations}</div>
+                    <div class="label">Iterations</div>
+                </div>
+            `;
+
+            // Per-image breakdown
+            let perImageHtml = '<h3>Per-Image Breakdown</h3>';
+            evaluation.perImage.forEach(img => {
+                perImageHtml += `
+                    <div class="image-result-row">
+                        <span class="filename">${img.filename}</span>
+                        <div class="metrics">
+                            <span class="metric">F1: <span class="metric-value">${(img.f1 * 100).toFixed(1)}%</span></span>
+                            <span class="metric">Color: <span class="metric-value">${(img.colorAccuracy * 100).toFixed(1)}%</span></span>
+                            <span class="metric">TP: <span class="metric-value">${img.truePositives}</span></span>
+                            <span class="metric">FP: <span class="metric-value">${img.falsePositives}</span></span>
+                            <span class="metric">FN: <span class="metric-value">${img.falseNegatives}</span></span>
+                        </div>
+                    </div>
+                `;
+            });
+            perImageResults.innerHTML = perImageHtml;
+
+            // Parameters output
+            paramsOutput.textContent = JSON.stringify(results.bestParams, null, 2);
+        }
+
+        // Copy parameters to clipboard
+        function copyParams() {
+            if (!lastResults?.bestParams) return;
+            navigator.clipboard.writeText(JSON.stringify(lastResults.bestParams, null, 2));
+            alert('Parameters copied to clipboard!');
+        }
+
+        // Apply to detector (saves to localStorage)
+        function applyToDetector() {
+            if (!lastResults?.bestParams) return;
+            localStorage.setItem('pokDetectorParams', JSON.stringify(lastResults.bestParams));
+            alert('Parameters saved! Open detector to use them.');
+        }
+
+        // Download parameters as JSON
+        function downloadParams() {
+            if (!lastResults?.bestParams) return;
+            const blob = new Blob([JSON.stringify(lastResults.bestParams, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'calibrated-params.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

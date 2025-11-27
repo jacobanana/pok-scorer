@@ -44,6 +44,51 @@ Parameters to expose:
 - `index.html` - UI with image upload, parameter controls, results display
 - `detector.js` - OpenCV detection logic
 - `color-classifier.js` - HSV-based color classification
+- `calibrator.html` - Auto-calibration UI
+- `calibrator.js` - Optimization algorithm
+- `dataset-schema.json` - JSON schema for annotated datasets
+- `example-dataset.json` - Example dataset format
+
+---
+
+## Phase 1.5: Auto-Calibration (Current)
+**Goal:** Automatically tune detection parameters using annotated training data
+
+### Features
+- [x] Dataset format definition (JSON schema)
+- [x] Image annotation format (x, y, color per pok)
+- [x] Optimization algorithm (random search + local refinement)
+- [x] Scoring metrics (F1, precision, recall, color accuracy, position error)
+- [x] UI for loading dataset and running calibration
+- [x] Export optimized parameters to detector
+
+### Dataset Format
+```json
+{
+  "version": "1.0",
+  "images": [
+    {
+      "filename": "game1.jpg",
+      "poks": [
+        { "x": 450, "y": 320, "radius": 28, "color": "red" },
+        { "x": 890, "y": 290, "radius": 27, "color": "blue" }
+      ]
+    }
+  ]
+}
+```
+
+### Optimization Algorithm
+1. **Random Search Phase**: Sample random parameter combinations to explore the space
+2. **Local Refinement Phase**: Hill-climbing from best found, mutating 1-3 params at a time
+3. **Scoring**: Combined score = (F1 × 50) + (ColorAccuracy × 40) - (PositionError penalty)
+
+### Metrics
+- **Precision**: Detected poks that match annotations / Total detections
+- **Recall**: Annotations matched / Total annotations
+- **F1 Score**: Harmonic mean of precision and recall
+- **Color Accuracy**: Correctly classified colors / Matched poks
+- **Position Error**: Average distance between matched detection and annotation
 
 ---
 
@@ -147,3 +192,13 @@ Parameters to expose:
   - HoughCircles (current)
   - SimpleBlobDetector (alternative)
 - **Settings versioning**: Save snapshots of settings with timestamps, allow reverting to previous versions
+
+### 2025-11-27 - Auto-Calibration System
+- **Dataset format**: JSON with version, array of images, each with filename and poks array
+- **Pok annotation**: x, y coordinates (pixels), optional radius, required color (red/blue)
+- **Optimization approach**:
+  - Two-phase: random search for exploration, local refinement for fine-tuning
+  - Combined score balances detection accuracy (F1), color classification, and position error
+  - Greedy matching algorithm pairs detections to annotations
+- **Match threshold**: Configurable distance (default 50px) for considering detection/annotation as match
+- **UI workflow**: Load dataset JSON → Load image files → Configure iterations → Run → Export params

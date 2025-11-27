@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "name": "Example Pok Dataset",
+  "description": "Example dataset showing the annotation format. Replace with your own images and annotations.",
+  "images": [
+    {
+      "filename": "game1.jpg",
+      "width": 1920,
+      "height": 1080,
+      "notes": "Good lighting, top-down view",
+      "poks": [
+        { "x": 450, "y": 320, "radius": 28, "color": "red" },
+        { "x": 520, "y": 380, "radius": 26, "color": "red" },
+        { "x": 890, "y": 290, "radius": 27, "color": "blue" },
+        { "x": 950, "y": 410, "radius": 28, "color": "blue" },
+        { "x": 700, "y": 350, "radius": 25, "color": "red" }
+      ]
+    },
+    {
+      "filename": "game2.jpg",
+      "width": 1920,
+      "height": 1080,
+      "notes": "Slightly angled view",
+      "poks": [
+        { "x": 380, "y": 400, "radius": 30, "color": "blue" },
+        { "x": 600, "y": 320, "radius": 28, "color": "red" },
+        { "x": 820, "y": 380, "radius": 29, "color": "blue" },
+        { "x": 750, "y": 450, "radius": 27, "color": "red" }
+      ]
+    }
+  ]
+}
