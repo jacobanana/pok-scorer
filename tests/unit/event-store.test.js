@@ -4,6 +4,7 @@
 
 import { EventStore } from '../../js/event-store.js';
 import { GameStartedEvent, PokPlacedEvent } from '../../js/events.js';
+import { PLAYERS } from '../../js/config.js';
 import {
     createEventStore,
     cleanupTestContext,
@@ -13,7 +14,7 @@ import {
     TEST_STORAGE_KEY
 } from '../lib/fixtures.js';
 
-const { describe, it, assert, beforeEach } = window;
+const { assert } = window;
 const runner = window.testRunner;
 
 runner.describe('EventStore - Initialization', () => {
@@ -51,7 +52,7 @@ runner.describe('EventStore - Event Appending', () => {
     });
 
     runner.it('should append event and assign version', () => {
-        const event = new GameStartedEvent('red');
+        const event = new GameStartedEvent(PLAYERS.RED);
         eventStore.append(event);
 
         assert.lengthOf(eventStore.events, 1);
@@ -60,9 +61,9 @@ runner.describe('EventStore - Event Appending', () => {
     });
 
     runner.it('should increment version for each event', () => {
-        eventStore.append(new GameStartedEvent('red'));
-        eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
-        eventStore.append(new PokPlacedEvent('pok2', 'blue', 30, 50));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
+        eventStore.append(new PokPlacedEvent('pok1', PLAYERS.RED, 30, 50));
+        eventStore.append(new PokPlacedEvent('pok2', PLAYERS.BLUE, 30, 50));
 
         assert.equal(eventStore.version, 3);
         assert.equal(eventStore.events[0].version, 1);
@@ -72,7 +73,7 @@ runner.describe('EventStore - Event Appending', () => {
 
     runner.it('should add timestamp to events', () => {
         const before = Date.now();
-        const event = new GameStartedEvent('red');
+        const event = new GameStartedEvent(PLAYERS.RED);
         const after = Date.now();
 
         assert.greaterThan(event.timestamp, before - 1);
@@ -80,12 +81,12 @@ runner.describe('EventStore - Event Appending', () => {
     });
 
     runner.it('should store event data correctly', () => {
-        const event = new GameStartedEvent('blue');
+        const event = new GameStartedEvent(PLAYERS.BLUE);
         eventStore.append(event);
 
         const storedEvent = eventStore.events[0];
         assert.equal(storedEvent.type, 'GAME_STARTED');
-        assert.equal(storedEvent.data.startingPlayerId, 'blue');
+        assert.equal(storedEvent.data.startingPlayerId, PLAYERS.BLUE);
     });
 });
 
@@ -106,7 +107,7 @@ runner.describe('EventStore - Pub/Sub', () => {
         const handler = () => { called = true; };
 
         eventStore.subscribe('GAME_STARTED', handler);
-        eventStore.append(new GameStartedEvent('red'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
 
         assert.ok(called, 'Handler should have been called');
     });
@@ -116,8 +117,8 @@ runner.describe('EventStore - Pub/Sub', () => {
         const handler = () => { callCount++; };
 
         eventStore.subscribe('*', handler);
-        eventStore.append(new GameStartedEvent('red'));
-        eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
+        eventStore.append(new PokPlacedEvent('pok1', PLAYERS.RED, 30, 50));
 
         assert.equal(callCount, 2, 'Wildcard handler should be called for all events');
     });
@@ -127,7 +128,7 @@ runner.describe('EventStore - Pub/Sub', () => {
         const handler = (event) => { receivedEvent = event; };
 
         eventStore.subscribe('GAME_STARTED', handler);
-        const event = new GameStartedEvent('red');
+        const event = new GameStartedEvent(PLAYERS.RED);
         eventStore.append(event);
 
         assert.equal(receivedEvent, event);
@@ -139,7 +140,7 @@ runner.describe('EventStore - Pub/Sub', () => {
         eventStore.subscribe('*', () => callOrder.push('wildcard'));
         eventStore.subscribe('GAME_STARTED', () => callOrder.push('specific'));
 
-        eventStore.append(new GameStartedEvent('red'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
 
         assert.deepEqual(callOrder, ['wildcard', 'specific']);
     });
@@ -151,7 +152,7 @@ runner.describe('EventStore - Pub/Sub', () => {
         eventStore.subscribe('GAME_STARTED', () => count1++);
         eventStore.subscribe('GAME_STARTED', () => count2++);
 
-        eventStore.append(new GameStartedEvent('red'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
 
         assert.equal(count1, 1);
         assert.equal(count2, 1);
@@ -163,7 +164,7 @@ runner.describe('EventStore - Pub/Sub', () => {
 
         eventStore.subscribe('GAME_STARTED', handler);
         eventStore.unsubscribe('GAME_STARTED', handler);
-        eventStore.append(new GameStartedEvent('red'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
 
         assert.notOk(called, 'Handler should not be called after unsubscribe');
     });
@@ -175,9 +176,9 @@ runner.describe('EventStore - Querying Events', () => {
     runner.beforeEach(() => {
         disableLogging();
         eventStore = createEventStore();
-        eventStore.append(new GameStartedEvent('red'));
-        eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
-        eventStore.append(new PokPlacedEvent('pok2', 'blue', 30, 50));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
+        eventStore.append(new PokPlacedEvent('pok1', PLAYERS.RED, 30, 50));
+        eventStore.append(new PokPlacedEvent('pok2', PLAYERS.BLUE, 30, 50));
     });
 
     runner.afterEach(() => {
@@ -222,12 +223,12 @@ runner.describe('EventStore - Player Names', () => {
     runner.it('should return default player names when no events', () => {
         const names = eventStore.getPlayerNamesFromEvents();
 
-        assert.equal(names.red, 'Red');
-        assert.equal(names.blue, 'Blue');
+        assert.equal(names.red, PLAYERS.RED);
+        assert.equal(names.blue, PLAYERS.BLUE);
     });
 
     runner.it('should return player names from GAME_STARTED event', () => {
-        eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
         const names = eventStore.getPlayerNamesFromEvents();
 
@@ -236,17 +237,17 @@ runner.describe('EventStore - Player Names', () => {
     });
 
     runner.it('should return default names when GAME_STARTED has no custom names', () => {
-        eventStore.append(new GameStartedEvent('red'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
 
         const names = eventStore.getPlayerNamesFromEvents();
 
-        assert.equal(names.red, 'Red');
-        assert.equal(names.blue, 'Blue');
+        assert.equal(names.red, PLAYERS.RED);
+        assert.equal(names.blue, PLAYERS.BLUE);
     });
 
     runner.it('should return names from most recent GAME_STARTED event', () => {
-        eventStore.append(new GameStartedEvent('red', 'Alice', 'Bob'));
-        eventStore.append(new GameStartedEvent('blue', 'Charlie', 'Diana'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
+        eventStore.append(new GameStartedEvent(PLAYERS.BLUE, 'Charlie', 'Diana'));
 
         const names = eventStore.getPlayerNamesFromEvents();
 
@@ -261,8 +262,8 @@ runner.describe('EventStore - Clear', () => {
     runner.beforeEach(() => {
         disableLogging();
         eventStore = createEventStore();
-        eventStore.append(new GameStartedEvent('red'));
-        eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
+        eventStore.append(new PokPlacedEvent('pok1', PLAYERS.RED, 30, 50));
     });
 
     runner.afterEach(() => {
@@ -290,7 +291,7 @@ runner.describe('EventStore - Persistence (LocalStorage)', () => {
     });
 
     runner.it('should save events to LocalStorage', () => {
-        eventStore.append(new GameStartedEvent('red'));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
         eventStore.save();
 
         const saved = localStorage.getItem(TEST_STORAGE_KEY);
@@ -303,8 +304,8 @@ runner.describe('EventStore - Persistence (LocalStorage)', () => {
 
     runner.it('should load events from LocalStorage', () => {
         // Save some events
-        eventStore.append(new GameStartedEvent('red'));
-        eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
+        eventStore.append(new PokPlacedEvent('pok1', PLAYERS.RED, 30, 50));
         eventStore.save();
 
         // Create new store and load (use same test storage key)
@@ -325,8 +326,8 @@ runner.describe('EventStore - Persistence (LocalStorage)', () => {
         let eventCount = 0;
         eventStore.subscribe('*', () => eventCount++);
 
-        eventStore.append(new GameStartedEvent('red'));
-        eventStore.append(new PokPlacedEvent('pok1', 'red', 30, 50));
+        eventStore.append(new GameStartedEvent(PLAYERS.RED));
+        eventStore.append(new PokPlacedEvent('pok1', PLAYERS.RED, 30, 50));
         eventStore.save();
 
         // Create new store with subscriber (use same test storage key)

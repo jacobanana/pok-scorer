@@ -2,7 +2,7 @@
 // SCORING SERVICE (Pure Functions - No State)
 // ============================================
 
-import { CONFIG } from './config.js';
+import { CONFIG, PLAYERS } from './config.js';
 
 export class ScoringService {
     // Lookup score by zone ID
@@ -124,5 +124,66 @@ export class ScoringService {
             isHigh: true,
             boundaryZone: null
         };
+    }
+
+    // Calculate total score for a player from their poks
+    static getPlayerScore(playerId, poks, isFlipped = false) {
+        return poks
+            .filter(p => p.playerId === playerId)
+            .reduce((sum, p) => {
+                const zoneInfo = this.getZoneInfo(p.x, p.y, isFlipped);
+                return sum + zoneInfo.points;
+            }, 0);
+    }
+
+    // Calculate the score difference for a round
+    static getRoundDiff(poks, isFlipped = false) {
+        const redScore = this.getPlayerScore(PLAYERS.RED, poks, isFlipped);
+        const blueScore = this.getPlayerScore(PLAYERS.BLUE, poks, isFlipped);
+        return {
+            redScore,
+            blueScore,
+            diff: Math.abs(redScore - blueScore)
+        };
+    }
+
+    // Calculate round outcome from poks
+    static calculateRoundOutcome(poks, isFlipped = false) {
+        const { redScore, blueScore, diff } = this.getRoundDiff(poks, isFlipped);
+
+        let redPointsAwarded = 0;
+        let bluePointsAwarded = 0;
+
+        if (redScore > blueScore) {
+            redPointsAwarded = diff;
+        } else if (blueScore > redScore) {
+            bluePointsAwarded = diff;
+        }
+        // Tie: no points awarded
+
+        return {
+            redScore,
+            blueScore,
+            redPointsAwarded,
+            bluePointsAwarded,
+            winner: redScore > blueScore ? PLAYERS.RED : blueScore > redScore ? PLAYERS.BLUE : null
+        };
+    }
+
+    // Get the winner of a round (or null if tie)
+    static getRoundWinner(round) {
+        if (!round || !round.poks) {
+            return null;
+        }
+
+        const redScore = this.getPlayerScore(PLAYERS.RED, round.poks, round.isFlipped);
+        const blueScore = this.getPlayerScore(PLAYERS.BLUE, round.poks, round.isFlipped);
+
+        if (redScore > blueScore) {
+            return PLAYERS.RED;
+        } else if (blueScore > redScore) {
+            return PLAYERS.BLUE;
+        }
+        return null; // Tie
     }
 }

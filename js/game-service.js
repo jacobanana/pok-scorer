@@ -1,17 +1,17 @@
 // ============================================
-// GAME STATE PROJECTION (Calculated State)
+// GAME SERVICE (Event-Sourced Game Logic)
 // ============================================
-// This projection calculates state on-demand from events rather than caching.
+// This service calculates game state on-demand from events rather than caching.
 // Benefits:
 // - State always matches event log (no synchronization issues)
 // - Pure functions (no mutations)
 // - True time-travel debugging
 // - Simpler to reason about
 
-import { CONFIG } from './config.js';
+import { CONFIG, PLAYERS } from './config.js';
 import { ScoringService } from './scoring-service.js';
 
-export class GameStateProjection {
+export class GameService {
     constructor(eventStore) {
         this.eventStore = eventStore;
         // NO cached state - we calculate on demand!
@@ -21,12 +21,12 @@ export class GameStateProjection {
         return {
             isStarted: false,
             players: {
-                red: { totalScore: 0 },
-                blue: { totalScore: 0 }
+                [PLAYERS.RED]: { totalScore: 0 },
+                [PLAYERS.BLUE]: { totalScore: 0 }
             },
             playerNames: {
-                red: 'Red',
-                blue: 'Blue'
+                [PLAYERS.RED]: PLAYERS.RED,
+                [PLAYERS.BLUE]: PLAYERS.BLUE
             },
             rounds: [],
             currentRoundIndex: -1,
@@ -77,9 +77,6 @@ export class GameStateProjection {
             startingPlayerId: event.data.startingPlayerId,
             currentPlayerId: event.data.startingPlayerId,
             poks: [],
-            redPoksRemaining: CONFIG.POKS_PER_PLAYER,
-            bluePoksRemaining: CONFIG.POKS_PER_PLAYER,
-            isComplete: false,
             lastPlacedPokId: null,
             isFlipped: state.isFlipped
         };
@@ -88,8 +85,8 @@ export class GameStateProjection {
             ...state,
             isStarted: true,
             playerNames: {
-                red: event.data.redName || 'Red',
-                blue: event.data.blueName || 'Blue'
+                [PLAYERS.RED]: event.data.redName || PLAYERS.RED,
+                [PLAYERS.BLUE]: event.data.blueName || PLAYERS.BLUE
             },
             rounds: [...state.rounds, newRound],
             currentRoundIndex: 0
@@ -102,36 +99,18 @@ export class GameStateProjection {
         const currentRound = state.rounds[state.currentRoundIndex];
         if (!currentRound) return state;
 
-        // Calculate derived data from position
-        const zoneInfo = ScoringService.getZoneInfo(event.data.x, event.data.y, currentRound.isFlipped);
-
         const newPok = {
             id: event.data.pokId,
             playerId: event.data.playerId,
             x: event.data.x,
-            y: event.data.y,
-            zoneId: zoneInfo.zoneId,
-            points: zoneInfo.points,
-            isHigh: zoneInfo.isHigh,
-            boundaryZone: zoneInfo.boundaryZone
+            y: event.data.y
         };
-
-        const newRedRemaining = event.data.playerId === 'red'
-            ? currentRound.redPoksRemaining - 1
-            : currentRound.redPoksRemaining;
-
-        const newBlueRemaining = event.data.playerId === 'blue'
-            ? currentRound.bluePoksRemaining - 1
-            : currentRound.bluePoksRemaining;
 
         const updatedRound = {
             ...currentRound,
             poks: [...currentRound.poks, newPok],
-            redPoksRemaining: newRedRemaining,
-            bluePoksRemaining: newBlueRemaining,
             currentPlayerId: event.data.playerId,
-            lastPlacedPokId: event.data.pokId,
-            isComplete: newRedRemaining === 0 && newBlueRemaining === 0
+            lastPlacedPokId: event.data.pokId
         };
 
         const newRounds = [...state.rounds];
@@ -154,17 +133,10 @@ export class GameStateProjection {
 
         const pok = currentRound.poks[pokIndex];
 
-        // Recalculate derived data
-        const zoneInfo = ScoringService.getZoneInfo(event.data.x, event.data.y, currentRound.isFlipped);
-
         const updatedPok = {
             ...pok,
             x: event.data.x,
-            y: event.data.y,
-            zoneId: zoneInfo.zoneId,
-            points: zoneInfo.points,
-            isHigh: zoneInfo.isHigh,
-            boundaryZone: zoneInfo.boundaryZone
+            y: event.data.y
         };
 
         const newPoks = [...currentRound.poks];
@@ -193,22 +165,11 @@ export class GameStateProjection {
         const pokIndex = currentRound.poks.findIndex(p => p.id === event.data.pokId);
         if (pokIndex === -1) return state;
 
-        const pok = currentRound.poks[pokIndex];
-
         // Remove pok from array (immutably)
         const newPoks = [
             ...currentRound.poks.slice(0, pokIndex),
             ...currentRound.poks.slice(pokIndex + 1)
         ];
-
-        // Increment POKs remaining
-        const newRedRemaining = pok.playerId === 'red'
-            ? currentRound.redPoksRemaining + 1
-            : currentRound.redPoksRemaining;
-
-        const newBlueRemaining = pok.playerId === 'blue'
-            ? currentRound.bluePoksRemaining + 1
-            : currentRound.bluePoksRemaining;
 
         // Update last placed and current player
         let lastPlacedPokId = null;
@@ -223,11 +184,8 @@ export class GameStateProjection {
         const updatedRound = {
             ...currentRound,
             poks: newPoks,
-            redPoksRemaining: newRedRemaining,
-            bluePoksRemaining: newBlueRemaining,
             lastPlacedPokId,
-            currentPlayerId,
-            isComplete: false
+            currentPlayerId
         };
 
         const newRounds = [...state.rounds];
@@ -240,25 +198,18 @@ export class GameStateProjection {
     }
 
     applyRoundEnded(state, event) {
-        const redScore = event.data.redScore;
-        const blueScore = event.data.blueScore;
-        const diff = Math.abs(redScore - blueScore);
+        // Find the round that ended
+        const round = state.rounds[event.data.roundNumber];
+        if (!round) return state;
 
-        let newRedTotal = state.players.red.totalScore;
-        let newBlueTotal = state.players.blue.totalScore;
-
-        if (redScore > blueScore) {
-            newRedTotal += diff;
-        } else if (blueScore > redScore) {
-            newBlueTotal += diff;
-        }
-        // Tie: no points awarded
+        // Calculate outcome from poks using ScoringService
+        const outcome = ScoringService.calculateRoundOutcome(round.poks, round.isFlipped);
 
         return {
             ...state,
             players: {
-                red: { totalScore: newRedTotal },
-                blue: { totalScore: newBlueTotal }
+                [PLAYERS.RED]: { totalScore: state.players[PLAYERS.RED].totalScore + outcome.redPointsAwarded },
+                [PLAYERS.BLUE]: { totalScore: state.players[PLAYERS.BLUE].totalScore + outcome.bluePointsAwarded }
             }
         };
     }
@@ -269,9 +220,6 @@ export class GameStateProjection {
             startingPlayerId: event.data.startingPlayerId,
             currentPlayerId: event.data.startingPlayerId,
             poks: [],
-            redPoksRemaining: CONFIG.POKS_PER_PLAYER,
-            bluePoksRemaining: CONFIG.POKS_PER_PLAYER,
-            isComplete: false,
             lastPlacedPokId: null,
             isFlipped: state.isFlipped
         };
@@ -295,29 +243,17 @@ export class GameStateProjection {
         }
 
         const currentRound = state.rounds[state.currentRoundIndex];
-        if (!currentRound || currentRound.isComplete) {
+        if (!currentRound || this.isRoundComplete(currentRound)) {
             return {
                 ...state,
                 isFlipped: newIsFlipped
             };
         }
 
-        // Recalculate all POK zones with the new flip state
-        const updatedPoks = currentRound.poks.map(pok => {
-            const zoneInfo = ScoringService.getZoneInfo(pok.x, pok.y, newIsFlipped);
-            return {
-                ...pok,
-                zoneId: zoneInfo.zoneId,
-                points: zoneInfo.points,
-                isHigh: zoneInfo.isHigh,
-                boundaryZone: zoneInfo.boundaryZone
-            };
-        });
-
+        // No need to recalculate POK zones - they will be calculated on-demand from x, y
         const updatedRound = {
             ...currentRound,
-            isFlipped: newIsFlipped,
-            poks: updatedPoks
+            isFlipped: newIsFlipped
         };
 
         const newRounds = [...state.rounds];
@@ -342,17 +278,41 @@ export class GameStateProjection {
         return state.rounds[state.currentRoundIndex];
     }
 
-    getRoundScores() {
-        const round = this.getCurrentRound();
-        if (!round) return { red: 0, blue: 0 };
+    // Helper: Calculate zone info for a pok
+    getPokZoneInfo(pok, isFlipped) {
+        return ScoringService.getZoneInfo(pok.x, pok.y, isFlipped);
+    }
 
-        const redScore = round.poks
-            .filter(p => p.playerId === 'red')
-            .reduce((sum, p) => sum + p.points, 0);
+    // Helper: Get POKs remaining for a player in a round
+    getPoksRemaining(round, playerId) {
+        const placed = round.poks.filter(p => p.playerId === playerId).length;
+        return CONFIG.POKS_PER_PLAYER - placed;
+    }
 
-        const blueScore = round.poks
-            .filter(p => p.playerId === 'blue')
-            .reduce((sum, p) => sum + p.points, 0);
+    // Helper: Check if round is complete
+    isRoundComplete(round) {
+        const redRemaining = this.getPoksRemaining(round, PLAYERS.RED);
+        const blueRemaining = this.getPoksRemaining(round, PLAYERS.BLUE);
+        return redRemaining === 0 && blueRemaining === 0;
+    }
+
+    getRoundScores(round = null) {
+        const targetRound = round || this.getCurrentRound();
+        if (!targetRound) return { red: 0, blue: 0 };
+
+        const redScore = targetRound.poks
+            .filter(p => p.playerId === PLAYERS.RED)
+            .reduce((sum, p) => {
+                const zoneInfo = this.getPokZoneInfo(p, targetRound.isFlipped);
+                return sum + zoneInfo.points;
+            }, 0);
+
+        const blueScore = targetRound.poks
+            .filter(p => p.playerId === PLAYERS.BLUE)
+            .reduce((sum, p) => {
+                const zoneInfo = this.getPokZoneInfo(p, targetRound.isFlipped);
+                return sum + zoneInfo.points;
+            }, 0);
 
         return { red: redScore, blue: blueScore };
     }
@@ -361,18 +321,21 @@ export class GameStateProjection {
         const round = this.getCurrentRound();
         if (!round) return null;
 
+        const redRemaining = this.getPoksRemaining(round, PLAYERS.RED);
+        const blueRemaining = this.getPoksRemaining(round, PLAYERS.BLUE);
+
         // If one player out of POKs, other continues
-        if (round.redPoksRemaining === 0 && round.bluePoksRemaining > 0) {
-            return 'blue';
+        if (redRemaining === 0 && blueRemaining > 0) {
+            return PLAYERS.BLUE;
         }
-        if (round.bluePoksRemaining === 0 && round.redPoksRemaining > 0) {
-            return 'red';
+        if (blueRemaining === 0 && redRemaining > 0) {
+            return PLAYERS.RED;
         }
 
         // Both have POKs: lower score goes first
-        const scores = this.getRoundScores();
-        if (scores.red < scores.blue) return 'red';
-        if (scores.blue < scores.red) return 'blue';
+        const scores = this.getRoundScores(round);
+        if (scores.red < scores.blue) return PLAYERS.RED;
+        if (scores.blue < scores.red) return PLAYERS.BLUE;
 
         // Tied scores: if no POKs placed yet, start with starting player
         // Otherwise alternate from last player
@@ -381,22 +344,6 @@ export class GameStateProjection {
         }
 
         // Tied: alternate
-        return round.currentPlayerId === 'red' ? 'blue' : 'red';
-    }
-
-    hasWinner() {
-        const state = this.getState();
-        return state.players.red.totalScore >= CONFIG.WINNING_SCORE ||
-               state.players.blue.totalScore >= CONFIG.WINNING_SCORE;
-    }
-
-    getPlayerName(playerId) {
-        const state = this.getState();
-        return state.playerNames[playerId] || (playerId === 'red' ? 'Red' : 'Blue');
-    }
-
-    getPlayerNames() {
-        const state = this.getState();
-        return state.playerNames;
+        return round.currentPlayerId === PLAYERS.RED ? PLAYERS.BLUE : PLAYERS.RED;
     }
 }

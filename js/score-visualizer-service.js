@@ -13,8 +13,8 @@ export class ScoreVisualizerService {
     }
 
     init() {
-        this.createMarkers(this.redMarkersContainer, 'red');
-        this.createMarkers(this.blueMarkersContainer, 'blue');
+        this.createMarkers(this.redMarkersContainer, PLAYERS.RED);
+        this.createMarkers(this.blueMarkersContainer, PLAYERS.BLUE);
     }
 
     createMarkers(container, color) {
@@ -31,7 +31,7 @@ export class ScoreVisualizerService {
             // Red: start from right (100%) and go left (towards center)
             // Blue: start from left (0%) and go right (towards center)
             let position;
-            if (color === 'red') {
+            if (color === PLAYERS.RED) {
                 position = 100 - (i / (this.totalMarkers - 1)) * 100;
             } else {
                 position = (i / (this.totalMarkers - 1)) * 100;
@@ -43,8 +43,8 @@ export class ScoreVisualizerService {
     }
 
     updateScores(redScore, blueScore) {
-        this.updateMarkers(this.redMarkersContainer, redScore, 'red');
-        this.updateMarkers(this.blueMarkersContainer, blueScore, 'blue');
+        this.updateMarkers(this.redMarkersContainer, redScore, PLAYERS.RED);
+        this.updateMarkers(this.blueMarkersContainer, blueScore, PLAYERS.BLUE);
     }
 
     updateMarkers(container, score, color) {

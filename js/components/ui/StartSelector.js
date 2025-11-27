@@ -1,4 +1,5 @@
 import { Component } from '../core/Component.js';
+import { PLAYERS } from '../../config.js';
 import { ContinueButton, SaveLatestButton, ImportButton } from './Button.js';
 import { PlayerInput } from './PlayerInput.js';
 
@@ -74,20 +75,20 @@ export class StartSelector extends Component {
     _createPlayerInputs() {
         // Red player input
         this._playerInputs.red = new PlayerInput({
-            playerId: 'red',
+            playerId: PLAYERS.RED,
             id: 'redPlayerName',
-            placeholder: 'Red'
+            placeholder: PLAYERS.RED
         });
-        this._playerInputs.red.onStart(() => this.emit('start', { playerId: 'red' }));
+        this._playerInputs.red.onStart(() => this.emit('start', { playerId: PLAYERS.RED }));
         this._playerInputs.red.mount(this.el);
 
         // Blue player input
         this._playerInputs.blue = new PlayerInput({
-            playerId: 'blue',
+            playerId: PLAYERS.BLUE,
             id: 'bluePlayerName',
-            placeholder: 'Blue'
+            placeholder: PLAYERS.BLUE
         });
-        this._playerInputs.blue.onStart(() => this.emit('start', { playerId: 'blue' }));
+        this._playerInputs.blue.onStart(() => this.emit('start', { playerId: PLAYERS.BLUE }));
         this._playerInputs.blue.mount(this.el);
     }
 
@@ -112,15 +113,15 @@ export class StartSelector extends Component {
     /** Get both player names */
     getPlayerNames() {
         return {
-            red: this.getPlayerName('red'),
-            blue: this.getPlayerName('blue')
+            red: this.getPlayerName(PLAYERS.RED),
+            blue: this.getPlayerName(PLAYERS.BLUE)
         };
     }
 
     /** Prefill player names from saved data */
     prefillNames(savedData) {
-        if (savedData.redPlayerName) this.setPlayerName('red', savedData.redPlayerName);
-        if (savedData.bluePlayerName) this.setPlayerName('blue', savedData.bluePlayerName);
+        if (savedData.redPlayerName) this.setPlayerName(PLAYERS.RED, savedData.redPlayerName);
+        if (savedData.bluePlayerName) this.setPlayerName(PLAYERS.BLUE, savedData.bluePlayerName);
         return this;
     }
 

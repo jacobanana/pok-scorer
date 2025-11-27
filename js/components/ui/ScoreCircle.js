@@ -1,10 +1,11 @@
 import { Component } from '../core/Component.js';
+import { PLAYERS } from '../../config.js';
 
 /**
  * ScoreCircle component - Base circular score display
  *
  * Props:
- * - color: string - 'red' or 'blue'
+ * - color: string - PLAYERS.RED or PLAYERS.BLUE
  * - score: number - Score to display
  * - id: string - Optional ID for the score span
  */
@@ -20,7 +21,7 @@ export class ScoreCircle extends Component {
     }
 
     template() {
-        const { color = 'red', score = 0, id } = this.props;
+        const { color = PLAYERS.RED, score = 0, id } = this.props;
         const colorClass = this.useColorDirectly ? color : `${color}-circle`;
         const idAttr = id ? `id="${id}"` : '';
 

@@ -3,9 +3,10 @@
 // ============================================
 
 import { ScoringService } from '../../js/scoring-service.js';
+import { PLAYERS } from '../../js/config.js';
 import { restoreLogging } from '../lib/fixtures.js';
 
-const { describe, it, assert } = window;
+const { assert } = window;
 const runner = window.testRunner;
 
 // Note: ScoringService is stateless (all static methods), so no fixtures needed.
@@ -208,5 +209,205 @@ runner.describe('ScoringService - Lookup Functions', () => {
         const zone1Normal = ScoringService.lookupScore('1', false);
 
         assert.lessThan(zone1Boundary, zone1Normal);
+    });
+});
+
+runner.describe('ScoringService - getPlayerScore', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
+    runner.it('should calculate total score for a player', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 10, y: 50 },   // 3 points
+            { id: 'red2', playerId: PLAYERS.RED, x: 30, y: 50 },   // 2 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 50, y: 50 }  // 1 point
+        ];
+
+        const redScore = ScoringService.getPlayerScore(PLAYERS.RED, poks, false);
+        const blueScore = ScoringService.getPlayerScore(PLAYERS.BLUE, poks, false);
+
+        assert.equal(redScore, 5); // 3 + 2
+        assert.equal(blueScore, 1);
+    });
+
+    runner.it('should return 0 for player with no poks', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 10, y: 50 }
+        ];
+
+        const blueScore = ScoringService.getPlayerScore(PLAYERS.BLUE, poks, false);
+        assert.equal(blueScore, 0);
+    });
+
+    runner.it('should handle empty poks array', () => {
+        const score = ScoringService.getPlayerScore(PLAYERS.RED, [], false);
+        assert.equal(score, 0);
+    });
+
+    runner.it('should respect isFlipped parameter', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 50, y: 19 }  // Circle 4 (4 pts) or Circle 5 (5 pts) when flipped
+        ];
+
+        const normalScore = ScoringService.getPlayerScore(PLAYERS.RED, poks, false);
+        const flippedScore = ScoringService.getPlayerScore(PLAYERS.RED, poks, true);
+
+        assert.equal(normalScore, 4);
+        assert.equal(flippedScore, 5);
+    });
+});
+
+runner.describe('ScoringService - getRoundDiff', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
+    runner.it('should calculate scores and diff when red wins', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 10, y: 50 },   // 3 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 30, y: 50 }  // 2 points
+        ];
+
+        const result = ScoringService.getRoundDiff(poks, false);
+
+        assert.equal(result.redScore, 3);
+        assert.equal(result.blueScore, 2);
+        assert.equal(result.diff, 1);
+    });
+
+    runner.it('should calculate scores and diff when blue wins', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 30, y: 50 },   // 2 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 10, y: 50 }  // 3 points
+        ];
+
+        const result = ScoringService.getRoundDiff(poks, false);
+
+        assert.equal(result.redScore, 2);
+        assert.equal(result.blueScore, 3);
+        assert.equal(result.diff, 1);
+    });
+
+    runner.it('should handle tied scores', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 30, y: 50 },   // 2 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 30, y: 50 }  // 2 points
+        ];
+
+        const result = ScoringService.getRoundDiff(poks, false);
+
+        assert.equal(result.redScore, 2);
+        assert.equal(result.blueScore, 2);
+        assert.equal(result.diff, 0);
+    });
+
+    runner.it('should handle empty poks array', () => {
+        const result = ScoringService.getRoundDiff([], false);
+
+        assert.equal(result.redScore, 0);
+        assert.equal(result.blueScore, 0);
+        assert.equal(result.diff, 0);
+    });
+});
+
+runner.describe('ScoringService - calculateRoundOutcome', () => {
+    runner.afterEach(() => {
+        restoreLogging();
+    });
+
+    runner.it('should award points to red winner', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 10, y: 50 },   // 3 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 30, y: 50 }  // 2 points
+        ];
+
+        const outcome = ScoringService.calculateRoundOutcome(poks, false);
+
+        assert.equal(outcome.redScore, 3);
+        assert.equal(outcome.blueScore, 2);
+        assert.equal(outcome.redPointsAwarded, 1);
+        assert.equal(outcome.bluePointsAwarded, 0);
+        assert.equal(outcome.winner, PLAYERS.RED);
+    });
+
+    runner.it('should award points to blue winner', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 30, y: 50 },   // 2 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 10, y: 50 }  // 3 points
+        ];
+
+        const outcome = ScoringService.calculateRoundOutcome(poks, false);
+
+        assert.equal(outcome.redScore, 2);
+        assert.equal(outcome.blueScore, 3);
+        assert.equal(outcome.redPointsAwarded, 0);
+        assert.equal(outcome.bluePointsAwarded, 1);
+        assert.equal(outcome.winner, PLAYERS.BLUE);
+    });
+
+    runner.it('should award no points on tie', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 30, y: 50 },   // 2 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 30, y: 50 }  // 2 points
+        ];
+
+        const outcome = ScoringService.calculateRoundOutcome(poks, false);
+
+        assert.equal(outcome.redScore, 2);
+        assert.equal(outcome.blueScore, 2);
+        assert.equal(outcome.redPointsAwarded, 0);
+        assert.equal(outcome.bluePointsAwarded, 0);
+        assert.equal(outcome.winner, null);
+    });
+
+    runner.it('should handle large score differences', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 50, y: 19 },   // Circle 4: 4 points
+            { id: 'red2', playerId: PLAYERS.RED, x: 10, y: 50 },   // Zone 3: 3 points
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 70, y: 50 }  // Zone 0: 0 points
+        ];
+
+        const outcome = ScoringService.calculateRoundOutcome(poks, false);
+
+        assert.equal(outcome.redScore, 7);
+        assert.equal(outcome.blueScore, 0);
+        assert.equal(outcome.redPointsAwarded, 7);
+        assert.equal(outcome.bluePointsAwarded, 0);
+        assert.equal(outcome.winner, PLAYERS.RED);
+    });
+
+    runner.it('should respect isFlipped parameter', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 50, y: 19 },   // Circle 4 (4 pts) or Circle 5 (5 pts) when flipped
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 30, y: 50 }  // Zone 2: 2 points
+        ];
+
+        const normalOutcome = ScoringService.calculateRoundOutcome(poks, false);
+        const flippedOutcome = ScoringService.calculateRoundOutcome(poks, true);
+
+        assert.equal(normalOutcome.redScore, 4);
+        assert.equal(normalOutcome.redPointsAwarded, 2); // 4 - 2 = 2
+
+        assert.equal(flippedOutcome.redScore, 5);
+        assert.equal(flippedOutcome.redPointsAwarded, 3); // 5 - 2 = 3
+    });
+
+    runner.it('should handle multiple poks per player', () => {
+        const poks = [
+            { id: 'red1', playerId: PLAYERS.RED, x: 10, y: 50 },   // 3 points
+            { id: 'red2', playerId: PLAYERS.RED, x: 30, y: 50 },   // 2 points
+            { id: 'red3', playerId: PLAYERS.RED, x: 50, y: 50 },   // 1 point
+            { id: 'blue1', playerId: PLAYERS.BLUE, x: 10, y: 50 }, // 3 points
+            { id: 'blue2', playerId: PLAYERS.BLUE, x: 30, y: 50 }  // 2 points
+        ];
+
+        const outcome = ScoringService.calculateRoundOutcome(poks, false);
+
+        assert.equal(outcome.redScore, 6);   // 3 + 2 + 1
+        assert.equal(outcome.blueScore, 5);  // 3 + 2
+        assert.equal(outcome.redPointsAwarded, 1);
+        assert.equal(outcome.bluePointsAwarded, 0);
+        assert.equal(outcome.winner, PLAYERS.RED);
     });
 });

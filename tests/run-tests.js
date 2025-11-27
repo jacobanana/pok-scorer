@@ -94,10 +94,26 @@ async function runTests() {
         const context = await browser.newContext();
         const page = await context.newPage();
 
+        // Track 404 errors
+        const resourceErrors = [];
+        page.on('response', response => {
+            if (response.status() === 404) {
+                resourceErrors.push({
+                    url: response.url(),
+                    status: response.status()
+                });
+            }
+        });
+
         // Collect console messages
         const consoleMessages = [];
         page.on('console', msg => {
-            consoleMessages.push({ type: msg.type(), text: msg.text() });
+            const text = msg.text();
+            consoleMessages.push({ type: msg.type(), text });
+            // Print errors to help debug
+            if (msg.type() === 'error') {
+                console.error(`${colors.red}Browser error: ${text}${colors.reset}`);
+            }
         });
 
         // Navigate to test page
@@ -105,72 +121,21 @@ async function runTests() {
 
         // Inject test runner that returns results
         const results = await page.evaluate(async () => {
-            // Import test framework
+            // Import test framework and shared loader
             const { TestRunner, assert } = await import('./lib/mini-test.js');
+            const { loadTestModules, createCollector, createTestResults, TEST_MODULES } = await import('./lib/test-loader.js');
 
             // Create fresh runner
             const runner = new TestRunner();
             window.testRunner = runner;
             window.assert = assert;
 
-            // Test modules
-            const testModules = [
-                './unit/scoring-service.test.js',
-                './unit/game-state-projection.test.js',
-                './unit/event-store.test.js',
-                './unit/component.test.js',
-                './integration/game-flow.test.js',
-                './integration/ui-components.test.js'
-            ];
+            // Create test results and collector
+            const testResults = createTestResults();
+            const collector = createCollector(testResults);
 
             // Load all test modules with cache busting
-            for (const module of testModules) {
-                try {
-                    const timestamp = Date.now();
-                    await import(`${module}?t=${timestamp}`);
-                } catch (error) {
-                    console.error(`Failed to load ${module}:`, error.message);
-                }
-            }
-
-            // Custom reporter that collects results
-            const testResults = {
-                suites: [],
-                passed: 0,
-                failed: 0,
-                skipped: 0
-            };
-
-            let currentSuite = null;
-
-            const collector = {
-                onStart() {},
-                onSuiteStart(name) {
-                    currentSuite = { name, tests: [] };
-                },
-                onTestStart() {},
-                onTestPass(name) {
-                    currentSuite.tests.push({ name, status: 'pass' });
-                    testResults.passed++;
-                },
-                onTestFail(name, error) {
-                    currentSuite.tests.push({
-                        name,
-                        status: 'fail',
-                        error: error.message || String(error)
-                    });
-                    testResults.failed++;
-                },
-                onTestSkip(name) {
-                    currentSuite.tests.push({ name, status: 'skip' });
-                    testResults.skipped++;
-                },
-                onSuiteEnd() {
-                    testResults.suites.push(currentSuite);
-                    currentSuite = null;
-                },
-                onComplete() {}
-            };
+            await loadTestModules(TEST_MODULES.all(), collector.recordImportError, true);
 
             // Run tests
             await runner.run(collector);
@@ -178,8 +143,31 @@ async function runTests() {
             return testResults;
         });
 
+        // Wait a bit for any async resource loads to complete
+        await page.waitForTimeout(100);
+
+        // Check for 404 errors first - these should fail the test run
+        if (resourceErrors.length > 0) {
+            console.log(`${colors.bright}${colors.red}Resource Loading Errors (404)${colors.reset}`);
+            for (const error of resourceErrors) {
+                console.log(`  ${colors.red}✗ 404 Not Found: ${error.url}${colors.reset}`);
+            }
+            console.log();
+            exitCode = 1;
+        }
+
         // Print results
         const totalTests = results.passed + results.failed + results.skipped;
+
+        // Print import errors if any
+        if (results.importErrors && results.importErrors.length > 0) {
+            console.log(`${colors.bright}${colors.red}Test File Import Errors${colors.reset}`);
+            for (const importError of results.importErrors) {
+                console.log(`  ${colors.red}✗ Failed to load ${importError.module}${colors.reset}`);
+                console.log(`    ${colors.red}${importError.error}${colors.reset}`);
+            }
+            console.log();
+        }
 
         for (const suite of results.suites) {
             console.log(`${colors.bright}${colors.blue}${suite.name}${colors.reset}`);
@@ -201,7 +189,10 @@ async function runTests() {
         const duration = performance.now() - startTime;
         console.log(`${colors.cyan}----------------------------------------${colors.reset}`);
 
-        if (results.failed === 0) {
+        const hasImportErrors = results.importErrors && results.importErrors.length > 0;
+        const has404Errors = resourceErrors.length > 0;
+
+        if (results.failed === 0 && !hasImportErrors && !has404Errors) {
             console.log(`${colors.green}${colors.bright}✓ All tests passed!${colors.reset}`);
         } else {
             console.log(`${colors.red}${colors.bright}✗ Some tests failed${colors.reset}`);
@@ -211,6 +202,12 @@ async function runTests() {
         console.log();
         console.log(`  ${colors.green}Passed:${colors.reset}  ${results.passed}`);
         console.log(`  ${colors.red}Failed:${colors.reset}  ${results.failed}`);
+        if (hasImportErrors) {
+            console.log(`  ${colors.red}Import Errors:${colors.reset} ${results.importErrors.length}`);
+        }
+        if (has404Errors) {
+            console.log(`  ${colors.red}404 Errors:${colors.reset} ${resourceErrors.length}`);
+        }
         console.log(`  ${colors.yellow}Skipped:${colors.reset} ${results.skipped}`);
         console.log(`  Total:   ${totalTests}`);
         console.log(`  Time:    ${formatDuration(duration)}`);

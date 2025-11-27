@@ -221,6 +221,28 @@ export class HTMLReporter {
         this.container = container;
         this.startTime = 0;
         this.currentSuite = null;
+        this.resourceErrors = [];
+        this._setup404Detection();
+    }
+
+    _setup404Detection() {
+        // Intercept fetch to track 404 errors
+        if (!window._fetch404Intercepted) {
+            const originalFetch = window.fetch;
+            const resourceErrors = this.resourceErrors;
+
+            window.fetch = async function(...args) {
+                const response = await originalFetch.apply(this, args);
+                if (response.status === 404) {
+                    const error = { url: response.url, type: 'FETCH' };
+                    if (!resourceErrors.find(e => e.url === error.url)) {
+                        resourceErrors.push(error);
+                    }
+                }
+                return response;
+            };
+            window._fetch404Intercepted = true;
+        }
     }
 
     onStart(suites) {
@@ -424,11 +446,77 @@ export class HTMLReporter {
         const running = this.container.querySelector('.running');
         if (running) running.remove();
 
+        // Display resource errors (404s) if any
+        if (this.resourceErrors && this.resourceErrors.length > 0) {
+            const resourceErrorsSection = document.createElement('div');
+            resourceErrorsSection.className = 'suite';
+            resourceErrorsSection.style.borderColor = '#dc3545';
+            resourceErrorsSection.style.background = '#f8d7da';
+
+            let errorsHTML = '<h3 style="color: #721c24;">🚫 Resource Loading Errors (404)</h3><div class="tests">';
+
+            this.resourceErrors.forEach(err => {
+                errorsHTML += `
+                    <div class="test fail">
+                        <div class="test-name">Failed to load ${this.escapeHtml(err.type)}: ${this.escapeHtml(err.url)}</div>
+                    </div>
+                `;
+            });
+
+            errorsHTML += '</div>';
+            resourceErrorsSection.innerHTML = errorsHTML;
+            this.container.insertBefore(resourceErrorsSection, this.container.firstChild);
+        }
+
+        // Display import errors if any
+        if (this.importErrors && this.importErrors.length > 0) {
+            const importErrorsSection = document.createElement('div');
+            importErrorsSection.className = 'suite';
+            importErrorsSection.style.borderColor = '#dc3545';
+            importErrorsSection.style.background = '#f8d7da';
+
+            let errorsHTML = '<h3 style="color: #721c24;">❌ Test File Import Errors</h3><div class="tests">';
+
+            this.importErrors.forEach(err => {
+                errorsHTML += `
+                    <div class="test fail">
+                        <div class="test-name">Failed to load ${this.escapeHtml(err.module)}</div>
+                        <div class="error">${this.escapeHtml(err.error)}</div>
+                    </div>
+                `;
+            });
+
+            errorsHTML += '</div>';
+            importErrorsSection.innerHTML = errorsHTML;
+            this.container.insertBefore(importErrorsSection, this.container.firstChild);
+        }
+
         const summary = document.createElement('div');
-        summary.className = results.failed > 0 ? 'summary fail' : 'summary pass';
+        const hasImportErrors = this.importErrors && this.importErrors.length > 0;
+        const hasResourceErrors = this.resourceErrors && this.resourceErrors.length > 0;
+        summary.className = (results.failed > 0 || hasImportErrors || hasResourceErrors) ? 'summary fail' : 'summary pass';
 
         const total = results.passed + results.failed + results.skipped;
-        const emoji = results.failed > 0 ? '❌' : '✅';
+        const emoji = (results.failed > 0 || hasImportErrors || hasResourceErrors) ? '❌' : '✅';
+
+        let statsHTML = `
+            <div class="stat pass">✅ Passed: <strong>${results.passed}</strong></div>
+            <div class="stat fail">❌ Failed: <strong>${results.failed}</strong></div>
+        `;
+
+        if (hasResourceErrors) {
+            statsHTML += `<div class="stat fail">🚫 404 Errors: <strong>${this.resourceErrors.length}</strong></div>`;
+        }
+
+        if (hasImportErrors) {
+            statsHTML += `<div class="stat fail">🚫 Import Errors: <strong>${this.importErrors.length}</strong></div>`;
+        }
+
+        statsHTML += `
+            <div class="stat skip">⏭️  Skipped: <strong>${results.skipped}</strong></div>
+            <div class="stat total">📊 Total: <strong>${total}</strong></div>
+            <div class="stat time">⏱️  Duration: <strong>${duration}ms</strong></div>
+        `;
 
         summary.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -436,11 +524,7 @@ export class HTMLReporter {
                 <button class="copy-button copy-all-button">📋 Copy All Results</button>
             </div>
             <div class="stats">
-                <div class="stat pass">✅ Passed: <strong>${results.passed}</strong></div>
-                <div class="stat fail">❌ Failed: <strong>${results.failed}</strong></div>
-                <div class="stat skip">⏭️  Skipped: <strong>${results.skipped}</strong></div>
-                <div class="stat total">📊 Total: <strong>${total}</strong></div>
-                <div class="stat time">⏱️  Duration: <strong>${duration}ms</strong></div>
+                ${statsHTML}
             </div>
         `;
         this.container.insertBefore(summary, this.container.firstChild);

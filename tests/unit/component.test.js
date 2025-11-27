@@ -3,6 +3,7 @@
 // ============================================
 
 import { Component } from '../../js/components/core/Component.js';
+import { PLAYERS } from '../../js/config.js';
 
 const { assert } = window;
 const runner = window.testRunner;
@@ -439,8 +440,8 @@ runner.describe('Component - Style Methods', () => {
     runner.it('should set single style with css()', () => {
         const component = new TestComponent();
         component.mount(testContainer);
-        component.css('backgroundColor', 'blue');
-        assert.equal(component.el.style.backgroundColor, 'blue');
+        component.css('backgroundColor', PLAYERS.BLUE);
+        assert.equal(component.el.style.backgroundColor, PLAYERS.BLUE);
     });
 
     runner.it('should return this for chaining', () => {

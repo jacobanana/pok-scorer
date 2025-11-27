@@ -19,6 +19,7 @@ import {
     Notification,
     LoadingBar
 } from '../../js/components/index.js';
+import { PLAYERS } from '../../js/config.js';
 
 const { assert } = window;
 const runner = window.testRunner;
@@ -197,7 +198,7 @@ runner.describe('ScoreCircle Component - Integration', () => {
     });
 
     runner.it('should render with color and score', () => {
-        const circle = new ScoreCircle({ color: 'red', score: 15 });
+        const circle = new ScoreCircle({ color: PLAYERS.RED, score: 15 });
         circle.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.score-circle.red-circle'));
@@ -205,21 +206,21 @@ runner.describe('ScoreCircle Component - Integration', () => {
     });
 
     runner.it('should render blue variant', () => {
-        const circle = new ScoreCircle({ color: 'blue', score: 10 });
+        const circle = new ScoreCircle({ color: PLAYERS.BLUE, score: 10 });
         circle.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.score-circle.blue-circle'));
     });
 
     runner.it('should render ModalScoreCircle with correct class', () => {
-        const circle = new ModalScoreCircle({ color: 'red', score: 5 });
+        const circle = new ModalScoreCircle({ color: PLAYERS.RED, score: 5 });
         circle.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.modal-score-circle'));
     });
 
     runner.it('should update score', () => {
-        const circle = new ScoreCircle({ color: 'red', score: 0 });
+        const circle = new ScoreCircle({ color: PLAYERS.RED, score: 0 });
         circle.mount(testContainer);
 
         circle.setScore(25);
@@ -242,7 +243,7 @@ runner.describe('ScoreMarkers Component - Integration', () => {
     });
 
     runner.it('should render with 21 markers', () => {
-        const markers = new ScoreMarkers({ color: 'red' });
+        const markers = new ScoreMarkers({ color: PLAYERS.RED });
         markers.mount(testContainer);
 
         const markerEls = testContainer.querySelectorAll('.score-marker');
@@ -250,21 +251,21 @@ runner.describe('ScoreMarkers Component - Integration', () => {
     });
 
     runner.it('should render red variant', () => {
-        const markers = new ScoreMarkers({ color: 'red' });
+        const markers = new ScoreMarkers({ color: PLAYERS.RED });
         markers.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.red-visualizer'));
     });
 
     runner.it('should render blue variant', () => {
-        const markers = new ScoreMarkers({ color: 'blue' });
+        const markers = new ScoreMarkers({ color: PLAYERS.BLUE });
         markers.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.blue-visualizer'));
     });
 
     runner.it('should update score and mark scored markers', () => {
-        const markers = new ScoreMarkers({ color: 'red', score: 0 });
+        const markers = new ScoreMarkers({ color: PLAYERS.RED, score: 0 });
         markers.mount(testContainer);
 
         markers.setScore(5);
@@ -274,7 +275,7 @@ runner.describe('ScoreMarkers Component - Integration', () => {
     });
 
     runner.it('should clamp score between 0 and 21', () => {
-        const markers = new ScoreMarkers({ color: 'blue' });
+        const markers = new ScoreMarkers({ color: PLAYERS.BLUE });
         markers.mount(testContainer);
 
         markers.setScore(25); // Over max
@@ -287,7 +288,7 @@ runner.describe('ScoreMarkers Component - Integration', () => {
     });
 
     runner.it('should reset to zero', () => {
-        const markers = new ScoreMarkers({ color: 'red', score: 10 });
+        const markers = new ScoreMarkers({ color: PLAYERS.RED, score: 10 });
         markers.mount(testContainer);
 
         markers.reset();
@@ -361,7 +362,7 @@ runner.describe('Pok Component - Integration', () => {
     runner.it('should render with player color and points', () => {
         const pok = new Pok({
             id: 'pok-1',
-            playerId: 'red',
+            playerId: PLAYERS.RED,
             points: 3,
             x: 50,
             y: 50
@@ -370,19 +371,19 @@ runner.describe('Pok Component - Integration', () => {
 
         const pokEl = testContainer.querySelector('.pok');
         assert.ok(pokEl);
-        assert.ok(pokEl.classList.contains('red'));
+        assert.ok(pokEl.classList.contains(PLAYERS.RED));
         assert.equal(pokEl.textContent, '3');
     });
 
     runner.it('should render blue player variant', () => {
-        const pok = new Pok({ playerId: 'blue', points: 2, x: 30, y: 30 });
+        const pok = new Pok({ playerId: PLAYERS.BLUE, points: 2, x: 30, y: 30 });
         pok.mount(testContainer);
 
         assert.ok(testContainer.querySelector('.pok.blue'));
     });
 
     runner.it('should set position', () => {
-        const pok = new Pok({ playerId: 'red', points: 1, x: 25, y: 75 });
+        const pok = new Pok({ playerId: PLAYERS.RED, points: 1, x: 25, y: 75 });
         pok.mount(testContainer);
 
         assert.equal(pok.el.style.left, '25%');
@@ -390,7 +391,7 @@ runner.describe('Pok Component - Integration', () => {
     });
 
     runner.it('should update position', () => {
-        const pok = new Pok({ playerId: 'red', points: 1, x: 0, y: 0 });
+        const pok = new Pok({ playerId: PLAYERS.RED, points: 1, x: 0, y: 0 });
         pok.mount(testContainer);
 
         pok.setPosition(50, 60);
@@ -403,21 +404,21 @@ runner.describe('Pok Component - Integration', () => {
     });
 
     runner.it('should add low-score class for low scoring POKs', () => {
-        const pok = new Pok({ playerId: 'red', points: 1, isHigh: false, x: 0, y: 0 });
+        const pok = new Pok({ playerId: PLAYERS.RED, points: 1, isHigh: false, x: 0, y: 0 });
         pok.mount(testContainer);
 
         assert.ok(pok.el.classList.contains('low-score'));
     });
 
     runner.it('should add boundary-zone class', () => {
-        const pok = new Pok({ playerId: 'red', points: 2, boundaryZone: '4', x: 0, y: 0 });
+        const pok = new Pok({ playerId: PLAYERS.RED, points: 2, boundaryZone: '4', x: 0, y: 0 });
         pok.mount(testContainer);
 
         assert.ok(pok.el.classList.contains('boundary-zone'));
     });
 
     runner.it('should set and clear last-placed highlight', () => {
-        const pok = new Pok({ playerId: 'red', points: 3, x: 0, y: 0 });
+        const pok = new Pok({ playerId: PLAYERS.RED, points: 3, x: 0, y: 0 });
         pok.mount(testContainer);
 
         pok.setLastPlaced();
@@ -428,7 +429,7 @@ runner.describe('Pok Component - Integration', () => {
     });
 
     runner.it('should set dragging state', () => {
-        const pok = new Pok({ playerId: 'blue', points: 4, x: 0, y: 0 });
+        const pok = new Pok({ playerId: PLAYERS.BLUE, points: 4, x: 0, y: 0 });
         pok.mount(testContainer);
 
         pok.setDragging(true);
@@ -440,7 +441,7 @@ runner.describe('Pok Component - Integration', () => {
     });
 
     runner.it('should update from data object', () => {
-        const pok = new Pok({ playerId: 'red', points: 1, isHigh: true, x: 0, y: 0 });
+        const pok = new Pok({ playerId: PLAYERS.RED, points: 1, isHigh: true, x: 0, y: 0 });
         pok.mount(testContainer);
 
         pok.updateFromData({
@@ -459,10 +460,10 @@ runner.describe('Pok Component - Integration', () => {
     });
 
     runner.it('should return id and player info', () => {
-        const pok = new Pok({ id: 'test-pok', playerId: 'blue', points: 3, x: 0, y: 0 });
+        const pok = new Pok({ id: 'test-pok', playerId: PLAYERS.BLUE, points: 3, x: 0, y: 0 });
 
         assert.equal(pok.getId(), 'test-pok');
-        assert.equal(pok.getPlayerId(), 'blue');
+        assert.equal(pok.getPlayerId(), PLAYERS.BLUE);
         assert.equal(pok.getPoints(), 3);
     });
 });
@@ -507,8 +508,8 @@ runner.describe('HistoryTable Component - Integration', () => {
 
     runner.it('should update player names', () => {
         const table = new HistoryTable({
-            redPlayerName: 'Red',
-            bluePlayerName: 'Blue'
+            redPlayerName: PLAYERS.RED,
+            bluePlayerName: PLAYERS.BLUE
         });
         table.mount(testContainer);
 
@@ -521,20 +522,20 @@ runner.describe('HistoryTable Component - Integration', () => {
 
     runner.it('should render rounds data', () => {
         const table = new HistoryTable({
-            redPlayerName: 'Red',
-            bluePlayerName: 'Blue'
+            redPlayerName: PLAYERS.RED,
+            bluePlayerName: PLAYERS.BLUE
         });
         table.mount(testContainer);
 
         const rounds = [
-            { poks: [{ playerId: 'red', points: 10 }, { playerId: 'blue', points: 8 }], isComplete: true },
-            { poks: [{ playerId: 'red', points: 5 }, { playerId: 'blue', points: 5 }], isComplete: true },
-            { poks: [{ playerId: 'red', points: 3 }], isComplete: false }
+            { poks: [{ playerId: PLAYERS.RED, points: 10 }, { playerId: PLAYERS.BLUE, points: 8 }], isComplete: true },
+            { poks: [{ playerId: PLAYERS.RED, points: 5 }, { playerId: PLAYERS.BLUE, points: 5 }], isComplete: true },
+            { poks: [{ playerId: PLAYERS.RED, points: 3 }], isComplete: false }
         ];
 
         table.setRounds(rounds, (round) => {
-            const red = round.poks.filter(p => p.playerId === 'red').reduce((s, p) => s + p.points, 0);
-            const blue = round.poks.filter(p => p.playerId === 'blue').reduce((s, p) => s + p.points, 0);
+            const red = round.poks.filter(p => p.playerId === PLAYERS.RED).reduce((s, p) => s + p.points, 0);
+            const blue = round.poks.filter(p => p.playerId === PLAYERS.BLUE).reduce((s, p) => s + p.points, 0);
             return { red, blue };
         });
 
@@ -616,10 +617,10 @@ runner.describe('Notification Component - Integration', () => {
         const notification = new Notification();
         notification.mount(testContainer);
 
-        notification.showMessage('Red', 'red-player');
+        notification.showMessage(PLAYERS.RED, 'red-player');
         assert.ok(notification.hasClass('red-player'));
 
-        notification.showMessage('Blue', 'blue-player');
+        notification.showMessage(PLAYERS.BLUE, 'blue-player');
         assert.ok(notification.hasClass('blue-player'));
         assert.notOk(notification.hasClass('red-player'));
     });
@@ -695,8 +696,8 @@ runner.describe('Composite Components - Integration', () => {
         container.className = 'score-display';
         testContainer.appendChild(container);
 
-        const redScore = new ScoreCircle({ color: 'red', score: 12 });
-        const blueScore = new ScoreCircle({ color: 'blue', score: 8 });
+        const redScore = new ScoreCircle({ color: PLAYERS.RED, score: 12 });
+        const blueScore = new ScoreCircle({ color: PLAYERS.BLUE, score: 8 });
         const diff = new ScoreDifference({ difference: 4 });
 
         redScore.mount(container);
@@ -713,8 +714,8 @@ runner.describe('Composite Components - Integration', () => {
         const container = document.createElement('div');
         testContainer.appendChild(container);
 
-        const redScore = new ScoreCircle({ color: 'red', score: 0 });
-        const blueScore = new ScoreCircle({ color: 'blue', score: 0 });
+        const redScore = new ScoreCircle({ color: PLAYERS.RED, score: 0 });
+        const blueScore = new ScoreCircle({ color: PLAYERS.BLUE, score: 0 });
         const diff = new ScoreDifference({ difference: 0 });
 
         redScore.mount(container);
@@ -737,10 +738,10 @@ runner.describe('Composite Components - Integration', () => {
     runner.it('should manage POK collection for a round', () => {
         const pokMap = new Map();
         const pokData = [
-            { id: 'p1', playerId: 'red', points: 3, x: 10, y: 10, isHigh: true },
-            { id: 'p2', playerId: 'blue', points: 2, x: 20, y: 20, isHigh: true },
-            { id: 'p3', playerId: 'red', points: 4, x: 30, y: 30, isHigh: true },
-            { id: 'p4', playerId: 'blue', points: 1, x: 40, y: 40, isHigh: false }
+            { id: 'p1', playerId: PLAYERS.RED, points: 3, x: 10, y: 10, isHigh: true },
+            { id: 'p2', playerId: PLAYERS.BLUE, points: 2, x: 20, y: 20, isHigh: true },
+            { id: 'p3', playerId: PLAYERS.RED, points: 4, x: 30, y: 30, isHigh: true },
+            { id: 'p4', playerId: PLAYERS.BLUE, points: 1, x: 40, y: 40, isHigh: false }
         ];
 
         // Create POKs

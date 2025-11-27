@@ -1,10 +1,11 @@
 import { Component } from '../core/Component.js';
+import { PLAYERS } from '../../config.js';
 
 /**
  * ScoreMarkers component - Marble scoreboard visualization
  *
  * Props:
- * - color: string - 'red' or 'blue'
+ * - color: string - PLAYERS.RED or PLAYERS.BLUE
  * - score: number - Current score (0-21)
  * - totalMarkers: number - Total markers to display (default 21)
  * - id: string - Optional ID for the markers container
@@ -16,7 +17,7 @@ export class ScoreMarkers extends Component {
     }
 
     template() {
-        const { color = 'red', id } = this.props;
+        const { color = PLAYERS.RED, id } = this.props;
         const idAttr = id ? `id="${id}"` : '';
 
         return `
@@ -47,7 +48,7 @@ export class ScoreMarkers extends Component {
         const container = this.find('.score-markers');
         if (!container) return;
 
-        const { color = 'red' } = this.props;
+        const { color = PLAYERS.RED } = this.props;
 
         container.innerHTML = '';
         for (let i = 0; i < this.totalMarkers; i++) {
@@ -60,7 +61,7 @@ export class ScoreMarkers extends Component {
             // Red: start from right (100%) and go left
             // Blue: start from left (0%) and go right
             let position;
-            if (color === 'red') {
+            if (color === PLAYERS.RED) {
                 position = 100 - (i / (this.totalMarkers - 1)) * 100;
             } else {
                 position = (i / (this.totalMarkers - 1)) * 100;

@@ -2,6 +2,12 @@
 // CONFIGURATION
 // ============================================
 
+// Player IDs
+export const PLAYERS = {
+    RED: 'red',
+    BLUE: 'blue'
+};
+
 export const CONFIG = {
     WINNING_SCORE: 21,
     POKS_PER_PLAYER: 5,
@@ -27,19 +33,4 @@ export const CONFIG = {
 
     // Outer zone (off table) score
     OUTER_ZONE_SCORE: 0,
-
-    // Legacy zone points mapping (deprecated - use zone definitions above)
-    ZONE_POINTS: {
-        'outer': 0, '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5
-    },
-
-    // Legacy compatibility (deprecated - use ZONES and CIRCLE_ZONES)
-    ZONE_BOUNDARIES: {
-        zone3Right: 20,
-        zone2Right: 40,
-        zone1Right: 60,
-        zone0Right: 100,
-        circle4: { x: 50, y: 19, radius: 6 },
-        circle5: { x: 50, y: 81, radius: 6 }
-    }
 };

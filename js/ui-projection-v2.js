@@ -2,7 +2,7 @@
 // UI PROJECTION V2 - Component-based Architecture
 // ============================================
 
-import { CONFIG } from './config.js';
+import { CONFIG, PLAYERS } from './config.js';
 import {
     Component,
     FlipButton,
@@ -193,12 +193,12 @@ export class UIProjection {
 
         // Score Markers - bind to existing DOM elements (already in HTML)
         this.components.redScoreMarkers = new ScoreMarkers({
-            color: 'red',
+            color: PLAYERS.RED,
             id: 'redScoreMarkers'
         });
 
         this.components.blueScoreMarkers = new ScoreMarkers({
-            color: 'blue',
+            color: PLAYERS.BLUE,
             id: 'blueScoreMarkers'
         });
 
@@ -211,12 +211,12 @@ export class UIProjection {
 
         // Current Round Score Display
         this.components.currentRedScore = new ScoreCircle({
-            color: 'red',
+            color: PLAYERS.RED,
             id: 'currentRoundScoreRed'
         });
 
         this.components.currentBlueScore = new ScoreCircle({
-            color: 'blue',
+            color: PLAYERS.BLUE,
             id: 'currentRoundScoreBlue'
         });
 
@@ -321,19 +321,19 @@ export class UIProjection {
             // Create modal score components
             const modalScoreDisplay = this.components.roundModal.getScoreDisplay();
             if (modalScoreDisplay) {
-                this.components.modalRedScore = new ModalScoreCircle({ color: 'red', id: 'roundEndModalRedScore' });
+                this.components.modalRedScore = new ModalScoreCircle({ color: PLAYERS.RED, id: 'roundEndModalRedScore' });
                 this.components.modalRedScore.mount(modalScoreDisplay);
 
                 this.components.modalScoreDiff = new ModalScoreDifference({ id: 'roundEndModalScoreDiff' });
                 this.components.modalScoreDiff.mount(modalScoreDisplay);
 
-                this.components.modalBlueScore = new ModalScoreCircle({ color: 'blue', id: 'roundEndModalBlueScore' });
+                this.components.modalBlueScore = new ModalScoreCircle({ color: PLAYERS.BLUE, id: 'roundEndModalBlueScore' });
                 this.components.modalBlueScore.mount(modalScoreDisplay);
             }
 
             // Create modal score markers
-            this.components.modalRedMarkers = new ModalScoreMarkers({ color: 'red', id: 'modalRedScoreMarkers' });
-            this.components.modalBlueMarkers = new ModalScoreMarkers({ color: 'blue', id: 'modalBlueScoreMarkers' });
+            this.components.modalRedMarkers = new ModalScoreMarkers({ color: PLAYERS.RED, id: 'modalRedScoreMarkers' });
+            this.components.modalBlueMarkers = new ModalScoreMarkers({ color: PLAYERS.BLUE, id: 'modalBlueScoreMarkers' });
 
             const redContainer = this.components.roundModal.getRedMarkersContainer();
             const blueContainer = this.components.roundModal.getBlueMarkersContainer();
@@ -369,15 +369,19 @@ export class UIProjection {
         // Check if POK already exists
         if (this.pokComponents.has(pok.id)) return;
 
+        // Calculate zone info on-demand
+        const round = this.gameState.getCurrentRound();
+        const zoneInfo = this.gameState.getPokZoneInfo(pok, round.isFlipped);
+
         // Create POK component
         const pokComponent = new Pok({
             id: pok.id,
             playerId: pok.playerId,
-            points: pok.points,
+            points: zoneInfo.points,
             x: pok.x,
             y: pok.y,
-            isHigh: pok.isHigh,
-            boundaryZone: pok.boundaryZone,
+            isHigh: zoneInfo.isHigh,
+            boundaryZone: zoneInfo.boundaryZone,
             isLastPlaced: true
         });
 
@@ -397,13 +401,17 @@ export class UIProjection {
 
         if (!pok || !pokComponent) return;
 
+        // Calculate zone info on-demand
+        const round = this.gameState.getCurrentRound();
+        const zoneInfo = this.gameState.getPokZoneInfo(pok, round.isFlipped);
+
         // Update component with new data
         pokComponent.updateFromData({
             x: pok.x,
             y: pok.y,
-            points: pok.points,
-            isHigh: pok.isHigh,
-            boundaryZone: pok.boundaryZone
+            points: zoneInfo.points,
+            isHigh: zoneInfo.isHigh,
+            boundaryZone: zoneInfo.boundaryZone
         });
     }
 
@@ -435,16 +443,17 @@ export class UIProjection {
         this.containers.gameBoard?.classList.toggle('flipped', event.data.isFlipped);
         this._swapCircleZoneDOMPositions(event.data.isFlipped);
 
-        // Update all POK components
+        // Update all POK components with recalculated zone info
         const round = this.gameState.getCurrentRound();
         if (round) {
             round.poks.forEach(pok => {
                 const pokComponent = this.pokComponents.get(pok.id);
                 if (pokComponent) {
+                    const zoneInfo = this.gameState.getPokZoneInfo(pok, event.data.isFlipped);
                     pokComponent.updateFromData({
-                        points: pok.points,
-                        isHigh: pok.isHigh,
-                        boundaryZone: pok.boundaryZone
+                        points: zoneInfo.points,
+                        isHigh: zoneInfo.isHigh,
+                        boundaryZone: zoneInfo.boundaryZone
                     });
                 }
             });
@@ -467,11 +476,11 @@ export class UIProjection {
         document.body.className = '';
 
         // Clear and reset start selector
-        this.components.startSelector?.setPlayerName('red', '');
-        this.components.startSelector?.setPlayerName('blue', '');
+        this.components.startSelector?.setPlayerName(PLAYERS.RED, '');
+        this.components.startSelector?.setPlayerName(PLAYERS.BLUE, '');
 
         // Reset history headers
-        this.components.historyTable?.setPlayerNames('Red', 'Blue');
+        this.components.historyTable?.setPlayerNames(PLAYERS.RED, PLAYERS.BLUE);
 
         this.showStartSelector();
     }
@@ -520,23 +529,24 @@ export class UIProjection {
     }
 
     updateHistoryHeaders() {
-        const playerNames = this.gameState.getPlayerNames();
-        this.components.historyTable?.setPlayerNames(playerNames.red, playerNames.blue);
-        this.components.historyModalTable?.setPlayerNames(playerNames.red, playerNames.blue);
+        const state = this.gameState.getState();
+        this.components.historyTable?.setPlayerNames(state.playerNames.red, state.playerNames.blue);
+        this.components.historyModalTable?.setPlayerNames(state.playerNames.red, state.playerNames.blue);
     }
 
     updateRoundsHistory() {
         const state = this.gameState.getState();
         this.components.historyTable?.setRounds(
             state.rounds,
-            (round) => this._calculateRoundScores(round)
+            (round) => this._calculateRoundScores(round),
+            (round) => this.gameState.isRoundComplete(round)
         );
     }
 
     updateNextPlayerTurn() {
         const round = this.gameState.getCurrentRound();
 
-        if (round && round.isComplete) {
+        if (round && this.gameState.isRoundComplete(round)) {
             document.body.classList.remove('red-turn', 'blue-turn');
             return;
         }
@@ -549,12 +559,13 @@ export class UIProjection {
     }
 
     showTurnNotification(playerId) {
-        const playerName = this.gameState.getPlayerName(playerId);
+        const state = this.gameState.getState();
+        const playerName = state.playerNames[playerId] || playerId;
         const round = this.gameState.getCurrentRound();
 
         let message = `${playerName}'s turn`;
         if (round) {
-            const poksRemaining = playerId === 'red' ? round.redPoksRemaining : round.bluePoksRemaining;
+            const poksRemaining = this.gameState.getPoksRemaining(round, playerId);
             message = `${playerName}'s turn (${poksRemaining} POKs left)`;
         }
 
@@ -568,16 +579,19 @@ export class UIProjection {
 
     showRoundModal(event) {
         const state = this.gameState.getState();
-        const scores = { red: event.data.redScore, blue: event.data.blueScore };
+        const round = state.rounds[event.data.roundNumber];
+        if (!round) return;
+
+        // Calculate scores from the round's poks
+        const scores = this.gameState.getRoundScores(round);
         const diff = Math.abs(scores.red - scores.blue);
-        const playerNames = this.gameState.getPlayerNames();
 
         let winnerText, bgClass;
         if (scores.red > scores.blue) {
-            winnerText = `${playerNames.red.toUpperCase()} WINS!`;
+            winnerText = `${state.playerNames.red.toUpperCase()} WINS!`;
             bgClass = 'red-bg';
         } else if (scores.blue > scores.red) {
-            winnerText = `${playerNames.blue.toUpperCase()} WINS!`;
+            winnerText = `${state.playerNames.blue.toUpperCase()} WINS!`;
             bgClass = 'blue-bg';
         } else {
             winnerText = 'TIE!';
@@ -590,9 +604,11 @@ export class UIProjection {
 
         modal.find('#roundEndModalRoundNumber').textContent = `Round ${event.data.roundNumber + 1}`;
         modal.find('#roundEndModalWinner').textContent = winnerText;
-        modal.find('#roundEndModalRedScore').textContent = scores.red;
-        modal.find('#roundEndModalBlueScore').textContent = scores.blue;
-        modal.find('#roundEndModalScoreDiff').textContent = diff > 0 ? `+${diff}` : '0';
+
+        // Update modal score circle components
+        this.components.modalRedScore?.setScore(scores.red);
+        this.components.modalBlueScore?.setScore(scores.blue);
+        this.components.modalScoreDiff?.setDifference(diff > 0 ? `+${diff}` : '0');
 
         // Update modal score visualizers
         this.components.modalRedMarkers?.setScore(state.players.red.totalScore);
@@ -690,14 +706,15 @@ export class UIProjection {
 
         if (round && round.poks) {
             round.poks.forEach(pok => {
+                const zoneInfo = this.gameState.getPokZoneInfo(pok, round.isFlipped);
                 const pokComponent = new Pok({
                     id: pok.id,
                     playerId: pok.playerId,
-                    points: pok.points,
+                    points: zoneInfo.points,
                     x: pok.x,
                     y: pok.y,
-                    isHigh: pok.isHigh,
-                    boundaryZone: pok.boundaryZone
+                    isHigh: zoneInfo.isHigh,
+                    boundaryZone: zoneInfo.boundaryZone
                 });
 
                 if (this.containers.table) {
@@ -709,15 +726,7 @@ export class UIProjection {
     }
 
     _calculateRoundScores(round) {
-        const redScore = round.poks
-            .filter(p => p.playerId === 'red')
-            .reduce((sum, p) => sum + p.points, 0);
-
-        const blueScore = round.poks
-            .filter(p => p.playerId === 'blue')
-            .reduce((sum, p) => sum + p.points, 0);
-
-        return { red: redScore, blue: blueScore };
+        return this.gameState.getRoundScores(round);
     }
 
     _updateRoundScoreDisplay(round) {
@@ -769,11 +778,11 @@ export class UIProjection {
                     const redName = lastGameStarted.data.redName;
                     const blueName = lastGameStarted.data.blueName;
 
-                    if (redName && redName !== 'Red') {
-                        this.components.startSelector?.setPlayerName('red', redName);
+                    if (redName && redName !== PLAYERS.RED) {
+                        this.components.startSelector?.setPlayerName(PLAYERS.RED, redName);
                     }
-                    if (blueName && blueName !== 'Blue') {
-                        this.components.startSelector?.setPlayerName('blue', blueName);
+                    if (blueName && blueName !== PLAYERS.BLUE) {
+                        this.components.startSelector?.setPlayerName(PLAYERS.BLUE, blueName);
                     }
                 }
             }
@@ -835,7 +844,7 @@ export class UIProjection {
      */
     checkRoundComplete() {
         const round = this.gameState.getCurrentRound();
-        if (!round || !round.isComplete) {
+        if (!round || !this.gameState.isRoundComplete(round)) {
             this.clearAutoEndTimer();
             return;
         }
@@ -863,15 +872,10 @@ export class UIProjection {
         if (!round) return;
 
         // Calculate winner for styling
-        const redScore = round.poks
-            .filter(p => p.playerId === 'red')
-            .reduce((sum, p) => sum + p.points, 0);
-        const blueScore = round.poks
-            .filter(p => p.playerId === 'blue')
-            .reduce((sum, p) => sum + p.points, 0);
+        const scores = this.gameState.getRoundScores(round);
 
-        const winnerClass = redScore > blueScore ? 'red-winner' :
-                           blueScore > redScore ? 'blue-winner' : 'tie-game';
+        const winnerClass = scores.red > scores.blue ? 'red-winner' :
+                           scores.blue > scores.red ? 'blue-winner' : 'tie-game';
 
         // Start loading bar animation
         const loadingBar = this.components.loadingBar;
@@ -925,23 +929,15 @@ export class UIProjection {
         // Get rounds from game state
         const state = this.gameState.getState();
         const rounds = state.rounds;
-        const playerNames = this.gameState.getPlayerNames();
 
         // Populate table
         rounds.forEach((round, index) => {
-            const redScore = round.poks
-                .filter(p => p.playerId === 'red')
-                .reduce((sum, p) => sum + p.points, 0);
-            const blueScore = round.poks
-                .filter(p => p.playerId === 'blue')
-                .reduce((sum, p) => sum + p.points, 0);
-
-            const scores = { red: redScore, blue: blueScore };
+            const scores = this.gameState.getRoundScores(round);
             const diff = Math.abs(scores.red - scores.blue);
 
             // Determine winner
             let winner, winnerClass, rowClass;
-            if (round.isComplete) {
+            if (this.gameState.isRoundComplete(round)) {
                 if (scores.red > scores.blue) {
                     winner = playerNames.red;
                     winnerClass = 'red-winner';
@@ -1050,6 +1046,6 @@ export class UIProjection {
      * @returns {{red: string, blue: string}}
      */
     getPlayerNames() {
-        return this.components.startSelector?.getPlayerNames() || { red: 'Red', blue: 'Blue' };
+        return this.components.startSelector?.getPlayerNames() || { red: PLAYERS.RED, blue: PLAYERS.BLUE };
     }
 }

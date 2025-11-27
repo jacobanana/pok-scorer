@@ -12,6 +12,8 @@ import {
     TableFlippedEvent,
     GameResetEvent
 } from './events.js';
+import { PLAYERS } from './config.js';
+import { ScoringService } from './scoring-service.js';
 
 export class CommandHandler {
     constructor(eventStore, gameStateProjection) {
@@ -37,7 +39,7 @@ export class CommandHandler {
         return `pok-${maxId + 1}`;
     }
 
-    startGame(startingPlayerId, redName = 'Red', blueName = 'Blue') {
+    startGame(startingPlayerId, redName = PLAYERS.RED, blueName = PLAYERS.BLUE) {
         const state = this.gameState.getState();
         if (state.isStarted) {
             throw new Error('Game already started');
@@ -52,14 +54,12 @@ export class CommandHandler {
             throw new Error('No active round');
         }
 
-        if (round.isComplete) {
+        if (this.gameState.isRoundComplete(round)) {
             throw new Error('Round is complete');
         }
 
         // Check if player has POKs remaining
-        const poksRemaining = playerId === 'red'
-            ? round.redPoksRemaining
-            : round.bluePoksRemaining;
+        const poksRemaining = this.gameState.getPoksRemaining(round, playerId);
 
         if (poksRemaining === 0) {
             throw new Error('No POKs remaining for player');
@@ -101,7 +101,7 @@ export class CommandHandler {
         const round = this.gameState.getCurrentRound();
         if (!round) return;
 
-        if (!round.isComplete) {
+        if (!this.gameState.isRoundComplete(round)) {
             throw new Error('Round not complete');
         }
 
@@ -112,32 +112,26 @@ export class CommandHandler {
             return; // Round already ended, don't fire again
         }
 
-        const scores = this.gameState.getRoundScores();
-        this.eventStore.append(new RoundEndedEvent(
-            round.roundNumber,
-            scores.red,
-            scores.blue
-        ));
+        // Event only stores roundNumber - scores will be recalculated from poks
+        this.eventStore.append(new RoundEndedEvent(round.roundNumber));
     }
 
     startNextRound() {
         const state = this.gameState.getState();
         const prevRound = this.gameState.getCurrentRound();
 
-        if (!prevRound || !prevRound.isComplete) {
+        if (!prevRound || !this.gameState.isRoundComplete(prevRound)) {
             throw new Error('Cannot start next round');
         }
 
         // Determine starter: winner of previous round, or alternate if tie
-        const scores = this.gameState.getRoundScores();
+        const winner = ScoringService.getRoundWinner(prevRound);
         let starter;
-        if (scores.red > scores.blue) {
-            starter = 'red';
-        } else if (scores.blue > scores.red) {
-            starter = 'blue';
+        if (winner) {
+            starter = winner;
         } else {
             // Tie: alternate
-            starter = prevRound.startingPlayerId === 'red' ? 'blue' : 'red';
+            starter = prevRound.startingPlayerId === PLAYERS.RED ? PLAYERS.BLUE : PLAYERS.RED;
         }
 
         // Start the next round first (inherits current flip state)

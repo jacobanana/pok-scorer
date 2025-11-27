@@ -1,4 +1,5 @@
 import { Component } from '../core/Component.js';
+import { PLAYERS } from '../../config.js';
 
 /**
  * PlayerInput component - Player name input with start functionality
@@ -8,7 +9,7 @@ import { Component } from '../core/Component.js';
  * - 'change' - When input value changes, detail: { value, playerId }
  *
  * Props:
- * - playerId: string - 'red' or 'blue'
+ * - playerId: string - PLAYERS.RED or PLAYERS.BLUE
  * - placeholder: string - Input placeholder
  * - value: string - Initial value
  * - maxLength: number - Max input length (default 20)
@@ -18,7 +19,7 @@ import { Component } from '../core/Component.js';
 export class PlayerInput extends Component {
     template() {
         const {
-            playerId = 'red',
+            playerId = PLAYERS.RED,
             placeholder,
             value = '',
             maxLength = 20,

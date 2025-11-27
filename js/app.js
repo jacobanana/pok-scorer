@@ -49,19 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
         rounds: () => {
             const state = app.gameState.getState();
             const roundsInfo = state.rounds.map((round, index) => {
-                const scores = app.gameState.calculateRoundScores
-                    ? app.gameState.calculateRoundScores(round)
-                    : {
-                        red: round.poks.filter(p => p.playerId === 'red').reduce((sum, p) => sum + p.points, 0),
-                        blue: round.poks.filter(p => p.playerId === 'blue').reduce((sum, p) => sum + p.points, 0)
-                    };
+                const scores = app.gameState.getRoundScores(round);
 
-                const redPoksPlayed = round.poks.filter(p => p.playerId === 'red').length;
-                const bluePoksPlayed = round.poks.filter(p => p.playerId === 'blue').length;
+                const redPoksPlayed = round.poks.filter(p => p.playerId === PLAYERS.RED).length;
+                const bluePoksPlayed = round.poks.filter(p => p.playerId === PLAYERS.BLUE).length;
 
                 return {
                     roundNumber: round.roundNumber,
-                    isComplete: round.isComplete,
+                    isComplete: app.gameState.isRoundComplete(round),
                     isFlipped: round.isFlipped,
                     startingPlayer: round.startingPlayerId,
                     currentPlayer: round.currentPlayerId,
@@ -69,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     blueScore: scores.blue,
                     redPoksPlayed: redPoksPlayed,
                     bluePoksPlayed: bluePoksPlayed,
-                    redPoksLeft: round.redPoksRemaining,
-                    bluePoksLeft: round.bluePoksRemaining,
+                    redPoksLeft: app.gameState.getPoksRemaining(round, PLAYERS.RED),
+                    bluePoksLeft: app.gameState.getPoksRemaining(round, PLAYERS.BLUE),
                     totalPoks: round.poks.length
                 };
             });

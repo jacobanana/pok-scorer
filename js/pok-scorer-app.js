@@ -3,15 +3,16 @@
 // ============================================
 
 import { EventStore } from './event-store.js';
-import { GameStateProjection } from './game-state-projection.js';
+import { GameService } from './game-service.js';
 import { UIProjection } from './ui-projection-v2.js';
 import { CommandHandler } from './command-handler.js';
 import { ScoringService } from './scoring-service.js';
+import { CONFIG, PLAYERS } from './config.js';
 
 export class PokScorerApp {
     constructor() {
         this.eventStore = new EventStore();
-        this.gameState = new GameStateProjection(this.eventStore);
+        this.gameState = new GameService(this.eventStore);
         this.ui = new UIProjection(this.eventStore, this.gameState);
         this.commands = new CommandHandler(this.eventStore, this.gameState);
 
@@ -138,7 +139,10 @@ export class PokScorerApp {
                 this.ui.clearAutoEndTimer();
 
                 // Check if game is over
-                if (this.gameState.hasWinner()) {
+                const state = this.gameState.getState();
+                const hasWinner = state.players[PLAYERS.RED].totalScore >= CONFIG.WINNING_SCORE ||
+                                  state.players[PLAYERS.BLUE].totalScore >= CONFIG.WINNING_SCORE;
+                if (hasWinner) {
                     this.commands.resetGame();
                 } else {
                     this.commands.startNextRound();
@@ -158,7 +162,7 @@ export class PokScorerApp {
                 }
 
                 const round = this.gameState.getCurrentRound();
-                if (!round || round.isComplete) return;
+                if (!round || this.gameState.isRoundComplete(round)) return;
 
                 const pos = this.calculateTablePosition(event);
                 const nextPlayer = this.gameState.getNextPlayer();

@@ -2,7 +2,7 @@
 // EVENT STORE (Single Source of Truth)
 // ============================================
 
-import { CONFIG } from './config.js';
+import { CONFIG, PLAYERS } from './config.js';
 import { GameLoadedEvent, GameImportedEvent, GameExportedEvent, GameResetEvent } from './events.js';
 
 export class EventStore {
@@ -172,12 +172,12 @@ export class EventStore {
         // Find the most recent GAME_STARTED event to get player names
         const gameStartedEvents = this.events.filter(e => e.type === 'GAME_STARTED');
         if (gameStartedEvents.length === 0) {
-            return { red: 'Red', blue: 'Blue' };
+            return { red: PLAYERS.RED, blue: PLAYERS.BLUE };
         }
         const lastGameStarted = gameStartedEvents[gameStartedEvents.length - 1];
         return {
-            red: lastGameStarted.data.redName || 'Red',
-            blue: lastGameStarted.data.blueName || 'Blue'
+            red: lastGameStarted.data.redName || PLAYERS.RED,
+            blue: lastGameStarted.data.blueName || PLAYERS.BLUE
         };
     }
 
@@ -192,8 +192,8 @@ export class EventStore {
         const playerNames = this.getPlayerNamesFromEvents();
         let filename = 'pok-game';
 
-        const hasCustomRedName = playerNames.red !== 'Red';
-        const hasCustomBlueName = playerNames.blue !== 'Blue';
+        const hasCustomRedName = playerNames.red !== PLAYERS.RED;
+        const hasCustomBlueName = playerNames.blue !== PLAYERS.BLUE;
 
         if (hasCustomRedName || hasCustomBlueName) {
             // Sanitize names for filename (remove special chars, limit length)

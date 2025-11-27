@@ -1,11 +1,12 @@
 import { Component } from '../core/Component.js';
+import { PLAYERS } from '../../config.js';
 
 /**
  * Pok component - A draggable POK piece on the game board
  *
  * Props:
  * - id: string - POK ID
- * - playerId: string - Player ID ('red' or 'blue')
+ * - playerId: string - Player ID (PLAYERS.RED or PLAYERS.BLUE)
  * - points: number - Point value of this POK
  * - x: number - X position (percentage)
  * - y: number - Y position (percentage)
@@ -17,7 +18,7 @@ import { Component } from '../core/Component.js';
 export class Pok extends Component {
     template() {
         const {
-            playerId = 'red',
+            playerId = PLAYERS.RED,
             points = 0,
             isHigh = true,
             boundaryZone,

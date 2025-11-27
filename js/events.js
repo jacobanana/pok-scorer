@@ -2,6 +2,8 @@
 // EVENT DEFINITIONS (Minimal - Raw Facts Only)
 // ============================================
 
+import { PLAYERS } from './config.js';
+
 export class GameEvent {
     constructor(type, data) {
         this.type = type;
@@ -13,11 +15,11 @@ export class GameEvent {
 
 // Only raw facts: who started, player names (optional)
 export class GameStartedEvent extends GameEvent {
-    constructor(startingPlayerId, redName = 'Red', blueName = 'Blue') {
+    constructor(startingPlayerId, redName = PLAYERS.RED, blueName = PLAYERS.BLUE) {
         super('GAME_STARTED', {
             startingPlayerId,
-            redName: redName || 'Red',
-            blueName: blueName || 'Blue'
+            redName: redName || PLAYERS.RED,
+            blueName: blueName || PLAYERS.BLUE
         });
     }
 }
@@ -53,12 +55,11 @@ export class PokRemovedEvent extends GameEvent {
 }
 
 // Derived event (generated when conditions met)
+// Scores are recalculated from poks, not stored in event
 export class RoundEndedEvent extends GameEvent {
-    constructor(roundNumber, redScore, blueScore) {
+    constructor(roundNumber) {
         super('ROUND_ENDED', {
-            roundNumber,
-            redScore,
-            blueScore
+            roundNumber
         });
     }
 }

@@ -5,9 +5,9 @@
 // Ensures each test runs with fresh state
 
 import { EventStore } from '../../js/event-store.js';
-import { GameStateProjection } from '../../js/game-state-projection.js';
+import { GameService } from '../../js/game-service.js';
 import { CommandHandler } from '../../js/command-handler.js';
-import { CONFIG } from '../../js/config.js';
+import { CONFIG, PLAYERS } from '../../js/config.js';
 
 // Storage key used for all tests - isolated from production
 const TEST_STORAGE_KEY = 'pok-test-event-store';
@@ -28,18 +28,18 @@ export function createEventStore(storageKey = TEST_STORAGE_KEY) {
 }
 
 /**
- * Creates a fresh GameStateProjection connected to the provided EventStore
+ * Creates a fresh GameService connected to the provided EventStore
  * @param {EventStore} eventStore - The EventStore to project from
- * @returns {GameStateProjection} Fresh GameStateProjection instance
+ * @returns {GameService} Fresh GameService instance
  */
-export function createGameStateProjection(eventStore) {
-    return new GameStateProjection(eventStore);
+export function createGameService(eventStore) {
+    return new GameService(eventStore);
 }
 
 /**
- * Creates a fresh CommandHandler for the provided EventStore and GameStateProjection
+ * Creates a fresh CommandHandler for the provided EventStore and GameService
  * @param {EventStore} eventStore - The EventStore to send commands to
- * @param {GameStateProjection} gameState - The GameStateProjection for state queries
+ * @param {GameService} gameState - The GameService for state queries
  * @returns {CommandHandler} Fresh CommandHandler instance
  */
 export function createCommandHandler(eventStore, gameState) {
@@ -62,7 +62,7 @@ export function createTestContext(options = {}) {
     CONFIG.ENABLE_LOGGING = enableLogging;
 
     const eventStore = createEventStore(storageKey);
-    const gameState = createGameStateProjection(eventStore);
+    const gameState = createGameService(eventStore);
     const commands = createCommandHandler(eventStore, gameState);
 
     return {
@@ -75,14 +75,14 @@ export function createTestContext(options = {}) {
 
 /**
  * Creates a test context with a game already started
- * @param {string} startingPlayer - 'red' or 'blue'
+ * @param {string} startingPlayer - PLAYERS.RED or PLAYERS.BLUE
  * @param {Object} [options] - Configuration options (same as createTestContext)
- * @param {string} [options.redName] - Custom name for red player (default: 'Red')
- * @param {string} [options.blueName] - Custom name for blue player (default: 'Blue')
+ * @param {string} [options.redName] - Custom name for red player (default: PLAYERS.RED)
+ * @param {string} [options.blueName] - Custom name for blue player (default: PLAYERS.BLUE)
  * @returns {TestContext} Object containing eventStore, gameState, and commands
  */
-export function createStartedGameContext(startingPlayer = 'red', options = {}) {
-    const { redName = 'Red', blueName = 'Blue', ...contextOptions } = options;
+export function createStartedGameContext(startingPlayer = PLAYERS.RED, options = {}) {
+    const { redName = PLAYERS.RED, blueName = PLAYERS.BLUE, ...contextOptions } = options;
     const context = createTestContext(contextOptions);
     context.commands.startGame(startingPlayer, redName, blueName);
     return context;

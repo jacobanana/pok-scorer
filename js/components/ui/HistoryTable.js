@@ -1,4 +1,5 @@
 import { Component } from '../core/Component.js';
+import { PLAYERS } from '../../config.js';
 
 /**
  * HistoryTable component - Rounds history table
@@ -22,8 +23,8 @@ export class HistoryTable extends Component {
             bodyId,
             redHeaderId,
             blueHeaderId,
-            redPlayerName = 'Red',
-            bluePlayerName = 'Blue'
+            redPlayerName = PLAYERS.RED,
+            bluePlayerName = PLAYERS.BLUE
         } = this.props;
 
         const tableId = id ? `id="${id}"` : '';
@@ -78,9 +79,10 @@ export class HistoryTable extends Component {
      * Update rounds data and re-render table body
      * @param {Array} rounds - Array of round data objects
      * @param {Function} calculateScores - Function to calculate scores for a round
+     * @param {Function} isRoundComplete - Function to check if round is complete
      * @returns {HistoryTable} this for chaining
      */
-    setRounds(rounds, calculateScores) {
+    setRounds(rounds, calculateScores, isRoundComplete = null) {
         const tbody = this.getBody();
         if (!tbody) return this;
 
@@ -88,7 +90,7 @@ export class HistoryTable extends Component {
         this.props.rounds = rounds;
 
         rounds.forEach((round, index) => {
-            const row = this._createRow(round, index, calculateScores);
+            const row = this._createRow(round, index, calculateScores, isRoundComplete);
             tbody.appendChild(row);
         });
 
@@ -99,17 +101,18 @@ export class HistoryTable extends Component {
      * Create a table row for a round
      * @private
      */
-    _createRow(round, index, calculateScores) {
+    _createRow(round, index, calculateScores, isRoundComplete = null) {
         const scores = calculateScores ? calculateScores(round) : { red: 0, blue: 0 };
-        const winner = this._determineWinner(scores, round.isComplete);
-        const diff = round.isComplete ? Math.abs(scores.red - scores.blue) : '-';
+        const isComplete = isRoundComplete ? isRoundComplete(round) : (round.isComplete ?? false);
+        const winner = this._determineWinner(scores, isComplete);
+        const diff = isComplete ? Math.abs(scores.red - scores.blue) : '-';
 
         const row = document.createElement('tr');
-        row.className = this._getRowClass(round, winner);
+        row.className = this._getRowClass(isComplete, winner);
         row.dataset.roundIndex = index;
 
         // Determine winner cell class
-        const winnerClass = winner ? `winner-${winner}` : (round.isComplete ? '' : 'winner-current');
+        const winnerClass = winner ? `winner-${winner}` : (isComplete ? '' : 'winner-current');
 
         row.innerHTML = `
             <td class="round-number">${index + 1}</td>
@@ -132,8 +135,8 @@ export class HistoryTable extends Component {
      */
     _determineWinner(scores, isComplete) {
         if (!isComplete) return null;
-        if (scores.red > scores.blue) return 'red';
-        if (scores.blue > scores.red) return 'blue';
+        if (scores.red > scores.blue) return PLAYERS.RED;
+        if (scores.blue > scores.red) return PLAYERS.BLUE;
         return 'tie';
     }
 
@@ -141,14 +144,14 @@ export class HistoryTable extends Component {
      * Get CSS class for a row
      * @private
      */
-    _getRowClass(round, winner) {
+    _getRowClass(isComplete, winner) {
         const classes = [];
 
-        if (!round.isComplete) {
+        if (!isComplete) {
             classes.push('round-row-current');
-        } else if (winner === 'red') {
+        } else if (winner === PLAYERS.RED) {
             classes.push('red-round-row');
-        } else if (winner === 'blue') {
+        } else if (winner === PLAYERS.BLUE) {
             classes.push('blue-round-row');
         } else {
             classes.push('tie-round-row');
@@ -162,13 +165,14 @@ export class HistoryTable extends Component {
      * @param {Object} round - Round data
      * @param {number} index - Round index
      * @param {Function} calculateScores - Score calculation function
+     * @param {Function} isRoundComplete - Function to check if round is complete
      * @returns {HistoryTable} this for chaining
      */
-    addRound(round, index, calculateScores) {
+    addRound(round, index, calculateScores, isRoundComplete = null) {
         const tbody = this.getBody();
         if (!tbody) return this;
 
-        const row = this._createRow(round, index, calculateScores);
+        const row = this._createRow(round, index, calculateScores, isRoundComplete);
         tbody.appendChild(row);
 
         return this;
@@ -179,14 +183,15 @@ export class HistoryTable extends Component {
      * @param {number} index - Round index
      * @param {Object} round - Round data
      * @param {Function} calculateScores - Score calculation function
+     * @param {Function} isRoundComplete - Function to check if round is complete
      * @returns {HistoryTable} this for chaining
      */
-    updateRound(index, round, calculateScores) {
+    updateRound(index, round, calculateScores, isRoundComplete = null) {
         const tbody = this.getBody();
         if (!tbody) return this;
 
         const existingRow = tbody.querySelector(`tr[data-round-index="${index}"]`);
-        const newRow = this._createRow(round, index, calculateScores);
+        const newRow = this._createRow(round, index, calculateScores, isRoundComplete);
 
         if (existingRow) {
             existingRow.replaceWith(newRow);

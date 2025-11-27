@@ -346,6 +346,7 @@
 
     <script type="module">
         import { TestRunner, HTMLReporter, ConsoleReporter, assert } from './lib/mini-test.js';
+        import { loadTestModules, TEST_MODULES } from './lib/test-loader.js';
 
         // Create runner and reporters
         const runner = new TestRunner();
@@ -356,37 +357,22 @@
         window.testRunner = runner;
         window.assert = assert;
 
-        // Import test files - categorized
-        const testModules = {
-            unit: [
-                './unit/scoring-service.test.js',
-                './unit/game-state-projection.test.js',
-                './unit/event-store.test.js',
-                './unit/component.test.js'
-            ],
-            integration: [
-                './integration/game-flow.test.js',
-                './integration/ui-components.test.js'
-            ]
-        };
-
         let testsLoaded = false;
+        let importErrors = [];
 
         async function loadTests() {
             if (testsLoaded) return;
 
-            const allModules = [...testModules.unit, ...testModules.integration];
-            for (const module of allModules) {
-                try {
-                    await import(module);
-                } catch (error) {
-                    console.warn(`Could not load ${module}:`, error.message);
-                }
-            }
+            const result = await loadTestModules(TEST_MODULES.all(), null, false);
+            importErrors = result.importErrors;
             testsLoaded = true;
         }
 
         async function runTests(category = 'all') {
+            // Clear previous import errors but keep resource errors
+            // (resource errors may have been caught during page load)
+            importErrors = [];
+
             // Load tests once
             await loadTests();
 
@@ -397,21 +383,27 @@
             // Determine which modules to run
             let modulesToRun = [];
             if (category === 'unit') {
-                modulesToRun = testModules.unit;
+                modulesToRun = TEST_MODULES.unit;
             } else if (category === 'integration') {
-                modulesToRun = testModules.integration;
+                modulesToRun = TEST_MODULES.integration;
             } else {
-                modulesToRun = [...testModules.unit, ...testModules.integration];
+                modulesToRun = TEST_MODULES.all();
             }
 
             // Re-import selected modules with cache busting
-            for (const module of modulesToRun) {
-                try {
-                    const timestamp = Date.now();
-                    await import(`${module}?t=${timestamp}`);
-                } catch (error) {
-                    console.warn(`Could not load ${module}:`, error.message);
+            const result = await loadTestModules(modulesToRun, null, true);
+
+            // Merge new errors (avoid duplicates)
+            result.importErrors.forEach(newError => {
+                const existing = importErrors.find(e => e.module === newError.module);
+                if (!existing) {
+                    importErrors.push(newError);
                 }
+            });
+
+            // Add import errors to reporter
+            if (importErrors.length > 0) {
+                htmlReporter.importErrors = importErrors;
             }
 
             // Run with HTML reporter
@@ -419,6 +411,18 @@
 
             // Log to console too
             console.group(`🧪 Test Results - ${category}`);
+            if (htmlReporter.resourceErrors.length > 0) {
+                console.error(`Resource Errors (404): ${htmlReporter.resourceErrors.length}`);
+                htmlReporter.resourceErrors.forEach(err => {
+                    console.error(`  ✗ Failed to load ${err.type}: ${err.url}`);
+                });
+            }
+            if (importErrors.length > 0) {
+                console.error(`Import Errors: ${importErrors.length}`);
+                importErrors.forEach(err => {
+                    console.error(`  ✗ ${err.module}: ${err.error}`);
+                });
+            }
             console.log(`Passed: ${freshRunner.results.passed}`);
             console.log(`Failed: ${freshRunner.results.failed}`);
             console.log(`Skipped: ${freshRunner.results.skipped}`);
