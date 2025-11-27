@@ -58,6 +58,37 @@ export class Notification extends Component {
     }
 
     /**
+     * Show notification without auto-hide (for edit mode)
+     * @param {string} message
+     * @param {string} styleClass - CSS class for styling
+     * @returns {Notification} this for chaining
+     */
+    showPersistent(message, styleClass = '') {
+        this.clearTimeouts();
+        this.setText(message);
+        this.removeClass('red-player', 'blue-player', 'edit-mode', 'fade-in', 'fade-out');
+
+        if (styleClass) {
+            this.addClass(styleClass);
+        }
+
+        this.addClass('show');
+        this.addClass('fade-in');
+
+        return this;
+    }
+
+    /**
+     * Hide the notification immediately
+     * @returns {Notification} this for chaining
+     */
+    hide() {
+        this.clearTimeouts();
+        this.removeClass('show', 'fade-in', 'fade-out', 'red-player', 'blue-player', 'edit-mode');
+        return this;
+    }
+
+    /**
      * Fade out the notification
      * @returns {Notification} this for chaining
      */
@@ -67,7 +98,7 @@ export class Notification extends Component {
 
         // Hide after animation completes
         this._fadeTimeout = setTimeout(() => {
-            this.removeClass('show', 'fade-out', 'red-player', 'blue-player');
+            this.removeClass('show', 'fade-out', 'red-player', 'blue-player', 'edit-mode');
         }, 300);
 
         return this;

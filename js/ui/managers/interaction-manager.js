@@ -28,6 +28,26 @@ export class InteractionManager {
 
         // POK components map (shared reference from PokRenderer)
         this.pokComponents = null;
+
+        // Edit mode - allows only pok movement, no placing/removing
+        this.editMode = false;
+        this.onExitEditMode = null;
+    }
+
+    /**
+     * Set edit mode - only allow moving poks, not placing/removing
+     * @param {boolean} enabled - Whether edit mode is enabled
+     */
+    setEditMode(enabled) {
+        this.editMode = enabled;
+    }
+
+    /**
+     * Set callback for exiting edit mode
+     * @param {Function} callback - Callback to run when edit mode exits
+     */
+    setExitEditModeCallback(callback) {
+        this.onExitEditMode = callback;
     }
 
     /**
@@ -67,6 +87,12 @@ export class InteractionManager {
 
             // Don't place POK if we clicked on an existing POK element
             if (event.target.classList.contains('pok')) {
+                return;
+            }
+
+            // In edit mode, clicking anywhere (except on poks) exits edit mode
+            if (this.editMode) {
+                this.onExitEditMode?.();
                 return;
             }
 
@@ -145,8 +171,11 @@ export class InteractionManager {
             }
         });
 
-        // Click on POK (undo) - only allow clicking on last-placed POK
+        // Click on POK (undo) - only allow clicking on last-placed POK (not in edit mode)
         tableContainer.addEventListener('click', (e) => {
+            // Don't allow removing poks in edit mode
+            if (this.editMode) return;
+
             if (e.target.classList.contains('pok') && e.target.classList.contains('last-placed')) {
                 e.stopPropagation(); // Prevent placePok from firing
                 const pokId = this._findPokIdByElement(e.target);
@@ -212,8 +241,8 @@ export class InteractionManager {
                     const pos = this._calculateTablePosition(e.changedTouches[0]);
                     touchedElement.classList.remove('dragging');
                     this.handlers.onMovePok?.(touchedPokId, pos.x, pos.y);
-                } else {
-                    // Tap: undo if last placed
+                } else if (!this.editMode) {
+                    // Tap: undo if last placed (not in edit mode)
                     const target = e.target.closest('.pok');
                     if (target && target.classList.contains('last-placed')) {
                         e.stopPropagation(); // Prevent placePok from firing

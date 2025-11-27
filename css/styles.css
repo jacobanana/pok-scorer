@@ -1487,6 +1487,87 @@ button:active {
     background: #429444;
 }
 
+/* End Round Button */
+.end-round-button {
+    position: absolute;
+    top: 0;
+    left: 240px;
+    width: auto;
+    padding: 8px 16px;
+    font-size: 14px;
+    background: #e91e63;
+    color: white;
+    border-radius: 6px;
+    margin: 0;
+    z-index: 100;
+    display: none;
+}
+
+.end-round-button.show {
+    display: block;
+}
+
+.end-round-button:hover {
+    background: #c2185b;
+}
+
+/* Modal Buttons Container */
+.modal-buttons-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+/* Edit Board Button (on round end modal) */
+.edit-board-button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: auto;
+    margin: 0;
+}
+
+.edit-board-button:hover {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.7);
+    transform: scale(1.05);
+}
+
+/* Modal Save Button (on winner modal) */
+.modal-save-button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    background: #ff9800;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: auto;
+    margin: 0;
+    display: none;
+}
+
+.modal-save-button:hover {
+    background: #f57c00;
+    transform: scale(1.05);
+}
+
+/* Edit Mode Notification */
+.player-turn-notification.edit-mode {
+    background: #ff9800;
+    font-size: 24px;
+}
+
 /* ============================================ */
 /* GAME WINNER CELEBRATION                     */
 /* ============================================ */
@@ -1754,7 +1835,8 @@ button:active {
     .flip-table-button,
     .show-history-button,
     .save-game-button,
-    .new-game-button {
+    .new-game-button,
+    .end-round-button {
         padding: 6px 12px;
         font-size: 12px;
     }
@@ -1763,8 +1845,24 @@ button:active {
         left: 90px;
     }
 
+    .end-round-button {
+        left: 190px;
+    }
+
     .save-game-button {
         right: 80px;
+    }
+
+    /* Modal buttons - smaller on mobile */
+    .edit-board-button,
+    .modal-save-button {
+        padding: 12px 24px;
+        font-size: 16px;
+    }
+
+    .modal-buttons-container {
+        margin-top: 20px;
+        gap: 15px;
     }
 
     .current-round-score {
@@ -1935,7 +2033,8 @@ button:active {
     .flip-table-button,
     .show-history-button,
     .save-game-button,
-    .new-game-button {
+    .new-game-button,
+    .end-round-button {
         padding: 3px 8px;
         font-size: 10px;
     }
@@ -1944,8 +2043,24 @@ button:active {
         left: 65px;
     }
 
+    .end-round-button {
+        left: 130px;
+    }
+
     .save-game-button {
         right: 70px;
+    }
+
+    /* Modal buttons - compact for landscape */
+    .edit-board-button,
+    .modal-save-button {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .modal-buttons-container {
+        margin-top: 15px;
+        gap: 10px;
     }
 
     .current-round-score {
@@ -2097,13 +2212,30 @@ button:active {
     .flip-table-button,
     .show-history-button,
     .save-game-button,
-    .new-game-button {
+    .new-game-button,
+    .end-round-button {
         padding: 4px 8px;
         font-size: 10px;
     }
 
     .show-history-button {
         left: 70px;
+    }
+
+    .end-round-button {
+        left: 140px;
+    }
+
+    /* Modal buttons - compact for extra small */
+    .edit-board-button,
+    .modal-save-button {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+
+    .modal-buttons-container {
+        margin-top: 15px;
+        gap: 10px;
     }
 
     /* Stack start selector buttons on mobile */

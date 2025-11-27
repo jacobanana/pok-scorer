@@ -8,6 +8,9 @@ import {
     HistoryButton,
     NewGameButton,
     SaveButton,
+    EndRoundButton,
+    EditBoardButton,
+    ModalSaveButton,
     RoundEndModal,
     ScoreCircle,
     ModalScoreCircle,
@@ -64,8 +67,13 @@ export class UIProjection {
             onAdvanceGame: null,
             onPlacePok: null,
             onMovePok: null,
-            onRemovePok: null
+            onRemovePok: null,
+            onEditBoard: null,
+            onEndRound: null
         };
+
+        // Edit mode state
+        this.isEditMode = false;
 
         // Component references
         this.components = {
@@ -280,6 +288,11 @@ export class UIProjection {
             text: 'Show History'
         }).onClick(() => this._handleShowHistory());
 
+        this.components.buttons.endRound = new EndRoundButton({
+            id: 'endRoundButton',
+            text: 'End Round'
+        }).onClick(() => this._handleEndRound());
+
         this.components.buttons.newGame = new NewGameButton({
             id: 'newGameButton',
             text: 'New Game'
@@ -327,6 +340,28 @@ export class UIProjection {
 
             if (redContainer) this.components.modalRedMarkers.mount(redContainer);
             if (blueContainer) this.components.modalBlueMarkers.mount(blueContainer);
+
+            // Create modal buttons
+            const buttonsContainer = this.components.roundModal.getButtonsContainer();
+            if (buttonsContainer) {
+                this.components.modalEditBoard = new EditBoardButton({
+                    id: 'modalEditBoardButton',
+                    text: 'Edit Board'
+                }).onClick((e) => {
+                    e.stopPropagation(); // Prevent modal click from advancing game
+                    this._handleEditBoard();
+                });
+                this.components.modalEditBoard.mount(buttonsContainer);
+
+                this.components.modalSave = new ModalSaveButton({
+                    id: 'modalSaveButton',
+                    text: 'Save Game'
+                }).onClick((e) => {
+                    e.stopPropagation(); // Prevent modal click from advancing game
+                    this._handleExportMatch();
+                });
+                this.components.modalSave.mount(buttonsContainer);
+            }
 
             // Set up modal click handler to advance the game
             this._setupRoundModalAdvance();
@@ -383,6 +418,7 @@ export class UIProjection {
             onMovePok: (id, x, y) => this.handlers.onMovePok?.(id, x, y),
             onRemovePok: (id) => this.handlers.onRemovePok?.(id)
         });
+        this.managers.interaction.setExitEditModeCallback(() => this.exitEditMode());
         this.managers.interaction.init();
 
         // Score Display Manager
@@ -396,6 +432,7 @@ export class UIProjection {
             this.managers.pokRenderer,
             this.managers.scoreDisplay
         );
+        this.managers.roundModal.setUpdateModalButtonsCallback((hasWinner) => this.updateModalButtons(hasWinner));
 
         // Auto-End Manager
         this.managers.autoEnd = new AutoEndManager(this.eventStore, this.gameState, this.components);
@@ -425,6 +462,8 @@ export class UIProjection {
 
     onRoundEnded(event) {
         this.managers.autoEnd?.clearAutoEndTimer();
+        // Hide End Round button when round modal shows
+        this.components.buttons.endRound?.hide();
         this.managers.roundModal?.showRoundModal(event);
     }
 
@@ -491,8 +530,13 @@ export class UIProjection {
 
         if (round && this.gameState.isRoundComplete(round)) {
             document.body.classList.remove('red-turn', 'blue-turn');
+            // Show End Round button when round is complete
+            this.components.buttons.endRound?.show();
             return;
         }
+
+        // Hide End Round button when round is not complete
+        this.components.buttons.endRound?.hide();
 
         const nextPlayer = this.gameState.getNextPlayer();
         if (nextPlayer) {
@@ -628,6 +672,59 @@ export class UIProjection {
 
     _handleExportMatch() {
         this.handlers.onExportMatch?.();
+    }
+
+    _handleEndRound() {
+        // Hide the End Round button and trigger auto end
+        this.components.buttons.endRound?.hide();
+        this.managers.autoEnd?.clearAutoEndTimer();
+        this.handlers.onAutoEndRound?.();
+    }
+
+    _handleEditBoard() {
+        // Enter edit mode - close modal and allow pok movement
+        this.isEditMode = true;
+        this.managers.roundModal?.hideRoundModal();
+        this.managers.interaction?.setEditMode(true);
+
+        // Show edit mode notification
+        this.components.notification?.showPersistent('Edit Mode - Move POKs, then click board to continue', 'edit-mode');
+    }
+
+    /**
+     * Exit edit mode and return to round end modal
+     */
+    exitEditMode() {
+        if (!this.isEditMode) return;
+
+        this.isEditMode = false;
+        this.managers.interaction?.setEditMode(false);
+        this.components.notification?.hide();
+
+        // Re-show the round modal with updated scores
+        const round = this.gameState.getCurrentRound();
+        if (round) {
+            // Update scores after editing
+            this.managers.scoreDisplay?.updateScores();
+
+            // Show round end modal again
+            const state = this.gameState.getState();
+            this.managers.roundModal?.showRoundModalForRound(round, state);
+        }
+    }
+
+    /**
+     * Show/hide modal buttons based on whether game has a winner
+     */
+    updateModalButtons(hasWinner) {
+        // Edit Board button is always shown (for normal round ends)
+        // Save Game button is only shown when game is over
+        if (this.components.modalEditBoard) {
+            this.components.modalEditBoard.el.style.display = hasWinner ? 'none' : 'inline-block';
+        }
+        if (this.components.modalSave) {
+            this.components.modalSave.el.style.display = hasWinner ? 'inline-block' : 'none';
+        }
     }
 
     // ==========================================

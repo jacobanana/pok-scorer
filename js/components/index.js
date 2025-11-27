@@ -14,6 +14,9 @@ export {
     ContinueButton,
     SaveLatestButton,
     CloseButton,
+    EditBoardButton,
+    EndRoundButton,
+    ModalSaveButton,
     // Modals
     Modal,
     HistoryModal,

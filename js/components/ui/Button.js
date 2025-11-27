@@ -149,3 +149,34 @@ export class CloseButton extends Button {
         return 'close-history-button';
     }
 }
+
+/** Edit Board button (shown on round end modal) */
+export class EditBoardButton extends Button {
+    get buttonClass() {
+        return 'edit-board-button';
+    }
+}
+
+/** End Round button (shown when round is complete) */
+export class EndRoundButton extends Button {
+    get buttonClass() {
+        return 'end-round-button';
+    }
+
+    show() {
+        this.addClass('show');
+        return this;
+    }
+
+    hide() {
+        this.removeClass('show');
+        return this;
+    }
+}
+
+/** Modal Save Game button (shown on winner modal) */
+export class ModalSaveButton extends Button {
+    get buttonClass() {
+        return 'modal-save-button';
+    }
+}

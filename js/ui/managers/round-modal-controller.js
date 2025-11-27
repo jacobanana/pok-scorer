@@ -17,6 +17,15 @@ export class RoundModalController {
         this.pokRenderer = pokRenderer;
         this.scoreDisplayManager = scoreDisplayManager;
         this.confettiActive = false;
+        this.onUpdateModalButtons = null;
+    }
+
+    /**
+     * Set callback for updating modal buttons
+     * @param {Function} callback - Function that takes hasWinner boolean
+     */
+    setUpdateModalButtonsCallback(callback) {
+        this.onUpdateModalButtons = callback;
     }
 
     /**
@@ -106,6 +115,10 @@ export class RoundModalController {
         // Apply game winner styling (gold celebration theme)
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg');
         modal.addClass('game-winner');
+
+        // Update modal buttons - show Save button, hide Edit Board
+        this.onUpdateModalButtons?.(true);
+
         modal.open();
 
         // Start the confetti celebration!
@@ -174,7 +187,32 @@ export class RoundModalController {
         // Set background and show
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg', 'game-winner');
         modal.addClass(bgClass);
+
+        // Update modal buttons - show Edit Board, hide Save button
+        this.onUpdateModalButtons?.(false);
+
         modal.open();
+    }
+
+    /**
+     * Show round end modal for a specific round (used after editing)
+     * @param {Object} round - The round object
+     * @param {Object} state - The game state
+     */
+    showRoundModalForRound(round, state) {
+        if (!round) return;
+
+        // Calculate scores from the round's poks
+        const scores = this.gameState.getRoundScores(round);
+
+        // Check if this round ends the game
+        const gameWinner = this._checkForGameWinner(state);
+
+        if (gameWinner) {
+            this._showGameWinnerModal(gameWinner, state, round.roundNumber);
+        } else {
+            this._showRoundEndModal(scores, state, round.roundNumber);
+        }
     }
 
     /**

@@ -11,7 +11,10 @@ export {
     ImportButton,
     ContinueButton,
     SaveLatestButton,
-    CloseButton
+    CloseButton,
+    EditBoardButton,
+    EndRoundButton,
+    ModalSaveButton
 } from './Button.js';
 
 // Modals

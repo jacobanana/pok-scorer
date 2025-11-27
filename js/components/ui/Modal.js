@@ -144,9 +144,15 @@ export class RoundEndModal extends Modal {
                         </div>
                         <div class="modal-blue-markers"></div>
                     </div>
+                    <div class="modal-buttons-container" id="modalButtonsContainer"></div>
                 </div>
             </div>
         `.trim();
+    }
+
+    /** Get the buttons container element */
+    getButtonsContainer() {
+        return this.find('.modal-buttons-container');
     }
 
     /** Get the score display container for mounting score components */
