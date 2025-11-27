@@ -3,8 +3,8 @@
 // ============================================
 
 import { CONFIG, PLAYERS } from './config.js';
+import { ScoringService } from './scoring-service.js';
 import {
-    Component,
     FlipButton,
     HistoryButton,
     NewGameButton,
@@ -55,11 +55,19 @@ export class UIProjection {
             onFlipTable: null,
             onNewGame: null,
             onExportMatch: null,
-            onAutoEndRound: null  // Called when auto-end countdown completes
+            onAutoEndRound: null,  // Called when auto-end countdown completes
+            onPlacePok: null,      // Called when user clicks to place a POK
+            onMovePok: null,       // Called when user drags a POK
+            onRemovePok: null      // Called when user clicks to remove a POK
         };
 
         // Auto-end timer state
         this._autoEndTimer = null;
+
+        // Drag/drop state
+        this.isDragging = false;
+        this.draggedPokId = null;
+        this._dragImage = null;
 
         // Component references
         this.components = {
@@ -143,6 +151,9 @@ export class UIProjection {
 
         // Create components
         this._createComponents();
+
+        // Set up interaction handlers
+        this._setupInteractionHandlers();
     }
 
     /**
@@ -344,6 +355,309 @@ export class UIProjection {
     }
 
     // ==========================================
+    // Interaction Handlers
+    // ==========================================
+
+    /**
+     * Set up all user interaction handlers (drag/drop, click, touch, etc.)
+     * @private
+     */
+    _setupInteractionHandlers() {
+        this._setupClickToPlace();
+        this._setupDragAndDrop();
+        this._setupTouchEvents();
+        this._setupBoundaryHighlight();
+    }
+
+    /**
+     * Set up click-to-place POK functionality
+     * @private
+     */
+    _setupClickToPlace() {
+        const tableContainer = this.containers.gameBoard;
+        if (!tableContainer) return;
+
+        tableContainer.addEventListener('click', (event) => {
+            if (this.isDragging) return;
+
+            // Don't place POK if we clicked on an existing POK element
+            if (event.target.classList.contains('pok')) {
+                return;
+            }
+
+            const round = this.gameState.getCurrentRound();
+            if (!round || this.gameState.isRoundComplete(round)) return;
+
+            const pos = this._calculateTablePosition(event);
+            this.handlers.onPlacePok?.(pos.x, pos.y);
+        });
+    }
+
+    /**
+     * Set up drag and drop for POKs
+     * @private
+     */
+    _setupDragAndDrop() {
+        const tableContainer = this.containers.gameBoard;
+        if (!tableContainer) return;
+
+        // Drag start
+        tableContainer.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('pok')) {
+                this.isDragging = true;
+                this.draggedPokId = this._findPokIdByElement(e.target);
+                e.target.classList.add('dragging');
+
+                // Create a custom drag image (clone positioned off-screen)
+                this._dragImage = e.target.cloneNode(true);
+                this._dragImage.style.opacity = '0.8';
+                this._dragImage.style.position = 'absolute';
+                this._dragImage.style.top = '-1000px';
+                document.body.appendChild(this._dragImage);
+                e.dataTransfer.setDragImage(this._dragImage,
+                    e.target.offsetWidth / 2,
+                    e.target.offsetHeight / 2);
+
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+
+        // Drag end
+        tableContainer.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('pok')) {
+                e.target.classList.remove('dragging');
+                this.isDragging = false;
+                this.draggedPokId = null;
+
+                // Clean up drag image
+                this._dragImage?.remove();
+                this._dragImage = null;
+
+                // Clear boundary highlights
+                const zones = document.querySelectorAll('.zone, .circle-zone');
+                zones.forEach(zone => {
+                    zone.classList.remove('boundary-highlight');
+                });
+            }
+        });
+
+        // Drag over
+        tableContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move'; // Show move cursor, not copy
+
+            // Show boundary highlighting while dragging
+            if (this.isDragging) {
+                const pos = this._calculateTablePosition(e);
+                this._highlightBoundaryZone(pos.x, pos.y);
+            }
+        });
+
+        // Drop
+        tableContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+
+            if (this.draggedPokId) {
+                const pos = this._calculateTablePosition(e);
+                this.handlers.onMovePok?.(this.draggedPokId, pos.x, pos.y);
+            }
+        });
+
+        // Click on POK (undo) - only allow clicking on last-placed POK
+        tableContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('pok') && e.target.classList.contains('last-placed')) {
+                e.stopPropagation(); // Prevent placePok from firing
+                const pokId = this._findPokIdByElement(e.target);
+                this.handlers.onRemovePok?.(pokId);
+            }
+        });
+    }
+
+    /**
+     * Set up touch events for mobile
+     * @private
+     */
+    _setupTouchEvents() {
+        const tableContainer = this.containers.gameBoard;
+        if (!tableContainer) return;
+
+        let touchStartPos = null;
+        let touchedPokId = null;
+        let touchedElement = null;
+        let hasMoved = false;
+
+        tableContainer.addEventListener('touchstart', (e) => {
+            const target = e.target.closest('.pok');
+            if (target) {
+                e.preventDefault();
+                touchedPokId = this._findPokIdByElement(target);
+                touchedElement = target;
+                touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                hasMoved = false;
+                this.isDragging = false;
+            }
+        }, { passive: false });
+
+        tableContainer.addEventListener('touchmove', (e) => {
+            if (touchedPokId && touchedElement) {
+                e.preventDefault();
+
+                const dx = Math.abs(e.touches[0].clientX - touchStartPos.x);
+                const dy = Math.abs(e.touches[0].clientY - touchStartPos.y);
+
+                if (dx > 5 || dy > 5) {
+                    hasMoved = true;
+                    this.isDragging = true;
+                    touchedElement.classList.add('dragging');
+
+                    // Update POK visual position during drag
+                    const pos = this._calculateTablePosition(e.touches[0]);
+                    touchedElement.style.left = `${pos.x}%`;
+                    touchedElement.style.top = `${pos.y}%`;
+
+                    // Show boundary zone highlighting
+                    this._highlightBoundaryZone(pos.x, pos.y);
+                }
+            }
+        }, { passive: false });
+
+        tableContainer.addEventListener('touchend', (e) => {
+            if (touchedPokId) {
+                e.preventDefault();
+
+                if (hasMoved) {
+                    // Drag: move POK to final position
+                    const pos = this._calculateTablePosition(e.changedTouches[0]);
+                    touchedElement.classList.remove('dragging');
+                    this.handlers.onMovePok?.(touchedPokId, pos.x, pos.y);
+                } else {
+                    // Tap: undo if last placed
+                    const target = e.target.closest('.pok');
+                    if (target && target.classList.contains('last-placed')) {
+                        e.stopPropagation(); // Prevent placePok from firing
+                        this.handlers.onRemovePok?.(touchedPokId);
+                    }
+                }
+
+                // Clear boundary highlights
+                const zones = document.querySelectorAll('.zone, .circle-zone');
+                zones.forEach(zone => {
+                    zone.classList.remove('boundary-highlight');
+                });
+
+                touchedPokId = null;
+                touchedElement = null;
+                touchStartPos = null;
+                hasMoved = false;
+                this.isDragging = false;
+            }
+        }, { passive: false });
+    }
+
+    /**
+     * Set up boundary zone highlighting on mouse move
+     * @private
+     */
+    _setupBoundaryHighlight() {
+        const tableContainer = this.containers.gameBoard;
+        if (!tableContainer) return;
+
+        tableContainer.addEventListener('mousemove', (e) => {
+            // Don't show boundary highlight if dragging (handled in dragover)
+            if (this.isDragging) return;
+
+            // Don't show boundary highlight if clicking on existing POK
+            if (e.target.classList.contains('pok')) return;
+
+            const round = this.gameState.getCurrentRound();
+            if (!round || round.isComplete) return;
+
+            // Calculate position
+            const pos = this._calculateTablePosition(e);
+
+            // Highlight boundary zone
+            this._highlightBoundaryZone(pos.x, pos.y);
+        });
+
+        tableContainer.addEventListener('mouseleave', () => {
+            // Remove all boundary highlights when mouse leaves table
+            const zones = document.querySelectorAll('.zone, .circle-zone');
+            zones.forEach(zone => {
+                zone.classList.remove('boundary-highlight');
+            });
+        });
+    }
+
+    /**
+     * Highlight the boundary zone at a given position
+     * @private
+     */
+    _highlightBoundaryZone(x, y) {
+        const round = this.gameState.getCurrentRound();
+        if (!round) return;
+
+        const isFlipped = round.isFlipped;
+        const zoneInfo = ScoringService.getZoneInfo(x, y, isFlipped);
+
+        const zones = document.querySelectorAll('.zone, .circle-zone');
+        zones.forEach(zone => {
+            const zoneId = zone.getAttribute('data-zone');
+            zone.classList.remove('boundary-highlight');
+
+            if (zoneInfo.boundaryZone && zoneId === zoneInfo.boundaryZone) {
+                zone.classList.add('boundary-highlight');
+            }
+        });
+    }
+
+    /**
+     * Calculate table position from event
+     * @private
+     */
+    _calculateTablePosition(event) {
+        const tableElement = this.containers.table;
+        if (!tableElement) return { x: 0, y: 0 };
+
+        const rect = tableElement.getBoundingClientRect();
+
+        const clientX = event.clientX !== undefined ? event.clientX : event.changedTouches?.[0]?.clientX;
+        const clientY = event.clientY !== undefined ? event.clientY : event.changedTouches?.[0]?.clientY;
+
+        let x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        // Account for table flip
+        const state = this.gameState.getState();
+        if (state.isFlipped) {
+            x = rect.width - x;
+        }
+
+        return {
+            x: (x / rect.width) * 100,
+            y: (y / rect.height) * 100
+        };
+    }
+
+    /**
+     * Find POK ID by DOM element
+     * @private
+     */
+    _findPokIdByElement(element) {
+        // Find pokId by matching position (hacky but works)
+        const left = parseFloat(element.style.left);
+        const top = parseFloat(element.style.top);
+
+        const round = this.gameState.getCurrentRound();
+        if (!round) return null;
+
+        const pok = round.poks.find(p =>
+            Math.abs(p.x - left) < 0.1 && Math.abs(p.y - top) < 0.1
+        );
+
+        return pok?.id;
+    }
+
+    // ==========================================
     // Event Handlers
     // ==========================================
 
@@ -481,6 +795,12 @@ export class UIProjection {
 
         // Reset history headers
         this.components.historyTable?.setPlayerNames(PLAYERS.RED, PLAYERS.BLUE);
+
+        // Reset drag state
+        this.isDragging = false;
+        this.draggedPokId = null;
+        this._dragImage?.remove();
+        this._dragImage = null;
 
         this.showStartSelector();
     }
