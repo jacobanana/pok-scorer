@@ -108,7 +108,13 @@ Parameters to expose:
 
 ## Reference: Pok Visual Properties
 
-From main app:
+### Physical Pok Structure
+**Important:** Poks are NOT solid colored circles!
+- **Center:** Metallic/chrome marble (reflective, grayish)
+- **Outer ring:** Colored plastic ring (red or blue)
+- **Detection implication:** Must sample the OUTER RING, not the center, for color classification
+
+### Digital representation (main app):
 - Red poks: `#d32f2f` (HSV approximately: H=0, S=78%, V=83%)
 - Blue poks: `#1976d2` (HSV approximately: H=210, S=88%, V=82%)
 - Pok size: `clamp(20px, 2vw, 30px)` with 2-3px border
@@ -129,3 +135,15 @@ From main app:
 - **Detection trigger**: Manual "Detect" button click required (no live update on slider change)
 - **Visual feedback**: Semi-transparent colored fills for detected circles
 - **Input sources**: Support both file upload AND webcam capture
+
+### 2025-11-27 - Phase 1 Enhancements
+- **Pok structure discovery**: Poks have metal marble center with colored plastic ring
+  - Color sampling must target outer ring (annular region), not center
+- **Parameter UX improvements**:
+  - Add help text tooltips for unclear parameters
+  - Add color preview swatches showing current HSV range
+  - Add color picker to set target colors visually
+- **Algorithm comparison**: Support multiple detection algorithms
+  - HoughCircles (current)
+  - SimpleBlobDetector (alternative)
+- **Settings versioning**: Save snapshots of settings with timestamps, allow reverting to previous versions

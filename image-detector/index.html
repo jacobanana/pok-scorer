@@ -29,7 +29,7 @@
             max-width: 1400px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 1fr 380px;
             gap: 20px;
         }
 
@@ -180,6 +180,9 @@
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .param-group {
@@ -191,11 +194,18 @@
             justify-content: space-between;
             font-size: 13px;
             margin-bottom: 4px;
+            align-items: center;
         }
 
         .param-group label span {
             color: #4a90d9;
             font-family: monospace;
+        }
+
+        .param-label-text {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         input[type="range"] {
@@ -222,18 +232,88 @@
             gap: 10px;
         }
 
-        .color-preview {
+        .color-section-header {
             display: flex;
+            align-items: center;
             gap: 10px;
-            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        .color-preview-box {
+            display: flex;
+            gap: 4px;
             align-items: center;
         }
 
         .color-swatch {
-            width: 30px;
-            height: 20px;
-            border-radius: 3px;
-            border: 1px solid #555;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 2px solid #555;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+        }
+
+        .color-picker-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .color-picker-btn:hover {
+            background: #666;
+        }
+
+        input[type="color"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            background: #555;
+            border-radius: 50%;
+            font-size: 10px;
+            color: #aaa;
+            cursor: help;
+            flex-shrink: 0;
+        }
+
+        .help-tooltip {
+            position: relative;
+        }
+
+        .help-tooltip .tooltip-text {
+            visibility: hidden;
+            background: #333;
+            color: #ddd;
+            font-size: 11px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            text-align: left;
+            line-height: 1.4;
+            font-weight: normal;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .help-tooltip:hover .tooltip-text {
+            visibility: visible;
         }
 
         .btn-reset {
@@ -263,6 +343,98 @@
 
         .status.error {
             color: #e74c3c;
+        }
+
+        /* Algorithm selector */
+        .algorithm-selector {
+            margin-bottom: 15px;
+        }
+
+        .algorithm-selector select {
+            width: 100%;
+            padding: 8px 12px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #eee;
+            font-size: 13px;
+        }
+
+        /* Version history */
+        .version-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+        }
+
+        .version-section h3 {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .version-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .version-controls button {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .version-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #222;
+            border-radius: 4px;
+        }
+
+        .version-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .version-item:hover {
+            background: #333;
+        }
+
+        .version-item:last-child {
+            border-bottom: none;
+        }
+
+        .version-item .version-time {
+            color: #888;
+        }
+
+        .version-item .version-delete {
+            color: #e74c3c;
+            padding: 2px 6px;
+            font-size: 10px;
+            background: transparent;
+            border: 1px solid #e74c3c;
+            border-radius: 3px;
+        }
+
+        .version-item .version-delete:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .no-versions {
+            padding: 15px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
         }
 
         @media (max-width: 900px) {
@@ -331,105 +503,322 @@
         <div class="side-panel">
             <h2>Detection Parameters</h2>
 
-            <div class="param-section">
-                <h3>Circle Detection</h3>
+            <!-- Algorithm Selector -->
+            <div class="algorithm-selector">
+                <label style="font-size: 12px; margin-bottom: 5px; display: block; color: #aaa;">Detection Algorithm</label>
+                <select id="algorithm">
+                    <option value="hough">HoughCircles (edge-based)</option>
+                    <option value="blob">SimpleBlobDetector (area-based)</option>
+                </select>
+            </div>
+
+            <!-- HoughCircles Parameters -->
+            <div class="param-section" id="houghParams">
+                <h3>
+                    Circle Detection
+                    <span class="help-tooltip help-icon">?
+                        <span class="tooltip-text">HoughCircles finds circles using edge detection. Works well for clear, well-defined circular shapes.</span>
+                    </span>
+                </h3>
 
                 <div class="param-group">
-                    <label>dp <span id="dpValue">1</span></label>
+                    <label>
+                        <span class="param-label-text">
+                            dp
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">Inverse ratio of accumulator resolution. 1 = same as image. Higher = faster but less accurate.</span>
+                            </span>
+                        </span>
+                        <span id="dpValue">1</span>
+                    </label>
                     <input type="range" id="dp" min="1" max="3" step="0.1" value="1">
                 </div>
 
                 <div class="param-group">
-                    <label>minDist <span id="minDistValue">20</span></label>
+                    <label>
+                        <span class="param-label-text">
+                            minDist
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">Minimum distance between detected circle centers. Prevents detecting the same circle twice.</span>
+                            </span>
+                        </span>
+                        <span id="minDistValue">20</span>
+                    </label>
                     <input type="range" id="minDist" min="5" max="100" step="1" value="20">
                 </div>
 
                 <div class="param-group">
-                    <label>param1 (Canny) <span id="param1Value">100</span></label>
+                    <label>
+                        <span class="param-label-text">
+                            param1 (Canny)
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">Higher threshold for Canny edge detector. Lower = more edges detected, more noise.</span>
+                            </span>
+                        </span>
+                        <span id="param1Value">100</span>
+                    </label>
                     <input type="range" id="param1" min="10" max="300" step="5" value="100">
                 </div>
 
                 <div class="param-group">
-                    <label>param2 (Threshold) <span id="param2Value">30</span></label>
+                    <label>
+                        <span class="param-label-text">
+                            param2 (Threshold)
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">Accumulator threshold for circle detection. Lower = more circles detected, more false positives.</span>
+                            </span>
+                        </span>
+                        <span id="param2Value">30</span>
+                    </label>
                     <input type="range" id="param2" min="5" max="100" step="1" value="30">
                 </div>
 
                 <div class="param-row">
                     <div class="param-group">
-                        <label>minRadius <span id="minRadiusValue">10</span></label>
+                        <label>
+                            <span class="param-label-text">minRadius</span>
+                            <span id="minRadiusValue">10</span>
+                        </label>
                         <input type="range" id="minRadius" min="1" max="100" step="1" value="10">
                     </div>
                     <div class="param-group">
-                        <label>maxRadius <span id="maxRadiusValue">50</span></label>
+                        <label>
+                            <span class="param-label-text">maxRadius</span>
+                            <span id="maxRadiusValue">50</span>
+                        </label>
                         <input type="range" id="maxRadius" min="10" max="200" step="1" value="50">
                     </div>
                 </div>
             </div>
 
+            <!-- SimpleBlobDetector Parameters -->
+            <div class="param-section" id="blobParams" style="display: none;">
+                <h3>
+                    Blob Detection
+                    <span class="help-tooltip help-icon">?
+                        <span class="tooltip-text">SimpleBlobDetector finds blobs by area, circularity, and color. Good for objects that aren't perfect circles.</span>
+                    </span>
+                </h3>
+
+                <div class="param-group">
+                    <label>
+                        <span class="param-label-text">
+                            minArea
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">Minimum blob area in pixels. Filter out small noise.</span>
+                            </span>
+                        </span>
+                        <span id="blobMinAreaValue">100</span>
+                    </label>
+                    <input type="range" id="blobMinArea" min="10" max="5000" step="10" value="100">
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <span class="param-label-text">
+                            maxArea
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">Maximum blob area in pixels. Filter out large objects.</span>
+                            </span>
+                        </span>
+                        <span id="blobMaxAreaValue">5000</span>
+                    </label>
+                    <input type="range" id="blobMaxArea" min="100" max="50000" step="100" value="5000">
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <span class="param-label-text">
+                            minCircularity
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">How circular the blob must be (0-1). 1.0 = perfect circle. Lower values accept more oval shapes.</span>
+                            </span>
+                        </span>
+                        <span id="blobMinCircularityValue">0.7</span>
+                    </label>
+                    <input type="range" id="blobMinCircularity" min="0" max="1" step="0.05" value="0.7">
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <span class="param-label-text">
+                            minConvexity
+                            <span class="help-tooltip help-icon">?
+                                <span class="tooltip-text">How convex the blob must be (0-1). Lower values accept more irregular shapes.</span>
+                            </span>
+                        </span>
+                        <span id="blobMinConvexityValue">0.8</span>
+                    </label>
+                    <input type="range" id="blobMinConvexity" min="0" max="1" step="0.05" value="0.8">
+                </div>
+            </div>
+
+            <!-- Red Color Range -->
             <div class="param-section">
-                <h3>Red Color Range (HSV)</h3>
+                <div class="color-section-header">
+                    <h3 style="margin-bottom: 0;">Red Color Range (HSV)</h3>
+                    <div class="color-preview-box">
+                        <div class="color-swatch" id="redPreview1" style="background: #d32f2f;"></div>
+                        <div class="color-swatch" id="redPreview2" style="background: #d32f2f;"></div>
+                    </div>
+                    <div class="color-picker-wrapper">
+                        <button class="color-picker-btn" onclick="document.getElementById('redColorPicker').click()">Pick</button>
+                        <input type="color" id="redColorPicker" value="#d32f2f" onchange="applyColorPicker('red', this.value)">
+                    </div>
+                </div>
+                <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Red wraps around 0°/180° in HSV, so we use two hue ranges.</p>
 
                 <div class="param-row">
                     <div class="param-group">
-                        <label>H Low 1 <span id="redH1LowValue">0</span></label>
+                        <label>
+                            <span class="param-label-text">H Low 1</span>
+                            <span id="redH1LowValue">0</span>
+                        </label>
                         <input type="range" id="redH1Low" min="0" max="20" step="1" value="0">
                     </div>
                     <div class="param-group">
-                        <label>H High 1 <span id="redH1HighValue">10</span></label>
+                        <label>
+                            <span class="param-label-text">H High 1</span>
+                            <span id="redH1HighValue">10</span>
+                        </label>
                         <input type="range" id="redH1High" min="0" max="30" step="1" value="10">
                     </div>
                 </div>
 
                 <div class="param-row">
                     <div class="param-group">
-                        <label>H Low 2 <span id="redH2LowValue">160</span></label>
+                        <label>
+                            <span class="param-label-text">H Low 2</span>
+                            <span id="redH2LowValue">160</span>
+                        </label>
                         <input type="range" id="redH2Low" min="140" max="180" step="1" value="160">
                     </div>
                     <div class="param-group">
-                        <label>H High 2 <span id="redH2HighValue">180</span></label>
+                        <label>
+                            <span class="param-label-text">H High 2</span>
+                            <span id="redH2HighValue">180</span>
+                        </label>
                         <input type="range" id="redH2High" min="160" max="180" step="1" value="180">
                     </div>
                 </div>
 
                 <div class="param-row">
                     <div class="param-group">
-                        <label>S Min <span id="redSMinValue">100</span></label>
+                        <label>
+                            <span class="param-label-text">
+                                S Min
+                                <span class="help-tooltip help-icon">?
+                                    <span class="tooltip-text">Minimum saturation. Higher = requires more vivid colors, filters out grays.</span>
+                                </span>
+                            </span>
+                            <span id="redSMinValue">100</span>
+                        </label>
                         <input type="range" id="redSMin" min="0" max="255" step="5" value="100">
                     </div>
                     <div class="param-group">
-                        <label>V Min <span id="redVMinValue">100</span></label>
+                        <label>
+                            <span class="param-label-text">
+                                V Min
+                                <span class="help-tooltip help-icon">?
+                                    <span class="tooltip-text">Minimum value/brightness. Higher = requires brighter colors, filters out dark areas.</span>
+                                </span>
+                            </span>
+                            <span id="redVMinValue">100</span>
+                        </label>
                         <input type="range" id="redVMin" min="0" max="255" step="5" value="100">
                     </div>
                 </div>
             </div>
 
+            <!-- Blue Color Range -->
             <div class="param-section">
-                <h3>Blue Color Range (HSV)</h3>
+                <div class="color-section-header">
+                    <h3 style="margin-bottom: 0;">Blue Color Range (HSV)</h3>
+                    <div class="color-preview-box">
+                        <div class="color-swatch" id="bluePreview1" style="background: #1976d2;"></div>
+                        <div class="color-swatch" id="bluePreview2" style="background: #1976d2;"></div>
+                    </div>
+                    <div class="color-picker-wrapper">
+                        <button class="color-picker-btn" onclick="document.getElementById('blueColorPicker').click()">Pick</button>
+                        <input type="color" id="blueColorPicker" value="#1976d2" onchange="applyColorPicker('blue', this.value)">
+                    </div>
+                </div>
+                <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Two hue ranges for consistency. Blue typically only needs the first range.</p>
 
                 <div class="param-row">
                     <div class="param-group">
-                        <label>H Low <span id="blueHLowValue">100</span></label>
-                        <input type="range" id="blueHLow" min="80" max="130" step="1" value="100">
+                        <label>
+                            <span class="param-label-text">H Low 1</span>
+                            <span id="blueH1LowValue">100</span>
+                        </label>
+                        <input type="range" id="blueH1Low" min="80" max="130" step="1" value="100">
                     </div>
                     <div class="param-group">
-                        <label>H High <span id="blueHHighValue">130</span></label>
-                        <input type="range" id="blueHHigh" min="100" max="150" step="1" value="130">
+                        <label>
+                            <span class="param-label-text">H High 1</span>
+                            <span id="blueH1HighValue">130</span>
+                        </label>
+                        <input type="range" id="blueH1High" min="100" max="150" step="1" value="130">
                     </div>
                 </div>
 
                 <div class="param-row">
                     <div class="param-group">
-                        <label>S Min <span id="blueSMinValue">100</span></label>
+                        <label>
+                            <span class="param-label-text">H Low 2</span>
+                            <span id="blueH2LowValue">0</span>
+                        </label>
+                        <input type="range" id="blueH2Low" min="0" max="180" step="1" value="0">
+                    </div>
+                    <div class="param-group">
+                        <label>
+                            <span class="param-label-text">H High 2</span>
+                            <span id="blueH2HighValue">0</span>
+                        </label>
+                        <input type="range" id="blueH2High" min="0" max="180" step="1" value="0">
+                    </div>
+                </div>
+
+                <div class="param-row">
+                    <div class="param-group">
+                        <label>
+                            <span class="param-label-text">
+                                S Min
+                                <span class="help-tooltip help-icon">?
+                                    <span class="tooltip-text">Minimum saturation. Higher = requires more vivid colors, filters out grays.</span>
+                                </span>
+                            </span>
+                            <span id="blueSMinValue">100</span>
+                        </label>
                         <input type="range" id="blueSMin" min="0" max="255" step="5" value="100">
                     </div>
                     <div class="param-group">
-                        <label>V Min <span id="blueVMinValue">100</span></label>
+                        <label>
+                            <span class="param-label-text">
+                                V Min
+                                <span class="help-tooltip help-icon">?
+                                    <span class="tooltip-text">Minimum value/brightness. Higher = requires brighter colors, filters out dark areas.</span>
+                                </span>
+                            </span>
+                            <span id="blueVMinValue">100</span>
+                        </label>
                         <input type="range" id="blueVMin" min="0" max="255" step="5" value="100">
                     </div>
                 </div>
             </div>
 
             <button class="btn-reset" onclick="resetParameters()">Reset to Defaults</button>
+
+            <!-- Version History -->
+            <div class="version-section">
+                <h3>Settings Versions</h3>
+                <div class="version-controls">
+                    <button class="btn-secondary" onclick="saveVersion()">Save Current</button>
+                </div>
+                <div class="version-list" id="versionList">
+                    <div class="no-versions">No saved versions yet</div>
+                </div>
+            </div>
         </div>
     </div>
 
