@@ -1506,45 +1506,15 @@ button:active {
     }
 }
 
-/* Confetti container */
-.modal.game-winner::before {
-    content: '';
+/* Confetti canvas styling - confetti is rendered via JS */
+.confetti-canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
-    background-image:
-        radial-gradient(circle, #ff6b6b 3px, transparent 3px),
-        radial-gradient(circle, #4dabf7 3px, transparent 3px),
-        radial-gradient(circle, #69db7c 3px, transparent 3px),
-        radial-gradient(circle, #ffd43b 3px, transparent 3px),
-        radial-gradient(circle, #da77f2 3px, transparent 3px),
-        radial-gradient(circle, #ff922b 3px, transparent 3px);
-    background-size: 10% 10%;
-    background-position:
-        5% 15%, 15% 35%, 25% 55%, 35% 25%, 45% 75%, 55% 45%,
-        65% 15%, 75% 65%, 85% 35%, 95% 85%, 8% 90%, 92% 10%;
-    animation: confetti-fall 4s linear infinite;
-    opacity: 0.8;
-}
-
-@keyframes confetti-fall {
-    0% {
-        transform: translateY(-100%) rotate(0deg);
-        opacity: 0;
-    }
-    10% {
-        opacity: 0.8;
-    }
-    90% {
-        opacity: 0.8;
-    }
-    100% {
-        transform: translateY(100vh) rotate(720deg);
-        opacity: 0;
-    }
+    z-index: 5;
 }
 
 /* Trophy icon styling */
@@ -1621,86 +1591,10 @@ button:active {
     border: 4px solid rgba(44, 24, 16, 0.5);
 }
 
-/* Celebration sparkles overlay */
-.modal.game-winner::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    background-image:
-        radial-gradient(circle, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
-        radial-gradient(circle, rgba(255, 255, 255, 0.6) 2px, transparent 2px);
-    background-size: 50px 50px, 80px 80px;
-    background-position: 0 0, 25px 25px;
-    animation: sparkle-twinkle 2s ease-in-out infinite alternate;
-}
-
-@keyframes sparkle-twinkle {
-    0% {
-        opacity: 0.3;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0.7;
-        transform: scale(1.02);
-    }
-}
-
-/* Winner modal content needs higher z-index to be above effects */
+/* Winner modal content needs higher z-index to be above confetti */
 .modal.game-winner .modal-content {
     position: relative;
     z-index: 10;
-}
-
-/* Star burst animation for extra flair */
-.star-burst {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    overflow: hidden;
-}
-
-.star-burst::before,
-.star-burst::after {
-    content: '★';
-    position: absolute;
-    font-size: 24px;
-    color: #fff;
-    text-shadow: 0 0 10px #ffd700;
-    animation: star-float 3s ease-in-out infinite;
-}
-
-.star-burst::before {
-    left: 10%;
-    animation-delay: 0s;
-}
-
-.star-burst::after {
-    right: 10%;
-    animation-delay: 1.5s;
-}
-
-@keyframes star-float {
-    0%, 100% {
-        transform: translateY(100vh) rotate(0deg);
-        opacity: 0;
-    }
-    10% {
-        opacity: 1;
-    }
-    90% {
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(-100px) rotate(360deg);
-        opacity: 0;
-    }
 }
 
 /* Final score banner */

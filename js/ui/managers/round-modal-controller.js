@@ -4,6 +4,7 @@
 // ============================================
 
 import { PLAYERS, CONFIG } from '../../config.js';
+import { startConfetti, destroyConfetti } from '../../effects/index.js';
 
 /**
  * Controls modal displays: round end, round preview, history
@@ -15,6 +16,7 @@ export class RoundModalController {
         this.containers = containers;
         this.pokRenderer = pokRenderer;
         this.scoreDisplayManager = scoreDisplayManager;
+        this.confettiActive = false;
     }
 
     /**
@@ -105,6 +107,31 @@ export class RoundModalController {
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg');
         modal.addClass('game-winner');
         modal.open();
+
+        // Start the confetti celebration!
+        this._startConfetti(modal.el);
+    }
+
+    /**
+     * Start the confetti effect
+     * @private
+     */
+    _startConfetti(container) {
+        if (!container || this.confettiActive) return;
+
+        this.confettiActive = true;
+        startConfetti(container, { burstCount: 200 });
+    }
+
+    /**
+     * Stop and clean up confetti
+     * @private
+     */
+    _stopConfetti() {
+        if (!this.confettiActive) return;
+
+        this.confettiActive = false;
+        destroyConfetti();
     }
 
     /**
@@ -154,6 +181,9 @@ export class RoundModalController {
      * Hide the round end modal
      */
     hideRoundModal() {
+        // Stop confetti if active
+        this._stopConfetti();
+
         const modal = this.components.roundModal;
         if (modal) {
             // Clean up game winner styling when hiding
