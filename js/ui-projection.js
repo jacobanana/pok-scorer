@@ -51,7 +51,7 @@ export class UIProjection {
             onGameStart: null,
             onContinueGame: null,
             onSaveLatest: null,
-            onImport: null,
+            onImportFile: null,    // Called with File object when user selects a file
             onFlipTable: null,
             onNewGame: null,
             onExportMatch: null,
@@ -1154,7 +1154,16 @@ export class UIProjection {
     }
 
     _handleImport() {
-        this.handlers.onImport?.();
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                this.handlers.onImportFile?.(file);
+            }
+        };
+        input.click();
     }
 
     _handleFlipTable() {
