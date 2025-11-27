@@ -10,12 +10,15 @@ A proof-of-concept tool using OpenCV.js to detect pok game pieces from uploaded 
 
 ### Features
 - [ ] Image upload interface
+- [ ] Webcam capture support
 - [ ] OpenCV.js integration
 - [ ] Circle detection using Hough Transform
 - [ ] Color classification (red vs blue)
-- [ ] Display detected poks overlaid on image
+- [ ] Display detected poks overlaid on image (semi-transparent fills)
 - [ ] Show count per player
-- [ ] Tweakable parameters UI
+- [ ] Tweakable parameters UI with sliders
+- [ ] Save/load parameters to localStorage
+- [ ] Manual "Detect" button (no auto-run on parameter change)
 
 ### Technical Approach
 
@@ -115,8 +118,14 @@ From main app:
 
 ## Notes & Decisions Log
 
-### 2024-XX-XX - Initial Planning
+### 2025-11-27 - Initial Planning
 - Starting with Phase 1 only - minimal proof of concept
 - All detection parameters exposed in UI for tuning
 - Standalone page, no integration with main app yet
 - Focus on detection accuracy before position mapping
+
+### 2025-11-27 - UI/UX Decisions
+- **Parameter persistence**: Save to localStorage so tuning isn't lost on refresh
+- **Detection trigger**: Manual "Detect" button click required (no live update on slider change)
+- **Visual feedback**: Semi-transparent colored fills for detected circles
+- **Input sources**: Support both file upload AND webcam capture
