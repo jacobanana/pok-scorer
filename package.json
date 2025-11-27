@@ -5,9 +5,17 @@
   "type": "module",
   "scripts": {
     "test": "node tests/run-tests.js",
-    "test:install": "npx playwright install chromium --with-deps"
+    "test:install": "npx playwright install chromium --with-deps",
+    "build": "esbuild js/app.js --bundle --minify --sourcemap --outfile=dist/app.min.js",
+    "build:dev": "esbuild js/app.js --bundle --sourcemap --outfile=dist/app.min.js",
+    "watch": "esbuild js/app.js --bundle --sourcemap --outfile=dist/app.min.js --watch",
+    "serve": "python serve.py 3000",
+    "dev": "npm-run-all build:dev --parallel watch serve"
   },
   "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "esbuild": "^0.27.0",
+    "npm-run-all": "^4.1.5",
     "playwright": "^1.40.0"
   },
   "engines": {
