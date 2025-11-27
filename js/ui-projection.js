@@ -56,6 +56,7 @@ export class UIProjection {
             onNewGame: null,
             onExportMatch: null,
             onAutoEndRound: null,  // Called when auto-end countdown completes
+            onAdvanceGame: null,   // Called when modal is clicked to advance the game
             onPlacePok: null,      // Called when user clicks to place a POK
             onMovePok: null,       // Called when user drags a POK
             onRemovePok: null      // Called when user clicks to remove a POK
@@ -285,6 +286,20 @@ export class UIProjection {
     }
 
     /**
+     * Set up round end modal click handler to advance the game
+     * @private
+     */
+    _setupRoundModalAdvance() {
+        const roundEndModal = document.getElementById('roundEndModal');
+        if (roundEndModal) {
+            roundEndModal.addEventListener('click', () => {
+                this.clearAutoEndTimer();
+                this.handlers.onAdvanceGame?.();
+            });
+        }
+    }
+
+    /**
      * Create control buttons
      * @private
      */
@@ -351,6 +366,9 @@ export class UIProjection {
 
             if (redContainer) this.components.modalRedMarkers.mount(redContainer);
             if (blueContainer) this.components.modalBlueMarkers.mount(blueContainer);
+
+            // Set up modal click handler to advance the game
+            this._setupRoundModalAdvance();
         }
     }
 

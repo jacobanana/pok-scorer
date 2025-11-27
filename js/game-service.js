@@ -298,6 +298,13 @@ export class GameService {
         return redRemaining === 0 && blueRemaining === 0;
     }
 
+    // Helper: Check if there's a winner (game over)
+    hasWinner() {
+        const state = this.getState();
+        return state.players[PLAYERS.RED].totalScore >= CONFIG.WINNING_SCORE ||
+               state.players[PLAYERS.BLUE].totalScore >= CONFIG.WINNING_SCORE;
+    }
+
     getRoundScores(round = null) {
         const targetRound = round || this.getCurrentRound();
         if (!targetRound) return { red: 0, blue: 0 };

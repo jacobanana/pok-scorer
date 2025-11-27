@@ -18,7 +18,6 @@ export class PokScorerApp {
 
     init() {
         this.ui.init();
-        this.setupDOMEventListeners();
 
         // Set up all UI handlers
         this.ui.setHandlers({
@@ -66,6 +65,13 @@ export class PokScorerApp {
                 this.eventStore.exportToFile();
             },
             onAutoEndRound: () => this.commands.endRound(),
+            onAdvanceGame: () => {
+                if (this.gameState.hasWinner()) {
+                    this.commands.resetGame();
+                } else {
+                    this.commands.startNextRound();
+                }
+            },
             onPlacePok: (x, y) => {
                 const nextPlayer = this.gameState.getNextPlayer();
                 try {
@@ -135,29 +141,6 @@ export class PokScorerApp {
         } else {
             // No saved game - show normal start selector
             this.ui.showStartSelector();
-        }
-    }
-
-    setupDOMEventListeners() {
-        // Note: Most event handlers are now set via ui.setHandlers()
-        // and handled through the UIProjection.
-
-        // Round End Modal - clicking advances the game
-        const roundEndModal = document.getElementById('roundEndModal');
-        if (roundEndModal) {
-            roundEndModal.addEventListener('click', () => {
-                this.ui.clearAutoEndTimer();
-
-                // Check if game is over
-                const state = this.gameState.getState();
-                const hasWinner = state.players[PLAYERS.RED].totalScore >= CONFIG.WINNING_SCORE ||
-                                  state.players[PLAYERS.BLUE].totalScore >= CONFIG.WINNING_SCORE;
-                if (hasWinner) {
-                    this.commands.resetGame();
-                } else {
-                    this.commands.startNextRound();
-                }
-            });
         }
     }
 }
