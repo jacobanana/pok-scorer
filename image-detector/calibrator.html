@@ -681,7 +681,9 @@
         function applyToDetector() {
             if (!lastResults?.bestParams) return;
             localStorage.setItem('pokDetectorParams', JSON.stringify(lastResults.bestParams));
-            alert('Parameters saved! Open detector to use them.');
+            // Mark source as calibrated so detector shows the right indicator
+            localStorage.setItem('pokDetectorParamsSource', 'calibrated');
+            alert('Calibrated parameters saved! Open detector to use them.');
         }
 
         // Download parameters as JSON

@@ -437,6 +437,64 @@
             font-size: 12px;
         }
 
+        /* Parameter source indicator */
+        .param-source {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .param-source .source-label {
+            color: #888;
+        }
+
+        .param-source .source-value {
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: #444;
+        }
+
+        .param-source .source-value.calibrated {
+            background: #2ecc71;
+            color: #111;
+        }
+
+        .param-source .source-value.imported {
+            background: #4a90d9;
+            color: #fff;
+        }
+
+        .param-source .source-value.custom {
+            background: #f39c12;
+            color: #111;
+        }
+
+        /* Import/Export controls */
+        .import-export-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .import-export-controls button {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+
+        .import-export-controls .btn-reset {
+            flex-basis: 100%;
+            margin-top: 5px;
+        }
+
         @media (max-width: 900px) {
             .container {
                 grid-template-columns: 1fr;
@@ -807,7 +865,23 @@
                 </div>
             </div>
 
-            <button class="btn-reset" onclick="resetParameters()">Reset to Defaults</button>
+            <!-- Parameter Source Indicator -->
+            <div class="param-source" id="paramSource">
+                <span class="source-label">Source:</span>
+                <span class="source-value" id="paramSourceValue">Default</span>
+            </div>
+
+            <!-- Import/Export Controls -->
+            <div class="import-export-controls">
+                <input type="file" id="importParamsFile" accept=".json">
+                <button class="btn-secondary" onclick="document.getElementById('importParamsFile').click()">
+                    Import JSON
+                </button>
+                <button class="btn-secondary" onclick="exportParamsToJson()">
+                    Export JSON
+                </button>
+                <button class="btn-reset" onclick="resetParameters()">Reset to Defaults</button>
+            </div>
 
             <!-- Version History -->
             <div class="version-section">

@@ -75,6 +75,15 @@ const defaultParams = {
 
 const STORAGE_KEY = 'pokDetectorParams';
 const VERSIONS_KEY = 'pokDetectorVersions';
+const SOURCE_KEY = 'pokDetectorParamsSource';
+
+// Parameter source types
+const PARAM_SOURCE = {
+    DEFAULT: 'default',
+    CALIBRATED: 'calibrated',
+    IMPORTED: 'imported',
+    CUSTOM: 'custom'
+};
 
 /**
  * Called when OpenCV.js is loaded
@@ -121,10 +130,20 @@ function getParams() {
 /**
  * Save parameters to localStorage
  */
-function saveParams() {
+function saveParams(markAsCustom = true) {
     const params = getParams();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(params));
     updateColorPreviews();
+
+    // Mark as custom if user manually changed params (unless explicitly disabled)
+    if (markAsCustom) {
+        const currentSource = getParamSource();
+        // Only mark as custom if not currently being set programmatically
+        if (currentSource !== PARAM_SOURCE.CALIBRATED &&
+            currentSource !== PARAM_SOURCE.IMPORTED) {
+            // Don't change source here - let specific actions set it
+        }
+    }
 }
 
 /**
@@ -164,7 +183,9 @@ function resetParameters() {
             updateParamDisplay(id, defaultParams[id]);
         }
     });
-    saveParams();
+    saveParams(false);
+    setParamSource(PARAM_SOURCE.DEFAULT);
+    setStatus('Parameters reset to defaults', 'ready');
 }
 
 /**
@@ -287,7 +308,9 @@ function initParams() {
         if (el) {
             el.addEventListener('input', (e) => {
                 updateParamDisplay(id, e.target.value);
-                saveParams();
+                saveParams(false);
+                // Mark as custom when user manually adjusts
+                setParamSource(PARAM_SOURCE.CUSTOM);
             });
         }
     });
@@ -738,5 +761,139 @@ function renderVersionList() {
     }).join('');
 }
 
+// ==================== Import/Export ====================
+
+/**
+ * Get/set parameter source
+ */
+function getParamSource() {
+    return localStorage.getItem(SOURCE_KEY) || PARAM_SOURCE.DEFAULT;
+}
+
+function setParamSource(source) {
+    localStorage.setItem(SOURCE_KEY, source);
+    updateParamSourceDisplay();
+}
+
+/**
+ * Update the parameter source display in UI
+ */
+function updateParamSourceDisplay() {
+    const sourceEl = document.getElementById('paramSourceValue');
+    if (!sourceEl) return;
+
+    const source = getParamSource();
+    sourceEl.className = 'source-value ' + source;
+
+    const labels = {
+        [PARAM_SOURCE.DEFAULT]: 'Default',
+        [PARAM_SOURCE.CALIBRATED]: 'Calibrated',
+        [PARAM_SOURCE.IMPORTED]: 'Imported',
+        [PARAM_SOURCE.CUSTOM]: 'Custom'
+    };
+    sourceEl.textContent = labels[source] || 'Unknown';
+}
+
+/**
+ * Export current parameters to JSON file
+ */
+function exportParamsToJson() {
+    const params = getParams();
+    const exportData = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        source: getParamSource(),
+        parameters: params
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pok-detector-params-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setStatus('Parameters exported to JSON file', 'ready');
+}
+
+/**
+ * Import parameters from JSON file
+ */
+function importParamsFromJson(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            let params;
+
+            // Handle both exported format and calibrator output format
+            if (data.parameters) {
+                params = data.parameters;
+            } else if (data.algorithm) {
+                // Direct params object (calibrator format)
+                params = data;
+            } else {
+                throw new Error('Invalid parameter file format');
+            }
+
+            applyParams(params);
+            setParamSource(PARAM_SOURCE.IMPORTED);
+            setStatus('Parameters imported from JSON file', 'ready');
+        } catch (err) {
+            setStatus('Import error: ' + err.message, 'error');
+            console.error('Import error:', err);
+        }
+    };
+    reader.onerror = () => {
+        setStatus('Failed to read file', 'error');
+    };
+    reader.readAsText(file);
+}
+
+/**
+ * Apply parameters object to UI and save
+ */
+function applyParams(params) {
+    // Set algorithm
+    if (params.algorithm) {
+        algorithmSelect.value = params.algorithm;
+        updateAlgorithmUI();
+    }
+
+    // Set all parameters
+    allParamIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && params[id] !== undefined) {
+            el.value = params[id];
+            updateParamDisplay(id, params[id]);
+        }
+    });
+
+    saveParams();
+}
+
+/**
+ * Initialize import file handler
+ */
+function initImportHandler() {
+    const importInput = document.getElementById('importParamsFile');
+    if (importInput) {
+        importInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importParamsFromJson(file);
+                // Reset input so same file can be selected again
+                e.target.value = '';
+            }
+        });
+    }
+}
+
 // Initialize on load
 initParams();
+initImportHandler();
+updateParamSourceDisplay();
