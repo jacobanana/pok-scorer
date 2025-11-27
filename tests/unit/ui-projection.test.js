@@ -2,9 +2,7 @@
 // UI PROJECTION TESTS
 // ============================================
 
-import { UIProjection } from '../../js/ui-projection-v2.js';
-import { EventStore } from '../../js/event-store.js';
-import { GameService } from '../../js/game-service.js';
+import { UIProjection } from '../../js/ui-projection.js';
 import { PLAYERS } from '../../js/config.js';
 import {
     GameStartedEvent,

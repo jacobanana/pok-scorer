@@ -4,7 +4,7 @@
 
 import { EventStore } from './event-store.js';
 import { GameService } from './game-service.js';
-import { UIProjection } from './ui-projection-v2.js';
+import { UIProjection } from './ui-projection.js';
 import { CommandHandler } from './command-handler.js';
 import { CONFIG, PLAYERS } from './config.js';
 
