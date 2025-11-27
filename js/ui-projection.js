@@ -146,7 +146,7 @@ export class UIProjection {
             root: document.getElementById('app'),
             startSelector: document.getElementById('startSelectorContainer'),
             gameBoard: document.getElementById('gameBoardContainer'),
-            table: document.querySelector('.table'),
+            table: document.getElementById('gameTable'),
             scoreVisualizer: document.getElementById('scoreVisualizerContainer'),
             leftPanel: document.getElementById('leftPanelContainer'),
             modals: document.getElementById('modalsContainer')
@@ -186,7 +186,7 @@ export class UIProjection {
             blueHeaderId: 'historyHeaderBlue'
         });
 
-        const historyContainer = this.containers.leftPanel?.querySelector('.history-table-container');
+        const historyContainer = document.getElementById('historyTableContainer');
         if (historyContainer) {
             this.components.historyTable.mount(historyContainer);
             this.components.historyTable
@@ -214,8 +214,8 @@ export class UIProjection {
             id: 'blueScoreMarkers'
         });
 
-        const redVisualizer = this.containers.scoreVisualizer?.querySelector('.red-visualizer');
-        const blueVisualizer = this.containers.scoreVisualizer?.querySelector('.blue-visualizer');
+        const redVisualizer = document.getElementById('redVisualizer');
+        const blueVisualizer = document.getElementById('blueVisualizer');
 
         if (redVisualizer) this.components.redScoreMarkers.bindTo(redVisualizer);
         if (blueVisualizer) this.components.blueScoreMarkers.bindTo(blueVisualizer);
@@ -235,7 +235,7 @@ export class UIProjection {
             id: 'currentRoundScoreDifference'
         });
 
-        const scoreRow = this.containers.scoreVisualizer?.querySelector('.score-row');
+        const scoreRow = document.getElementById('scoreRow');
         if (scoreRow) {
             this.components.currentRedScore.mount(scoreRow);
             this.components.currentDiff.mount(scoreRow);
@@ -247,7 +247,7 @@ export class UIProjection {
             id: 'roundEndLoadingBar'
         });
 
-        const loadingBarEl = this.containers.scoreVisualizer?.querySelector('.round-end-loading-bar');
+        const loadingBarEl = document.getElementById('roundEndLoadingBar');
         if (loadingBarEl) {
             this.components.loadingBar.bindTo(loadingBarEl);
         }
@@ -267,7 +267,7 @@ export class UIProjection {
      * @private
      */
     _createControlButtons() {
-        const buttonContainer = document.querySelector('.right-panel .control-buttons');
+        const buttonContainer = document.getElementById('controlButtonsContainer');
         if (!buttonContainer) return;
 
         this.components.buttons.flip = new FlipButton({

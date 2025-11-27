@@ -58,7 +58,8 @@ export class PlayerInput extends Component {
         // Emit start event when clicking outside the input
         this.on('click', (e) => {
             if (!e.target.matches('input')) {
-                this.emit('start', { playerId: this.props.playerId });
+                // Emit without bubbling to prevent double handling by parent listeners
+                this.emit('start', { playerId: this.props.playerId }, { bubbles: false });
             }
         });
     }

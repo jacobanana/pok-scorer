@@ -48,17 +48,17 @@
                 <div class="left-panel" id="leftPanelContainer">
                     <div class="rounds-history">
                         <h1>Rounds History</h1>
-                        <div class="history-table-container"></div>
+                        <div id="historyTableContainer" class="history-table-container"></div>
                     </div>
                     <div class="next-player-indicator-container"></div>
                 </div>
 
                 <!-- Right Panel -->
                 <div class="right-panel">
-                    <div class="control-buttons"></div>
+                    <div id="controlButtonsContainer" class="control-buttons"></div>
 
                     <div class="table-container" id="gameBoardContainer">
-                        <div class="table">
+                        <div id="gameTable" class="table">
                             <div class="table-inner">
                                 <div class="side left">
                                     <div class="column">
@@ -88,16 +88,16 @@
                             <div class="loading-bar-fill"></div>
                         </div>
                         <div class="end-pok-indicator red"><span id="endPokScoreRed">0</span></div>
-                        <div class="score-visualizer red-visualizer">
+                        <div id="redVisualizer" class="score-visualizer red-visualizer">
                             <div class="score-bar">
                                 <div class="score-track"></div>
                                 <div class="score-markers" id="redScoreMarkers"></div>
                             </div>
                         </div>
                         <div class="current-round-score" id="currentRoundScoreDisplay">
-                            <div class="score-row"></div>
+                            <div id="scoreRow" class="score-row"></div>
                         </div>
-                        <div class="score-visualizer blue-visualizer">
+                        <div id="blueVisualizer" class="score-visualizer blue-visualizer">
                             <div class="score-bar">
                                 <div class="score-track"></div>
                                 <div class="score-markers" id="blueScoreMarkers"></div>

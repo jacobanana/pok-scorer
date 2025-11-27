@@ -127,8 +127,9 @@ export class Component {
         return this;
     }
 
-    emit(eventName, detail = null) {
-        this.el?.dispatchEvent(new CustomEvent(eventName, { bubbles: true, cancelable: true, detail }));
+    emit(eventName, detail = null, options = {}) {
+        const { bubbles = true, cancelable = true } = options;
+        this.el?.dispatchEvent(new CustomEvent(eventName, { bubbles, cancelable, detail }));
         return this;
     }
 
