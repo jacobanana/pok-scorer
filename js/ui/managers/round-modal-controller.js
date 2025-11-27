@@ -3,7 +3,8 @@
 // Manages round end modal, round preview, and history modal
 // ============================================
 
-import { PLAYERS } from '../../config.js';
+import { PLAYERS, CONFIG } from '../../config.js';
+import { startConfetti, destroyConfetti } from '../../effects/index.js';
 
 /**
  * Controls modal displays: round end, round preview, history
@@ -15,6 +16,24 @@ export class RoundModalController {
         this.containers = containers;
         this.pokRenderer = pokRenderer;
         this.scoreDisplayManager = scoreDisplayManager;
+        this.confettiActive = false;
+    }
+
+    /**
+     * Check if the game has a winner after this round
+     * @private
+     */
+    _checkForGameWinner(state) {
+        const redTotal = state.players[PLAYERS.RED].totalScore;
+        const blueTotal = state.players[PLAYERS.BLUE].totalScore;
+
+        if (redTotal >= CONFIG.WINNING_SCORE) {
+            return { winner: PLAYERS.RED, name: state.playerNames.red, redScore: redTotal, blueScore: blueTotal };
+        }
+        if (blueTotal >= CONFIG.WINNING_SCORE) {
+            return { winner: PLAYERS.BLUE, name: state.playerNames.blue, redScore: redTotal, blueScore: blueTotal };
+        }
+        return null;
     }
 
     /**
@@ -27,6 +46,102 @@ export class RoundModalController {
 
         // Calculate scores from the round's poks
         const scores = this.gameState.getRoundScores(round);
+
+        // Check if this round ends the game
+        const gameWinner = this._checkForGameWinner(state);
+
+        if (gameWinner) {
+            this._showGameWinnerModal(gameWinner, state, event.data.roundNumber);
+        } else {
+            this._showRoundEndModal(scores, state, event.data.roundNumber);
+        }
+    }
+
+    /**
+     * Show the game winner celebration modal
+     * @private
+     */
+    _showGameWinnerModal(gameWinner, state, roundNumber) {
+        const modal = this.components.roundModal;
+        if (!modal) return;
+
+        // Update header to show "GAME OVER"
+        const headerEl = modal.find('#roundEndModalRoundNumber');
+        if (headerEl) {
+            headerEl.innerHTML = `<span class="winner-trophy">🏆</span><br>GAME OVER`;
+        }
+
+        // Show champion name
+        const winnerEl = modal.find('#roundEndModalWinner');
+        if (winnerEl) {
+            winnerEl.textContent = `${gameWinner.name.toUpperCase()} IS THE CHAMPION!`;
+        }
+
+        // Update center POK scores to show final total scores
+        const redScoreEl = modal.find('#modalCenterPokScoreRed');
+        const blueScoreEl = modal.find('#modalCenterPokScoreBlue');
+        if (redScoreEl) redScoreEl.textContent = gameWinner.redScore;
+        if (blueScoreEl) blueScoreEl.textContent = gameWinner.blueScore;
+
+        // Update modal score circles to show final totals
+        if (this.components.modalRedScore) {
+            this.components.modalRedScore.setScore(gameWinner.redScore);
+        }
+        if (this.components.modalBlueScore) {
+            this.components.modalBlueScore.setScore(gameWinner.blueScore);
+        }
+        if (this.components.modalScoreDiff) {
+            const diff = Math.abs(gameWinner.redScore - gameWinner.blueScore);
+            this.components.modalScoreDiff.setDifference(diff);
+        }
+
+        // Update modal score markers to show final totals
+        if (this.components.modalRedMarkers) {
+            this.components.modalRedMarkers.setScore(gameWinner.redScore);
+        }
+        if (this.components.modalBlueMarkers) {
+            this.components.modalBlueMarkers.setScore(gameWinner.blueScore);
+        }
+
+        // Apply game winner styling (gold celebration theme)
+        modal.removeClass('red-bg', 'blue-bg', 'tie-bg');
+        modal.addClass('game-winner');
+        modal.open();
+
+        // Start the confetti celebration!
+        this._startConfetti(modal.el);
+    }
+
+    /**
+     * Start the confetti effect
+     * @private
+     */
+    _startConfetti(container) {
+        if (!container || this.confettiActive) return;
+
+        this.confettiActive = true;
+        startConfetti(container, { burstCount: 200 });
+    }
+
+    /**
+     * Stop and clean up confetti
+     * @private
+     */
+    _stopConfetti() {
+        if (!this.confettiActive) return;
+
+        this.confettiActive = false;
+        destroyConfetti();
+    }
+
+    /**
+     * Show regular round end modal
+     * @private
+     */
+    _showRoundEndModal(scores, state, roundNumber) {
+        const modal = this.components.roundModal;
+        if (!modal) return;
+
         const diff = Math.abs(scores.red - scores.blue);
 
         let winnerText, bgClass;
@@ -42,17 +157,22 @@ export class RoundModalController {
         }
 
         // Update modal content
-        const modal = this.components.roundModal;
-        if (!modal) return;
+        const headerEl = modal.find('#roundEndModalRoundNumber');
+        if (headerEl) {
+            headerEl.textContent = `Round ${roundNumber + 1}`;
+        }
 
-        modal.find('#roundEndModalRoundNumber').textContent = `Round ${event.data.roundNumber + 1}`;
-        modal.find('#roundEndModalWinner').textContent = winnerText;
+        const winnerEl = modal.find('#roundEndModalWinner');
+        if (winnerEl) {
+            winnerEl.textContent = winnerText;
+        }
 
         // Update modal scores
+        const round = state.rounds[roundNumber];
         this.scoreDisplayManager.updateModalScores(round, state);
 
         // Set background and show
-        modal.removeClass('red-bg', 'blue-bg', 'tie-bg');
+        modal.removeClass('red-bg', 'blue-bg', 'tie-bg', 'game-winner');
         modal.addClass(bgClass);
         modal.open();
     }
@@ -61,7 +181,15 @@ export class RoundModalController {
      * Hide the round end modal
      */
     hideRoundModal() {
-        this.components.roundModal?.close();
+        // Stop confetti if active
+        this._stopConfetti();
+
+        const modal = this.components.roundModal;
+        if (modal) {
+            // Clean up game winner styling when hiding
+            modal.removeClass('game-winner');
+            modal.close();
+        }
     }
 
     /**
