@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pok Detection Dataset",
+  "description": "Annotated dataset for training/calibrating the pok detector",
+  "type": "object",
+  "required": ["version", "images"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Dataset format version",
+      "const": "1.0"
+    },
+    "name": {
+      "type": "string",
+      "description": "Optional name for this dataset"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the dataset"
+    },
+    "images": {
+      "type": "array",
+      "description": "Array of annotated images",
+      "items": {
+        "type": "object",
+        "required": ["filename", "poks"],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Image filename (relative to dataset location)"
+          },
+          "width": {
+            "type": "integer",
+            "description": "Image width in pixels (optional, auto-detected if not provided)"
+          },
+          "height": {
+            "type": "integer",
+            "description": "Image height in pixels (optional, auto-detected if not provided)"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes about this image (lighting, angle, etc.)"
+          },
+          "poks": {
+            "type": "array",
+            "description": "Array of annotated pok positions",
+            "items": {
+              "type": "object",
+              "required": ["x", "y", "color"],
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "description": "X coordinate of pok center in pixels"
+                },
+                "y": {
+                  "type": "number",
+                  "description": "Y coordinate of pok center in pixels"
+                },
+                "radius": {
+                  "type": "number",
+                  "description": "Approximate radius in pixels (optional, helps with matching)"
+                },
+                "color": {
+                  "type": "string",
+                  "enum": ["red", "blue"],
+                  "description": "Pok color"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
