@@ -1494,16 +1494,6 @@ button:active {
 /* Winner modal with gold celebration theme */
 .modal.game-winner {
     background: linear-gradient(135deg, #ffd700 0%, #ffb347 50%, #ffd700 100%);
-    animation: winner-bg-shimmer 3s ease-in-out infinite;
-}
-
-@keyframes winner-bg-shimmer {
-    0%, 100% {
-        background: linear-gradient(135deg, #ffd700 0%, #ffb347 50%, #ffd700 100%);
-    }
-    50% {
-        background: linear-gradient(135deg, #ffb347 0%, #ffd700 50%, #ffb347 100%);
-    }
 }
 
 /* Confetti canvas styling - confetti is rendered via JS */
