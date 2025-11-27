@@ -3,6 +3,76 @@
 // Creates spectacular celebration effects
 // ============================================
 
+// ============================================
+// CONFIGURATION
+// Adjust these values to customize the confetti
+// ============================================
+
+const CONFETTI_CONFIG = {
+    // Particle counts
+    INITIAL_BURST_COUNT: 150,       // Particles in initial burst
+    SPAWN_RATE: 8,                  // Particles spawned per interval
+    MAX_PARTICLES: 400,             // Maximum particles on screen
+    SPAWN_INTERVAL_MS: 100,         // How often to spawn new particles
+
+    // Physics
+    GRAVITY: 0.12,                  // Downward acceleration
+    DRAG: 0.99,                     // Air resistance (0-1)
+    WIND_STRENGTH: 3,               // Maximum wind force
+    WIND_CHANGE_INTERVAL_MS: 2000,  // How often wind changes direction
+    WIND_INTERPOLATION: 0.02,       // How smoothly wind changes (0-1)
+
+    // Particle appearance
+    MIN_SIZE: 6,                    // Minimum particle size (px)
+    MAX_SIZE: 14,                   // Maximum particle size (px)
+    MIN_ASPECT_RATIO: 0.5,          // Minimum width/height ratio
+    MAX_ASPECT_RATIO: 1.0,          // Maximum width/height ratio
+
+    // Particle motion
+    INITIAL_VELOCITY_X: 4,          // Horizontal velocity spread
+    INITIAL_VELOCITY_Y_MIN: 1,      // Minimum downward velocity
+    INITIAL_VELOCITY_Y_MAX: 3,      // Maximum downward velocity
+    WOBBLE_SPEED_MIN: 0.05,         // Minimum wobble frequency
+    WOBBLE_SPEED_MAX: 0.15,         // Maximum wobble frequency
+    WOBBLE_AMPLITUDE_MIN: 1,        // Minimum wobble distance
+    WOBBLE_AMPLITUDE_MAX: 4,        // Maximum wobble distance
+    ROTATION_SPEED: 0.15,           // Maximum rotation speed
+    TILT_SPEED_MIN: 0.02,           // Minimum 3D tilt speed
+    TILT_SPEED_MAX: 0.07,           // Maximum 3D tilt speed
+    FLUTTER_MIN: 0.5,               // Minimum flutter effect
+    FLUTTER_MAX: 1.0,               // Maximum flutter effect
+
+    // Particle lifetime
+    DECAY_RATE_MIN: 0.003,          // Minimum fade speed
+    DECAY_RATE_MAX: 0.005,          // Maximum fade speed
+    FADE_START_PERCENT: 0.7,        // Start fading at this % of screen height
+
+    // Spawn positions
+    SPAWN_HEIGHT_MIN: 50,           // Minimum spawn height above viewport
+    SPAWN_HEIGHT_MAX: 250,          // Maximum spawn height above viewport
+
+    // Colors - vibrant celebration palette
+    COLORS: [
+        '#ff6b6b', // Red
+        '#4dabf7', // Blue
+        '#69db7c', // Green
+        '#ffd43b', // Yellow
+        '#da77f2', // Purple
+        '#ff922b', // Orange
+        '#f06595', // Pink
+        '#20c997', // Teal
+        '#fcc419', // Gold
+        '#ffffff', // White
+    ],
+
+    // Shape distribution (more common shapes appear multiple times)
+    SHAPES: ['rect', 'rect', 'rect', 'circle', 'ribbon', 'star'],
+};
+
+// ============================================
+// CONFETTI PARTICLE CLASS
+// ============================================
+
 /**
  * Individual confetti particle with physics
  */
@@ -11,61 +81,52 @@ class ConfettiParticle {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
 
+        const cfg = CONFETTI_CONFIG;
+
         // Position - start above viewport
         this.x = options.x ?? Math.random() * canvas.width;
-        this.y = options.y ?? -20 - Math.random() * 100;
+        this.y = options.y ?? -cfg.SPAWN_HEIGHT_MIN - Math.random() * (cfg.SPAWN_HEIGHT_MAX - cfg.SPAWN_HEIGHT_MIN);
 
         // Velocity
-        this.vx = (Math.random() - 0.5) * 4;
-        this.vy = Math.random() * 2 + 2;
+        this.vx = (Math.random() - 0.5) * cfg.INITIAL_VELOCITY_X;
+        this.vy = Math.random() * (cfg.INITIAL_VELOCITY_Y_MAX - cfg.INITIAL_VELOCITY_Y_MIN) + cfg.INITIAL_VELOCITY_Y_MIN;
 
         // Physics
-        this.gravity = 0.12;
-        this.drag = 0.99;
-        this.wobbleSpeed = Math.random() * 0.1 + 0.05;
-        this.wobbleAmplitude = Math.random() * 3 + 1;
+        this.gravity = cfg.GRAVITY;
+        this.drag = cfg.DRAG;
+        this.wobbleSpeed = Math.random() * (cfg.WOBBLE_SPEED_MAX - cfg.WOBBLE_SPEED_MIN) + cfg.WOBBLE_SPEED_MIN;
+        this.wobbleAmplitude = Math.random() * (cfg.WOBBLE_AMPLITUDE_MAX - cfg.WOBBLE_AMPLITUDE_MIN) + cfg.WOBBLE_AMPLITUDE_MIN;
         this.wobbleOffset = Math.random() * Math.PI * 2;
 
         // Rotation
         this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.15;
+        this.rotationSpeed = (Math.random() - 0.5) * cfg.ROTATION_SPEED;
         this.tilt = Math.random() * Math.PI * 2;
-        this.tiltSpeed = Math.random() * 0.05 + 0.02;
+        this.tiltSpeed = Math.random() * (cfg.TILT_SPEED_MAX - cfg.TILT_SPEED_MIN) + cfg.TILT_SPEED_MIN;
 
         // Appearance
-        this.size = Math.random() * 8 + 6;
-        this.aspectRatio = Math.random() * 0.5 + 0.5;
+        this.size = Math.random() * (cfg.MAX_SIZE - cfg.MIN_SIZE) + cfg.MIN_SIZE;
+        this.aspectRatio = Math.random() * (cfg.MAX_ASPECT_RATIO - cfg.MIN_ASPECT_RATIO) + cfg.MIN_ASPECT_RATIO;
         this.color = options.color ?? this._randomColor();
         this.shape = options.shape ?? this._randomShape();
         this.opacity = 1;
 
         // Lifetime
         this.life = 1;
-        this.decay = 0.003 + Math.random() * 0.002;
+        this.decay = cfg.DECAY_RATE_MIN + Math.random() * (cfg.DECAY_RATE_MAX - cfg.DECAY_RATE_MIN);
 
         // Flutter effect for ribbon-like motion
-        this.flutter = Math.random() * 0.5 + 0.5;
+        this.flutter = Math.random() * (cfg.FLUTTER_MAX - cfg.FLUTTER_MIN) + cfg.FLUTTER_MIN;
         this.flutterPhase = Math.random() * Math.PI * 2;
     }
 
     _randomColor() {
-        const colors = [
-            '#ff6b6b', // Red
-            '#4dabf7', // Blue
-            '#69db7c', // Green
-            '#ffd43b', // Yellow
-            '#da77f2', // Purple
-            '#ff922b', // Orange
-            '#f06595', // Pink
-            '#20c997', // Teal
-            '#fcc419', // Gold
-            '#ffffff', // White
-        ];
+        const colors = CONFETTI_CONFIG.COLORS;
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
     _randomShape() {
-        const shapes = ['rect', 'rect', 'rect', 'circle', 'ribbon', 'star'];
+        const shapes = CONFETTI_CONFIG.SHAPES;
         return shapes[Math.floor(Math.random() * shapes.length)];
     }
 
@@ -97,7 +158,7 @@ class ConfettiParticle {
         this.tilt += this.tiltSpeed;
 
         // Decay opacity as particle falls
-        if (this.y > this.canvas.height * 0.7) {
+        if (this.y > this.canvas.height * CONFETTI_CONFIG.FADE_START_PERCENT) {
             this.life -= this.decay * 2;
         }
         this.opacity = Math.max(0, this.life);
@@ -198,12 +259,16 @@ class ConfettiParticle {
     }
 }
 
+// ============================================
+// CONFETTI SYSTEM CLASS
+// ============================================
+
 /**
  * Confetti system manager
  * Handles particle creation, animation, and cleanup
  */
 export class ConfettiSystem {
-    constructor() {
+    constructor(customConfig = {}) {
         this.canvas = null;
         this.ctx = null;
         this.particles = [];
@@ -214,14 +279,8 @@ export class ConfettiSystem {
         this.wind = 0;
         this.targetWind = 0;
 
-        // Configuration
-        this.config = {
-            particleCount: 150,      // Initial burst count
-            spawnRate: 8,            // Particles per frame during continuous mode
-            gravity: 0.12,
-            windChangeInterval: 2000,
-            maxParticles: 400
-        };
+        // Allow runtime config overrides
+        this.config = { ...CONFETTI_CONFIG, ...customConfig };
 
         // Bind methods
         this._animate = this._animate.bind(this);
@@ -273,7 +332,7 @@ export class ConfettiSystem {
         this.lastTime = performance.now();
 
         // Initial burst of confetti
-        const burstCount = options.burstCount ?? this.config.particleCount;
+        const burstCount = options.burstCount ?? this.config.INITIAL_BURST_COUNT;
         this._createBurst(burstCount);
 
         // Start animation loop
@@ -291,11 +350,12 @@ export class ConfettiSystem {
      */
     _createBurst(count) {
         const centerX = this.canvas.width / 2;
+        const cfg = this.config;
 
         for (let i = 0; i < count; i++) {
             // Spawn from multiple points across the top
             const spawnX = Math.random() * this.canvas.width;
-            const spawnY = -Math.random() * 200 - 50;
+            const spawnY = -Math.random() * cfg.SPAWN_HEIGHT_MAX - cfg.SPAWN_HEIGHT_MIN;
 
             const particle = new ConfettiParticle(this.canvas, {
                 x: spawnX,
@@ -303,8 +363,8 @@ export class ConfettiSystem {
             });
 
             // Add some initial velocity variation for burst effect
-            particle.vy = Math.random() * 3 + 1;
-            particle.vx = (spawnX - centerX) / this.canvas.width * 2 + (Math.random() - 0.5) * 4;
+            particle.vy = Math.random() * cfg.INITIAL_VELOCITY_Y_MAX + cfg.INITIAL_VELOCITY_Y_MIN;
+            particle.vx = (spawnX - centerX) / this.canvas.width * 2 + (Math.random() - 0.5) * cfg.INITIAL_VELOCITY_X;
 
             this.particles.push(particle);
         }
@@ -315,9 +375,9 @@ export class ConfettiSystem {
      * @private
      */
     _spawnContinuous() {
-        if (this.particles.length >= this.config.maxParticles) return;
+        if (this.particles.length >= this.config.MAX_PARTICLES) return;
 
-        for (let i = 0; i < this.config.spawnRate; i++) {
+        for (let i = 0; i < this.config.SPAWN_RATE; i++) {
             const particle = new ConfettiParticle(this.canvas, {
                 x: Math.random() * this.canvas.width,
                 y: -20 - Math.random() * 50
@@ -341,7 +401,7 @@ export class ConfettiSystem {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Smoothly interpolate wind
-        this.wind += (this.targetWind - this.wind) * 0.02;
+        this.wind += (this.targetWind - this.wind) * this.config.WIND_INTERPOLATION;
 
         // Update and draw particles
         this.particles = this.particles.filter(particle => {
@@ -354,7 +414,7 @@ export class ConfettiSystem {
 
         // Spawn new particles continuously
         this.spawnTimer += deltaTime;
-        if (this.spawnTimer > 100) { // Every 100ms
+        if (this.spawnTimer > this.config.SPAWN_INTERVAL_MS) {
             this._spawnContinuous();
             this.spawnTimer = 0;
         }
@@ -371,10 +431,10 @@ export class ConfettiSystem {
         const changeWind = () => {
             if (!this.isRunning) return;
 
-            this.targetWind = (Math.random() - 0.5) * 3;
+            this.targetWind = (Math.random() - 0.5) * this.config.WIND_STRENGTH;
 
             setTimeout(changeWind,
-                this.config.windChangeInterval + Math.random() * 1000
+                this.config.WIND_CHANGE_INTERVAL_MS + Math.random() * 1000
             );
         };
 
@@ -452,6 +512,10 @@ export class ConfettiSystem {
         return this;
     }
 }
+
+// ============================================
+// CONVENIENCE FUNCTIONS
+// ============================================
 
 // Singleton instance for easy access
 let confettiInstance = null;
