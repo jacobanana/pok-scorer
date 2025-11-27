@@ -90,7 +90,11 @@ async function runTests() {
 
     try {
         // Launch headless browser
-        browser = await chromium.launch({ headless: true });
+        browser = await chromium.launch({
+            headless: true,
+            channel: 'chromium',
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+        });
         const context = await browser.newContext();
         const page = await context.newPage();
 

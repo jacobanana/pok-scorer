@@ -40,21 +40,21 @@ function createUIProjectionDOM() {
             <div class="top-section">
                 <div class="left-panel" id="leftPanelContainer">
                     <div class="rounds-history">
-                        <div class="history-table-container"></div>
+                        <div class="history-table-container" id="historyTableContainer"></div>
                     </div>
                 </div>
                 <div class="right-panel">
-                    <div class="control-buttons"></div>
+                    <div class="control-buttons" id="controlButtonsContainer"></div>
                     <div class="table-container" id="gameBoardContainer">
-                        <div class="table"></div>
+                        <div class="table" id="gameTable"></div>
                     </div>
                     <div class="score-visualizer-container" id="scoreVisualizerContainer">
-                        <div class="round-end-loading-bar">
+                        <div class="round-end-loading-bar" id="roundEndLoadingBar">
                             <div class="loading-bar-fill"></div>
                         </div>
-                        <div class="red-visualizer"></div>
-                        <div class="score-row"></div>
-                        <div class="blue-visualizer"></div>
+                        <div class="red-visualizer" id="redVisualizer"></div>
+                        <div class="score-row" id="scoreRow"></div>
+                        <div class="blue-visualizer" id="blueVisualizer"></div>
                     </div>
                 </div>
             </div>
