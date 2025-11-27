@@ -16,6 +16,68 @@
             background: #1a1a2e;
             color: #eee;
             min-height: 100vh;
+            padding: 0;
+        }
+
+        /* Main Navigation */
+        .main-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 12px 20px;
+            background: #16162a;
+            border-bottom: 1px solid #333;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #888;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #ccc;
+            background: #2a2a4a;
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background: #3a3a5a;
+        }
+
+        .nav-step {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nav-link.active .nav-step {
+            background: #4a90d9;
+        }
+
+        .nav-label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .nav-arrow {
+            color: #444;
+            font-size: 14px;
+        }
+
+        .page-content {
             padding: 20px;
         }
 
@@ -341,24 +403,45 @@
     </style>
 </head>
 <body>
-    <h1>Pok Detector Calibrator</h1>
-    <p class="subtitle">Auto-tune detection parameters using annotated images</p>
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <a href="annotation-editor.html" class="nav-link">
+            <span class="nav-step">1</span>
+            <span class="nav-label">Dataset Editor</span>
+        </a>
+        <span class="nav-arrow">→</span>
+        <a href="calibrator.html" class="nav-link active">
+            <span class="nav-step">2</span>
+            <span class="nav-label">Calibrate</span>
+        </a>
+        <span class="nav-arrow">→</span>
+        <a href="index.html" class="nav-link">
+            <span class="nav-step">3</span>
+            <span class="nav-label">Detect</span>
+        </a>
+    </nav>
 
-    <div class="container">
+    <div class="page-content">
+        <h1>Pok Detector Calibrator</h1>
+        <p class="subtitle">Auto-tune detection parameters using annotated images</p>
+
+        <div class="container">
         <!-- Step 1: Load Dataset -->
         <div class="panel">
             <h2><span class="step-number" id="step1">1</span> Load Dataset</h2>
 
             <div class="info-box" style="margin-bottom: 15px;">
-                Create a JSON file with annotated pok positions. See
-                <a href="example-dataset.json" target="_blank">example-dataset.json</a> for the format.
-                Each image needs: filename, and array of poks with x, y, color.
+                Create a JSON file with annotated pok positions using the <a href="annotation-editor.html">Dataset Editor</a>,
+                or load a saved dataset from localStorage.
             </div>
 
             <div class="file-input-group">
                 <input type="file" id="datasetInput" accept=".json">
                 <button class="btn-primary" onclick="document.getElementById('datasetInput').click()">
-                    Load Dataset JSON
+                    Load JSON File
+                </button>
+                <button class="btn-secondary" onclick="loadDatasetFromStorage()">
+                    Load from Storage
                 </button>
                 <span class="file-status" id="datasetStatus"></span>
             </div>
@@ -448,6 +531,7 @@
                 <button class="btn-secondary" onclick="downloadParams()">Download JSON</button>
             </div>
         </div>
+        </div>
     </div>
 
     <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()" type="text/javascript"></script>
@@ -520,6 +604,52 @@
 
             updateButtons();
         });
+
+        // Load dataset from localStorage (saved by Dataset Editor)
+        async function loadDatasetFromStorage() {
+            const EDITOR_STORAGE_KEY = 'pokDatasetEditor';
+            const saved = localStorage.getItem(EDITOR_STORAGE_KEY);
+
+            if (!saved) {
+                datasetStatus.textContent = 'No dataset in storage. Use Dataset Editor first.';
+                datasetStatus.className = 'file-status error';
+                return;
+            }
+
+            try {
+                const storageData = JSON.parse(saved);
+
+                // Load the dataset (annotations)
+                const datasetJson = JSON.stringify(storageData.dataset);
+                const result = Calibrator.loadDataset(datasetJson);
+
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+
+                datasetLoaded = true;
+                datasetStatus.textContent = `Loaded: ${result.imageCount} images from storage`;
+                datasetStatus.className = 'file-status success';
+
+                // Also load the images from data URLs
+                if (storageData.imageDataUrls && storageData.imageDataUrls.length > 0) {
+                    imagesStatus.textContent = 'Loading images from storage...';
+                    imagesStatus.className = 'file-status';
+
+                    const loadedCount = await Calibrator.loadImagesFromDataUrls(storageData.imageDataUrls);
+                    imagesLoaded = true;
+                    imagesStatus.textContent = `Loaded: ${loadedCount} images from storage`;
+                    imagesStatus.className = 'file-status success';
+                }
+
+                updateButtons();
+            } catch (err) {
+                datasetLoaded = false;
+                datasetStatus.textContent = `Error: ${err.message}`;
+                datasetStatus.className = 'file-status error';
+                updateButtons();
+            }
+        }
 
         // Load image files
         imagesInput.addEventListener('change', async (e) => {

@@ -16,6 +16,68 @@
             background: #1a1a2e;
             color: #eee;
             min-height: 100vh;
+            padding: 0;
+        }
+
+        /* Main Navigation */
+        .main-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 12px 20px;
+            background: #16162a;
+            border-bottom: 1px solid #333;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #888;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #ccc;
+            background: #2a2a4a;
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background: #3a3a5a;
+        }
+
+        .nav-step {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nav-link.active .nav-step {
+            background: #4a90d9;
+        }
+
+        .nav-label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .nav-arrow {
+            color: #444;
+            font-size: 14px;
+        }
+
+        .page-content {
             padding: 20px;
         }
 
@@ -507,9 +569,28 @@
     </style>
 </head>
 <body>
-    <h1>Pok Detector</h1>
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <a href="annotation-editor.html" class="nav-link">
+            <span class="nav-step">1</span>
+            <span class="nav-label">Dataset Editor</span>
+        </a>
+        <span class="nav-arrow">→</span>
+        <a href="calibrator.html" class="nav-link">
+            <span class="nav-step">2</span>
+            <span class="nav-label">Calibrate</span>
+        </a>
+        <span class="nav-arrow">→</span>
+        <a href="index.html" class="nav-link active">
+            <span class="nav-step">3</span>
+            <span class="nav-label">Detect</span>
+        </a>
+    </nav>
 
-    <div class="container">
+    <div class="page-content">
+        <h1>Pok Detector</h1>
+
+        <div class="container">
         <div class="main-panel">
             <div class="controls-bar">
                 <input type="file" id="imageInput" accept="image/*">
@@ -893,6 +974,7 @@
                     <div class="no-versions">No saved versions yet</div>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 

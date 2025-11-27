@@ -125,6 +125,41 @@ const Calibrator = {
     },
 
     /**
+     * Load images from data URLs (from localStorage)
+     */
+    async loadImagesFromDataUrls(imageDataUrls) {
+        this.loadedImages = [];
+
+        for (const entry of this.dataset.images) {
+            const dataUrlEntry = imageDataUrls.find(d => d.filename === entry.filename);
+            if (!dataUrlEntry) {
+                throw new Error(`Image data URL not found: ${entry.filename}`);
+            }
+
+            const img = await this.loadImageFromDataUrl(dataUrlEntry.dataUrl, entry.filename);
+            this.loadedImages.push({
+                image: img,
+                annotations: entry.poks,
+                filename: entry.filename
+            });
+        }
+
+        return this.loadedImages.length;
+    },
+
+    /**
+     * Load single image from data URL
+     */
+    loadImageFromDataUrl(dataUrl, filename) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Failed to load image: ' + filename));
+            img.src = dataUrl;
+        });
+    },
+
+    /**
      * Run detection on an image with given parameters
      */
     detectWithParams(image, params) {
