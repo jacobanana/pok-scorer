@@ -65,6 +65,9 @@ export class UIProjection {
         // Auto-end timer state
         this._autoEndTimer = null;
 
+        // Loading state (to prevent auto-end timers during event replay)
+        this.isLoading = false;
+
         // Drag/drop state
         this.isDragging = false;
         this.draggedPokId = null;
@@ -111,6 +114,9 @@ export class UIProjection {
 
         // Subscribe to category-based automatic updates
         this._subscribeToCategories(eventStore);
+
+        // Subscribe to manage auto-end timer state
+        this._subscribeToAutoEndTimerManagement(eventStore);
     }
 
     /**
@@ -132,6 +138,42 @@ export class UIProjection {
 
         EVENT_CATEGORIES.HEADERS.forEach(eventType => {
             eventStore.subscribe(eventType, () => this.updateHistoryHeaders());
+        });
+    }
+
+    /**
+     * Subscribe to events that manage auto-end timer state
+     * @private
+     */
+    _subscribeToAutoEndTimerManagement(eventStore) {
+        // Check round completion after any event (except ROUND_ENDED which already ended)
+        eventStore.subscribe('*', (event) => {
+            if (!this.isLoading && event.type !== 'ROUND_ENDED') {
+                this.checkRoundComplete();
+            }
+        });
+
+        // Reset countdown timer when a POK is moved during round completion
+        eventStore.subscribe('POK_MOVED', () => {
+            if (!this.isLoading && this.hasAutoEndTimer()) {
+                // Clear and restart the countdown to allow adjustments
+                this.clearAutoEndTimer();
+                this.checkRoundComplete();
+            }
+        });
+
+        // Handle game reset to clear auto-end timer and loading state
+        eventStore.subscribe('GAME_RESET', () => {
+            this.clearAutoEndTimer();
+            this.isLoading = false;
+        });
+
+        // Handle game loaded to clear auto-end timers and check round state
+        eventStore.subscribe('GAME_LOADED', () => {
+            this.clearAutoEndTimer();
+            this.isLoading = false;
+            // Now that loading is complete, check if we need to start countdown
+            this.checkRoundComplete();
         });
     }
 
@@ -1146,6 +1188,7 @@ export class UIProjection {
     }
 
     _handleContinueGame() {
+        this.isLoading = true;
         this.handlers.onContinueGame?.();
     }
 
@@ -1371,21 +1414,6 @@ export class UIProjection {
             map.set(id, component.el);
         });
         return map;
-    }
-
-    /**
-     * Legacy method for showing continue button
-     */
-    showContinueButton() {
-        this.components.startSelector?.showContinueButton();
-        this.components.startSelector?.showSaveLatestButton();
-    }
-
-    /**
-     * Legacy method for prefilling player names
-     */
-    prefillPlayerNames(savedData) {
-        this._prefillPlayerNames(savedData);
     }
 
     /**
