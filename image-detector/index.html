@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pok Detector - OpenCV.js</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .controls-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #4a90d9;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #3a7bc8;
+        }
+
+        .btn-secondary {
+            background: #444;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #555;
+        }
+
+        .btn-detect {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-detect:hover:not(:disabled) {
+            background: #27ae60;
+        }
+
+        .btn-webcam {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-webcam.active {
+            background: #c0392b;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #2a2a4a;
+            border-radius: 8px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .canvas-container canvas,
+        .canvas-container video {
+            max-width: 100%;
+            max-height: 600px;
+        }
+
+        .placeholder {
+            color: #666;
+            text-align: center;
+        }
+
+        .placeholder p {
+            margin-top: 10px;
+        }
+
+        .results-bar {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            background: #2a2a4a;
+            border-radius: 8px;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .result-dot.red { background: #d32f2f; }
+        .result-dot.blue { background: #1976d2; }
+        .result-dot.unknown { background: #888; }
+
+        .side-panel {
+            background: #2a2a4a;
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .side-panel h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444;
+        }
+
+        .param-section {
+            margin-bottom: 20px;
+        }
+
+        .param-section h3 {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .param-group {
+            margin-bottom: 12px;
+        }
+
+        .param-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .param-group label span {
+            color: #4a90d9;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #444;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4a90d9;
+            cursor: pointer;
+        }
+
+        .param-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .color-preview {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+            align-items: center;
+        }
+
+        .color-swatch {
+            width: 30px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #555;
+        }
+
+        .btn-reset {
+            width: 100%;
+            margin-top: 10px;
+            background: #555;
+        }
+
+        .btn-reset:hover {
+            background: #666;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .status.loading {
+            color: #f39c12;
+        }
+
+        .status.ready {
+            color: #2ecc71;
+        }
+
+        .status.error {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .side-panel {
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Pok Detector</h1>
+
+    <div class="container">
+        <div class="main-panel">
+            <div class="controls-bar">
+                <input type="file" id="imageInput" accept="image/*">
+                <button class="btn-primary" onclick="document.getElementById('imageInput').click()">
+                    Upload Image
+                </button>
+                <button class="btn-webcam" id="webcamBtn" onclick="toggleWebcam()">
+                    Start Webcam
+                </button>
+                <button class="btn-secondary" id="captureBtn" onclick="captureWebcam()" disabled>
+                    Capture
+                </button>
+                <button class="btn-detect" id="detectBtn" onclick="runDetection()" disabled>
+                    Detect Poks
+                </button>
+            </div>
+
+            <div class="canvas-container">
+                <video id="webcamVideo" autoplay playsinline style="display: none;"></video>
+                <canvas id="outputCanvas" style="display: none;"></canvas>
+                <div class="placeholder" id="placeholder">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <p>Upload an image or use webcam to detect poks</p>
+                </div>
+            </div>
+
+            <div class="results-bar">
+                <div class="result-item">
+                    <div class="result-dot red"></div>
+                    <span>Red: <strong id="redCount">0</strong></span>
+                </div>
+                <div class="result-item">
+                    <div class="result-dot blue"></div>
+                    <span>Blue: <strong id="blueCount">0</strong></span>
+                </div>
+                <div class="result-item">
+                    <div class="result-dot unknown"></div>
+                    <span>Unknown: <strong id="unknownCount">0</strong></span>
+                </div>
+            </div>
+
+            <div class="status" id="status">Loading OpenCV.js...</div>
+        </div>
+
+        <div class="side-panel">
+            <h2>Detection Parameters</h2>
+
+            <div class="param-section">
+                <h3>Circle Detection</h3>
+
+                <div class="param-group">
+                    <label>dp <span id="dpValue">1</span></label>
+                    <input type="range" id="dp" min="1" max="3" step="0.1" value="1">
+                </div>
+
+                <div class="param-group">
+                    <label>minDist <span id="minDistValue">20</span></label>
+                    <input type="range" id="minDist" min="5" max="100" step="1" value="20">
+                </div>
+
+                <div class="param-group">
+                    <label>param1 (Canny) <span id="param1Value">100</span></label>
+                    <input type="range" id="param1" min="10" max="300" step="5" value="100">
+                </div>
+
+                <div class="param-group">
+                    <label>param2 (Threshold) <span id="param2Value">30</span></label>
+                    <input type="range" id="param2" min="5" max="100" step="1" value="30">
+                </div>
+
+                <div class="param-row">
+                    <div class="param-group">
+                        <label>minRadius <span id="minRadiusValue">10</span></label>
+                        <input type="range" id="minRadius" min="1" max="100" step="1" value="10">
+                    </div>
+                    <div class="param-group">
+                        <label>maxRadius <span id="maxRadiusValue">50</span></label>
+                        <input type="range" id="maxRadius" min="10" max="200" step="1" value="50">
+                    </div>
+                </div>
+            </div>
+
+            <div class="param-section">
+                <h3>Red Color Range (HSV)</h3>
+
+                <div class="param-row">
+                    <div class="param-group">
+                        <label>H Low 1 <span id="redH1LowValue">0</span></label>
+                        <input type="range" id="redH1Low" min="0" max="20" step="1" value="0">
+                    </div>
+                    <div class="param-group">
+                        <label>H High 1 <span id="redH1HighValue">10</span></label>
+                        <input type="range" id="redH1High" min="0" max="30" step="1" value="10">
+                    </div>
+                </div>
+
+                <div class="param-row">
+                    <div class="param-group">
+                        <label>H Low 2 <span id="redH2LowValue">160</span></label>
+                        <input type="range" id="redH2Low" min="140" max="180" step="1" value="160">
+                    </div>
+                    <div class="param-group">
+                        <label>H High 2 <span id="redH2HighValue">180</span></label>
+                        <input type="range" id="redH2High" min="160" max="180" step="1" value="180">
+                    </div>
+                </div>
+
+                <div class="param-row">
+                    <div class="param-group">
+                        <label>S Min <span id="redSMinValue">100</span></label>
+                        <input type="range" id="redSMin" min="0" max="255" step="5" value="100">
+                    </div>
+                    <div class="param-group">
+                        <label>V Min <span id="redVMinValue">100</span></label>
+                        <input type="range" id="redVMin" min="0" max="255" step="5" value="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="param-section">
+                <h3>Blue Color Range (HSV)</h3>
+
+                <div class="param-row">
+                    <div class="param-group">
+                        <label>H Low <span id="blueHLowValue">100</span></label>
+                        <input type="range" id="blueHLow" min="80" max="130" step="1" value="100">
+                    </div>
+                    <div class="param-group">
+                        <label>H High <span id="blueHHighValue">130</span></label>
+                        <input type="range" id="blueHHigh" min="100" max="150" step="1" value="130">
+                    </div>
+                </div>
+
+                <div class="param-row">
+                    <div class="param-group">
+                        <label>S Min <span id="blueSMinValue">100</span></label>
+                        <input type="range" id="blueSMin" min="0" max="255" step="5" value="100">
+                    </div>
+                    <div class="param-group">
+                        <label>V Min <span id="blueVMinValue">100</span></label>
+                        <input type="range" id="blueVMin" min="0" max="255" step="5" value="100">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-reset" onclick="resetParameters()">Reset to Defaults</button>
+        </div>
+    </div>
+
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()" type="text/javascript"></script>
+    <script src="color-classifier.js"></script>
+    <script src="detector.js"></script>
+</body>
+</html>
