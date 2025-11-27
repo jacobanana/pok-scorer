@@ -1488,6 +1488,306 @@ button:active {
 }
 
 /* ============================================ */
+/* GAME WINNER CELEBRATION                     */
+/* ============================================ */
+
+/* Winner modal with gold celebration theme */
+.modal.game-winner {
+    background: linear-gradient(135deg, #ffd700 0%, #ffb347 50%, #ffd700 100%);
+    animation: winner-bg-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes winner-bg-shimmer {
+    0%, 100% {
+        background: linear-gradient(135deg, #ffd700 0%, #ffb347 50%, #ffd700 100%);
+    }
+    50% {
+        background: linear-gradient(135deg, #ffb347 0%, #ffd700 50%, #ffb347 100%);
+    }
+}
+
+/* Confetti container */
+.modal.game-winner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle, #ff6b6b 3px, transparent 3px),
+        radial-gradient(circle, #4dabf7 3px, transparent 3px),
+        radial-gradient(circle, #69db7c 3px, transparent 3px),
+        radial-gradient(circle, #ffd43b 3px, transparent 3px),
+        radial-gradient(circle, #da77f2 3px, transparent 3px),
+        radial-gradient(circle, #ff922b 3px, transparent 3px);
+    background-size: 10% 10%;
+    background-position:
+        5% 15%, 15% 35%, 25% 55%, 35% 25%, 45% 75%, 55% 45%,
+        65% 15%, 75% 65%, 85% 35%, 95% 85%, 8% 90%, 92% 10%;
+    animation: confetti-fall 4s linear infinite;
+    opacity: 0.8;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100%) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Trophy icon styling */
+.winner-trophy {
+    font-size: 120px;
+    animation: trophy-bounce 1s ease-in-out infinite;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.4);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes trophy-bounce {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-15px) scale(1.1);
+    }
+}
+
+/* Champion title with glow */
+.modal.game-winner .winner {
+    font-size: 72px;
+    color: #2c1810;
+    text-shadow:
+        0 0 10px rgba(255, 255, 255, 0.8),
+        0 0 20px rgba(255, 255, 255, 0.6),
+        0 0 30px rgba(255, 215, 0, 0.4);
+    animation: champion-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes champion-pulse {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow:
+            0 0 10px rgba(255, 255, 255, 0.8),
+            0 0 20px rgba(255, 255, 255, 0.6),
+            0 0 30px rgba(255, 215, 0, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        text-shadow:
+            0 0 20px rgba(255, 255, 255, 1),
+            0 0 40px rgba(255, 255, 255, 0.8),
+            0 0 60px rgba(255, 215, 0, 0.6);
+    }
+}
+
+/* Game over header styling */
+.modal.game-winner .modal-round-number {
+    font-size: 28px;
+    color: #2c1810;
+    text-transform: uppercase;
+    letter-spacing: 8px;
+    opacity: 0.9;
+}
+
+/* Winner announcement text */
+.winner-announcement {
+    font-size: 24px;
+    color: #2c1810;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+    opacity: 0.9;
+}
+
+/* Final score display in winner modal */
+.modal.game-winner .modal-score-circle {
+    border: 4px solid rgba(44, 24, 16, 0.5);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal.game-winner .modal-score-difference {
+    background-color: rgba(44, 24, 16, 0.3);
+    border: 4px solid rgba(44, 24, 16, 0.5);
+}
+
+/* Celebration sparkles overlay */
+.modal.game-winner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.6) 2px, transparent 2px);
+    background-size: 50px 50px, 80px 80px;
+    background-position: 0 0, 25px 25px;
+    animation: sparkle-twinkle 2s ease-in-out infinite alternate;
+}
+
+@keyframes sparkle-twinkle {
+    0% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0.7;
+        transform: scale(1.02);
+    }
+}
+
+/* Winner modal content needs higher z-index to be above effects */
+.modal.game-winner .modal-content {
+    position: relative;
+    z-index: 10;
+}
+
+/* Star burst animation for extra flair */
+.star-burst {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.star-burst::before,
+.star-burst::after {
+    content: '★';
+    position: absolute;
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 0 0 10px #ffd700;
+    animation: star-float 3s ease-in-out infinite;
+}
+
+.star-burst::before {
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.star-burst::after {
+    right: 10%;
+    animation-delay: 1.5s;
+}
+
+@keyframes star-float {
+    0%, 100% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Final score banner */
+.final-score-banner {
+    background: rgba(44, 24, 16, 0.2);
+    border-radius: 12px;
+    padding: 15px 30px;
+    margin: 20px auto;
+    display: inline-block;
+}
+
+.final-score-text {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2c1810;
+}
+
+.final-score-text .score-red {
+    color: #d32f2f;
+}
+
+.final-score-text .score-blue {
+    color: #1976d2;
+}
+
+/* Click to play again hint */
+.modal.game-winner .continue-hint {
+    color: #2c1810;
+    opacity: 0.8;
+    font-size: 20px;
+    animation: hint-pulse 2s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Responsive adjustments for winner modal */
+@media (max-width: 768px) {
+    .winner-trophy {
+        font-size: 80px;
+    }
+
+    .modal.game-winner .winner {
+        font-size: 48px;
+    }
+
+    .modal.game-winner .modal-round-number {
+        font-size: 20px;
+        letter-spacing: 4px;
+    }
+
+    .final-score-text {
+        font-size: 28px;
+    }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+    .winner-trophy {
+        font-size: 60px;
+    }
+
+    .modal.game-winner .winner {
+        font-size: 36px;
+    }
+
+    .modal.game-winner .modal-round-number {
+        font-size: 16px;
+        letter-spacing: 3px;
+    }
+
+    .final-score-text {
+        font-size: 24px;
+    }
+
+    .final-score-banner {
+        padding: 10px 20px;
+        margin: 10px auto;
+    }
+}
+
+/* ============================================ */
 /* LEGACY/UNUSED STYLES                        */
 /* (Kept for backwards compatibility)          */
 /* ============================================ */
