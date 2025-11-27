@@ -75,8 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show all TABLE_FLIPPED events
         flips: () => {
-            const events = app.eventStore.getAllEvents();
-            const flipEvents = events.filter(e => e.type === 'TABLE_FLIPPED');
+            const flipEvents = app.eventStore.getEventsByType('TABLE_FLIPPED');
             console.log(`Found ${flipEvents.length} TABLE_FLIPPED events:`);
             flipEvents.forEach((e, i) => {
                 console.log(`  ${i + 1}. Event #${e.id}: isFlipped=${e.data.isFlipped} at ${new Date(e.timestamp).toLocaleString()}`);

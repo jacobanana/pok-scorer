@@ -314,10 +314,9 @@ runner.describe('GameService - Calculated State', () => {
         ctx.eventStore.append(new PokPlacedEvent('pok2', PLAYERS.BLUE, 30, 50));
 
         const state = ctx.gameState.getState();
-        const events = ctx.eventStore.getAllEvents();
 
         // Count POK_PLACED events
-        const pokPlacedEvents = events.filter(e => e.type === 'POK_PLACED');
+        const pokPlacedEvents = ctx.eventStore.getEventsByType('POK_PLACED');
 
         // State should reflect event count
         assert.lengthOf(state.rounds[0].poks, pokPlacedEvents.length);

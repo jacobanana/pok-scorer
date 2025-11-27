@@ -235,11 +235,10 @@ runner.describe('Integration - Event Sourcing Consistency', () => {
 
         // State should still be consistent
         const state = ctx.gameState.getState();
-        const events = ctx.eventStore.getAllEvents();
 
         // Verify event count matches state
-        const pokPlaced = events.filter(e => e.type === 'POK_PLACED').length;
-        const pokRemoved = events.filter(e => e.type === 'POK_REMOVED').length;
+        const pokPlaced = ctx.eventStore.getEventsByType('POK_PLACED').length;
+        const pokRemoved = ctx.eventStore.getEventsByType('POK_REMOVED').length;
         const expectedPoks = pokPlaced - pokRemoved;
 
         assert.equal(state.rounds[0].poks.length, expectedPoks);

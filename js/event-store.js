@@ -39,6 +39,10 @@ export class EventStore {
         return [...this.events];
     }
 
+    getEventsByType(eventType) {
+        return this.events.filter(e => e.type === eventType);
+    }
+
     subscribe(eventType, handler) {
         if (!this.subscribers.has(eventType)) {
             this.subscribers.set(eventType, new Set());
@@ -170,7 +174,7 @@ export class EventStore {
 
     getPlayerNamesFromEvents() {
         // Find the most recent GAME_STARTED event to get player names
-        const gameStartedEvents = this.events.filter(e => e.type === 'GAME_STARTED');
+        const gameStartedEvents = this.getEventsByType('GAME_STARTED');
         if (gameStartedEvents.length === 0) {
             return { red: PLAYERS.RED, blue: PLAYERS.BLUE };
         }

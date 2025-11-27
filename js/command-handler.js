@@ -23,7 +23,7 @@ export class CommandHandler {
 
     getNextPokId() {
         // Calculate next POK ID by finding the highest existing ID in events
-        const pokPlacedEvents = this.eventStore.events.filter(e => e.type === 'POK_PLACED');
+        const pokPlacedEvents = this.eventStore.getEventsByType('POK_PLACED');
 
         let maxId = -1;
         pokPlacedEvents.forEach(event => {
@@ -106,7 +106,7 @@ export class CommandHandler {
         }
 
         // Check if ROUND_ENDED has already been fired for this round
-        const roundEndedEvents = this.eventStore.events.filter(e => e.type === 'ROUND_ENDED');
+        const roundEndedEvents = this.eventStore.getEventsByType('ROUND_ENDED');
         const alreadyEnded = roundEndedEvents.some(e => e.data.roundNumber === round.roundNumber);
         if (alreadyEnded) {
             return; // Round already ended, don't fire again
