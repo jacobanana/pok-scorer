@@ -34,6 +34,18 @@ export class GameService {
         };
     }
 
+    // Factory function to create a new round object
+    createRound(roundNumber, startingPlayerId, isFlipped) {
+        return {
+            roundNumber,
+            startingPlayerId,
+            currentPlayerId: startingPlayerId,
+            poks: [],
+            lastPlacedPokId: null,
+            isFlipped
+        };
+    }
+
     // Calculate state from all events (pure function)
     calculateStateFromEvents(events) {
         let state = this.initState();
@@ -72,14 +84,7 @@ export class GameService {
     // Pure event handlers (return new state, no mutations)
 
     applyGameStarted(state, event) {
-        const newRound = {
-            roundNumber: 0,
-            startingPlayerId: event.data.startingPlayerId,
-            currentPlayerId: event.data.startingPlayerId,
-            poks: [],
-            lastPlacedPokId: null,
-            isFlipped: state.isFlipped
-        };
+        const newRound = this.createRound(0, event.data.startingPlayerId, state.isFlipped);
 
         return {
             ...state,
@@ -215,14 +220,11 @@ export class GameService {
     }
 
     applyRoundStarted(state, event) {
-        const newRound = {
-            roundNumber: event.data.roundNumber,
-            startingPlayerId: event.data.startingPlayerId,
-            currentPlayerId: event.data.startingPlayerId,
-            poks: [],
-            lastPlacedPokId: null,
-            isFlipped: state.isFlipped
-        };
+        const newRound = this.createRound(
+            event.data.roundNumber,
+            event.data.startingPlayerId,
+            state.isFlipped
+        );
 
         return {
             ...state,
@@ -300,19 +302,8 @@ export class GameService {
         const targetRound = round || this.getCurrentRound();
         if (!targetRound) return { red: 0, blue: 0 };
 
-        const redScore = targetRound.poks
-            .filter(p => p.playerId === PLAYERS.RED)
-            .reduce((sum, p) => {
-                const zoneInfo = this.getPokZoneInfo(p, targetRound.isFlipped);
-                return sum + zoneInfo.points;
-            }, 0);
-
-        const blueScore = targetRound.poks
-            .filter(p => p.playerId === PLAYERS.BLUE)
-            .reduce((sum, p) => {
-                const zoneInfo = this.getPokZoneInfo(p, targetRound.isFlipped);
-                return sum + zoneInfo.points;
-            }, 0);
+        const redScore = ScoringService.getPlayerScore(PLAYERS.RED, targetRound.poks, targetRound.isFlipped);
+        const blueScore = ScoringService.getPlayerScore(PLAYERS.BLUE, targetRound.poks, targetRound.isFlipped);
 
         return { red: redScore, blue: blueScore };
     }
