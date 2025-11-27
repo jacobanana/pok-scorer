@@ -46,6 +46,8 @@ Parameters to expose:
 - `color-classifier.js` - HSV-based color classification
 - `calibrator.html` - Auto-calibration UI
 - `calibrator.js` - Optimization algorithm
+- `annotation-editor.html` - Dataset annotation editor UI
+- `annotation-editor.js` - Annotation editor logic
 - `dataset-schema.json` - JSON schema for annotated datasets
 - `example-dataset.json` - Example dataset format
 
@@ -202,3 +204,18 @@ Parameters to expose:
   - Greedy matching algorithm pairs detections to annotations
 - **Match threshold**: Configurable distance (default 50px) for considering detection/annotation as match
 - **UI workflow**: Load dataset JSON → Load image files → Configure iterations → Run → Export params
+
+### 2025-11-27 - Dataset Annotation Editor
+- **Visual annotation tool**: Click on images to place/edit pok annotations
+- **Interaction model**:
+  - Click to place red pok
+  - Click on existing pok to cycle: red → blue → delete
+  - Shift+drag to move poks
+- **Form editing**: Each pok creates a row with editable x, y, radius, color fields
+- **Persistence**:
+  - Save/load dataset to localStorage (includes image data)
+  - Download as JSON file (annotations only, images loaded separately)
+  - Import existing dataset JSON and overlay on loaded images
+- **Detection comparison**: Run detector on current image and compare with annotations
+  - Shows precision, recall, F1, color accuracy
+  - Overlays detections as dashed circles for visual comparison

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pok Dataset Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #2a2a4a;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #444;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            height: calc(100vh - 60px);
+        }
+
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: #252545;
+            padding: 10px 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            flex-wrap: wrap;
+        }
+
+        .image-tabs {
+            display: flex;
+            gap: 5px;
+            background: #1a1a2e;
+            padding: 5px 10px;
+            overflow-x: auto;
+            border-bottom: 1px solid #333;
+        }
+
+        .image-tab {
+            padding: 8px 15px;
+            background: #2a2a4a;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            color: #888;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .image-tab.active {
+            background: #3a3a5a;
+            color: #fff;
+        }
+
+        .image-tab .close-btn {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #555;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-tab .close-btn:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            overflow: auto;
+            background: #1a1a2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        #annotationCanvas {
+            display: block;
+            cursor: crosshair;
+            max-width: 100%;
+            max-height: calc(100vh - 200px);
+        }
+
+        .placeholder {
+            color: #555;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .placeholder svg {
+            margin-bottom: 15px;
+        }
+
+        .side-panel {
+            background: #2a2a4a;
+            border-left: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-section {
+            padding: 15px;
+            border-bottom: 1px solid #444;
+        }
+
+        .panel-section h3 {
+            font-size: 13px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .pok-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .pok-item {
+            background: #333;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .pok-item.red {
+            border-left: 4px solid #d32f2f;
+        }
+
+        .pok-item.blue {
+            border-left: 4px solid #1976d2;
+        }
+
+        .pok-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .pok-item-title {
+            font-weight: 500;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pok-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .pok-color-dot.red { background: #d32f2f; }
+        .pok-color-dot.blue { background: #1976d2; }
+
+        .pok-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .pok-item-actions button {
+            padding: 4px 8px;
+            font-size: 11px;
+            background: #444;
+            border: none;
+            border-radius: 3px;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .pok-item-actions button:hover {
+            background: #555;
+            color: #fff;
+        }
+
+        .pok-item-actions button.delete:hover {
+            background: #e74c3c;
+        }
+
+        .pok-item-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .pok-field {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .pok-field label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .pok-field input, .pok-field select {
+            padding: 5px 8px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 3px;
+            color: #eee;
+            font-size: 12px;
+        }
+
+        .pok-field input:focus, .pok-field select:focus {
+            outline: none;
+            border-color: #4a90d9;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #4a90d9;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #3a7bc8;
+        }
+
+        .btn-secondary {
+            background: #444;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #555;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #27ae60;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .stat-dot.red { background: #d32f2f; }
+        .stat-dot.blue { background: #1976d2; }
+
+        .detection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.5;
+        }
+
+        .radius-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .radius-control label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .radius-control input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #444;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .radius-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #4a90d9;
+            cursor: pointer;
+        }
+
+        .radius-control span {
+            font-size: 12px;
+            color: #4a90d9;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        .detection-results {
+            background: #1a1a2e;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .detection-results h4 {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 8px;
+        }
+
+        .detection-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 3px 0;
+        }
+
+        .detection-stat .value {
+            color: #4a90d9;
+            font-weight: 500;
+        }
+
+        .detection-stat .value.good { color: #2ecc71; }
+        .detection-stat .value.bad { color: #e74c3c; }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .side-panel {
+                border-left: none;
+                border-top: 1px solid #444;
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Pok Dataset Editor</h1>
+        <div class="header-buttons">
+            <input type="file" id="importDataset" accept=".json">
+            <button class="btn-secondary btn-small" onclick="document.getElementById('importDataset').click()">
+                Import Dataset
+            </button>
+            <button class="btn-secondary btn-small" onclick="loadFromStorage()">
+                Load from Storage
+            </button>
+            <button class="btn-primary btn-small" onclick="saveToStorage()">
+                Save to Storage
+            </button>
+            <button class="btn-success btn-small" onclick="downloadDataset()">
+                Download JSON
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-area">
+            <div class="toolbar">
+                <input type="file" id="addImages" accept="image/*" multiple>
+                <button class="btn-primary btn-small" onclick="document.getElementById('addImages').click()">
+                    Add Images
+                </button>
+                <div class="radius-control">
+                    <label>Default Radius:</label>
+                    <input type="range" id="defaultRadius" min="5" max="100" value="25">
+                    <span id="defaultRadiusValue">25</span>px
+                </div>
+                <div style="flex: 1;"></div>
+                <button class="btn-success btn-small" id="runDetectionBtn" onclick="runDetection()" disabled>
+                    Run Detection
+                </button>
+                <button class="btn-secondary btn-small" id="clearDetectionBtn" onclick="clearDetection()" disabled>
+                    Clear Detection
+                </button>
+            </div>
+
+            <div class="image-tabs" id="imageTabs">
+                <!-- Tabs generated dynamically -->
+            </div>
+
+            <div class="canvas-wrapper">
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="annotationCanvas"></canvas>
+                    <canvas id="detectionCanvas" class="detection-overlay"></canvas>
+                </div>
+                <div class="placeholder" id="placeholder">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <p>Add images to start annotating</p>
+                    <p class="info-text" style="margin-top: 10px;">
+                        Click on image to place a red pok<br>
+                        Click on pok to change: red → blue → delete
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="panel-section">
+                <h3>Current Image</h3>
+                <div class="stats-row" id="statsRow">
+                    <span class="stat"><span class="stat-dot red"></span> Red: <strong id="redCount">0</strong></span>
+                    <span class="stat"><span class="stat-dot blue"></span> Blue: <strong id="blueCount">0</strong></span>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Instructions</h3>
+                <p class="info-text">
+                    <strong>Click</strong> on image to place a red pok<br>
+                    <strong>Click on pok</strong> to cycle: red → blue → delete<br>
+                    <strong>Drag</strong> to move a pok (hold Shift)<br>
+                    Edit values in the list below for precision
+                </p>
+            </div>
+
+            <div class="panel-section" id="detectionPanel" style="display: none;">
+                <h3>Detection Comparison</h3>
+                <div class="detection-results" id="detectionResults">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+
+            <div class="pok-list" id="pokList">
+                <p class="info-text" style="text-align: center; padding: 20px;">
+                    No poks annotated yet.<br>Click on the image to add poks.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()" type="text/javascript"></script>
+    <script src="color-classifier.js"></script>
+    <script src="annotation-editor.js"></script>
+</body>
+</html>
