@@ -104,10 +104,14 @@ runner.describe('UIProjection - Initialization', () => {
         assert.equal(typeof ui.components, 'object');
     });
 
-    runner.it('should initialize empty pokComponents map', () => {
-        assert.ok(ui.pokComponents);
-        assert.ok(ui.pokComponents instanceof Map);
-        assert.equal(ui.pokComponents.size, 0);
+    runner.it('should initialize managers', () => {
+        ui.init();
+        assert.ok(ui.managers);
+        assert.ok(ui.managers.pokRenderer);
+        assert.ok(ui.managers.interaction);
+        assert.ok(ui.managers.scoreDisplay);
+        assert.ok(ui.managers.roundModal);
+        assert.ok(ui.managers.autoEnd);
     });
 
     runner.it('should initialize handlers object', () => {
@@ -173,9 +177,10 @@ runner.describe('UIProjection - Event Handlers', () => {
         const pokEvent = new PokPlacedEvent('pok-1', PLAYERS.RED, 50, 50);
         context.eventStore.append(pokEvent);
 
-        // POK component should be created and mounted
-        assert.ok(ui.pokComponents.has('pok-1'));
-        const pokComponent = ui.pokComponents.get('pok-1');
+        // POK component should be created and mounted in DOM
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        assert.ok(pokComponents.has('pok-1'));
+        const pokComponent = pokComponents.get('pok-1');
         assert.ok(pokComponent);
         assert.ok(pokComponent.el);
         assert.ok(pokComponent.el.classList.contains('pok'));
@@ -190,7 +195,8 @@ runner.describe('UIProjection - Event Handlers', () => {
         // Move POK
         context.eventStore.append(new PokMovedEvent('pok-1', 60, 70));
 
-        const pokComponent = ui.pokComponents.get('pok-1');
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        const pokComponent = pokComponents.get('pok-1');
         assert.ok(pokComponent);
         assert.equal(pokComponent.el.style.left, '60%');
         assert.equal(pokComponent.el.style.top, '70%');
@@ -201,12 +207,13 @@ runner.describe('UIProjection - Event Handlers', () => {
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
         context.eventStore.append(new PokPlacedEvent('pok-1', PLAYERS.RED, 50, 50));
 
-        assert.ok(ui.pokComponents.has('pok-1'));
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        assert.ok(pokComponents.has('pok-1'));
 
         // Remove POK
         context.eventStore.append(new PokRemovedEvent('pok-1'));
 
-        assert.notOk(ui.pokComponents.has('pok-1'));
+        assert.notOk(pokComponents.has('pok-1'));
     });
 
     runner.it('should handle ROUND_ENDED event', () => {
@@ -245,7 +252,8 @@ runner.describe('UIProjection - Event Handlers', () => {
         assert.notOk(ui.components.roundModal.isOpen());
 
         // Table should be cleared
-        assert.equal(ui.pokComponents.size, 0);
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        assert.equal(pokComponents.size, 0);
 
         // Body should have new turn class
         assert.ok(document.body.classList.contains('blue-turn'));
@@ -266,13 +274,14 @@ runner.describe('UIProjection - Event Handlers', () => {
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
         context.eventStore.append(new PokPlacedEvent('pok-1', PLAYERS.RED, 50, 50));
 
-        assert.ok(ui.pokComponents.size > 0);
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        assert.ok(pokComponents.size > 0);
 
         // Reset game
         context.eventStore.append(new GameResetEvent());
 
         // Table should be cleared
-        assert.equal(ui.pokComponents.size, 0);
+        assert.equal(pokComponents.size, 0);
 
         // Start selector should be shown
         assert.notOk(ui.components.startSelector.el.classList.contains('hidden'));
@@ -305,7 +314,7 @@ runner.describe('UIProjection - UI Update Methods', () => {
         cleanupTestContext(context);
     });
 
-    runner.it('should update scores correctly', () => {
+    runner.it('should update scores correctly when POKs are placed', () => {
         // Start game
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
@@ -313,14 +322,14 @@ runner.describe('UIProjection - UI Update Methods', () => {
         context.eventStore.append(new PokPlacedEvent('red-1', PLAYERS.RED, 50, 15)); // Zone 3 = 3 points
         context.eventStore.append(new PokPlacedEvent('blue-1', PLAYERS.BLUE, 50, 25)); // Zone 2 = 2 points
 
-        ui.updateScores();
-
-        // Check that score components were updated
+        // Scores are automatically updated via event subscriptions
+        // Check that score components exist and were created
         assert.ok(ui.components.currentRedScore);
         assert.ok(ui.components.currentBlueScore);
+        assert.ok(ui.components.currentDiff);
     });
 
-    runner.it('should update round history table', () => {
+    runner.it('should update round history table when events occur', () => {
         // Start game
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
@@ -328,12 +337,12 @@ runner.describe('UIProjection - UI Update Methods', () => {
         context.eventStore.append(new PokPlacedEvent('red-1', PLAYERS.RED, 50, 15));
         context.eventStore.append(new PokPlacedEvent('blue-1', PLAYERS.BLUE, 50, 25));
 
-        ui.updateRoundsHistory();
-
+        // History is automatically updated via event subscriptions
+        // Check that history table component exists
         assert.ok(ui.components.historyTable);
     });
 
-    runner.it('should show round modal with correct scores', () => {
+    runner.it('should show round modal when round ends', () => {
         // Start game and complete round
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
@@ -343,37 +352,44 @@ runner.describe('UIProjection - UI Update Methods', () => {
             context.eventStore.append(new PokPlacedEvent(`blue-${i}`, PLAYERS.BLUE, 50, 25 + i));
         }
 
-        const event = new RoundEndedEvent(0);
-        ui.showRoundModal(event);
+        // End round - modal is shown automatically
+        context.eventStore.append(new RoundEndedEvent(0));
 
         // Modal should be open
         assert.ok(ui.components.roundModal.isOpen());
 
-        // Score components should be updated
+        // Score components should exist
         assert.ok(ui.components.modalRedScore);
         assert.ok(ui.components.modalBlueScore);
         assert.ok(ui.components.modalScoreDiff);
     });
 
-    runner.it('should clear table when clearTable is called', () => {
+    runner.it('should clear table when round starts', () => {
         // Start game and place POKs
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
         context.eventStore.append(new PokPlacedEvent('pok-1', PLAYERS.RED, 50, 50));
         context.eventStore.append(new PokPlacedEvent('pok-2', PLAYERS.BLUE, 60, 60));
 
-        assert.equal(ui.pokComponents.size, 2);
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        assert.equal(pokComponents.size, 2);
 
-        ui.clearTable();
+        // Complete and start new round - table should be cleared
+        for (let i = 0; i < 4; i++) {
+            context.eventStore.append(new PokPlacedEvent(`r-${i}`, PLAYERS.RED, 50, 10));
+            context.eventStore.append(new PokPlacedEvent(`b-${i}`, PLAYERS.BLUE, 50, 25));
+        }
+        context.eventStore.append(new RoundEndedEvent(0));
+        context.eventStore.append(new RoundStartedEvent(1, PLAYERS.RED));
 
-        assert.equal(ui.pokComponents.size, 0);
+        assert.equal(pokComponents.size, 0);
     });
 });
 
 // ============================================
-// SHOW ROUND MODAL TESTS
+// ROUND END MODAL TESTS
 // ============================================
 
-runner.describe('UIProjection - showRoundModal', () => {
+runner.describe('UIProjection - Round End Modal', () => {
     let context;
     let ui;
 
@@ -391,7 +407,7 @@ runner.describe('UIProjection - showRoundModal', () => {
         cleanupTestContext(context);
     });
 
-    runner.it('should calculate scores from round poks, not event data', () => {
+    runner.it('should show modal when round ends', () => {
         // Start game
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
@@ -405,15 +421,13 @@ runner.describe('UIProjection - showRoundModal', () => {
             context.eventStore.append(new PokPlacedEvent(`blue-${i}`, PLAYERS.BLUE, 50, 25 + i));
         }
 
-        const event = new RoundEndedEvent(0);
-        ui.showRoundModal(event);
+        // End round - modal shown automatically via event handler
+        context.eventStore.append(new RoundEndedEvent(0));
 
-        // Verify modal score components are set correctly
+        // Verify modal score components exist and modal is open
         assert.ok(ui.components.modalRedScore);
         assert.ok(ui.components.modalBlueScore);
         assert.ok(ui.components.modalScoreDiff);
-
-        // Modal should be open
         assert.ok(ui.components.roundModal.isOpen());
     });
 
@@ -426,8 +440,7 @@ runner.describe('UIProjection - showRoundModal', () => {
             context.eventStore.append(new PokPlacedEvent(`blue-${i}`, PLAYERS.BLUE, 50, 25 + i));
         }
 
-        const event = new RoundEndedEvent(0);
-        ui.showRoundModal(event);
+        context.eventStore.append(new RoundEndedEvent(0));
 
         const winnerEl = ui.components.roundModal.find('#roundEndModalWinner');
         assert.ok(winnerEl.textContent.includes('ALICE'));
@@ -443,8 +456,7 @@ runner.describe('UIProjection - showRoundModal', () => {
             context.eventStore.append(new PokPlacedEvent(`blue-${i}`, PLAYERS.BLUE, 50, 10 + i));
         }
 
-        const event = new RoundEndedEvent(0);
-        ui.showRoundModal(event);
+        context.eventStore.append(new RoundEndedEvent(0));
 
         const winnerEl = ui.components.roundModal.find('#roundEndModalWinner');
         assert.ok(winnerEl.textContent.includes('BOB'));
@@ -460,8 +472,7 @@ runner.describe('UIProjection - showRoundModal', () => {
             context.eventStore.append(new PokPlacedEvent(`blue-${i}`, PLAYERS.BLUE, 50, 10 + i));
         }
 
-        const event = new RoundEndedEvent(0);
-        ui.showRoundModal(event);
+        context.eventStore.append(new RoundEndedEvent(0));
 
         const winnerEl = ui.components.roundModal.find('#roundEndModalWinner');
         assert.equal(winnerEl.textContent, 'TIE!');
@@ -494,26 +505,23 @@ runner.describe('UIProjection - Auto-End Countdown', () => {
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
         context.eventStore.append(new PokPlacedEvent('pok-1', PLAYERS.RED, 50, 50));
 
-        ui.checkRoundComplete();
-
-        assert.notOk(ui.hasAutoEndTimer());
+        // Auto-end timer checked automatically via event subscription
+        assert.notOk(ui.managers.autoEnd.hasAutoEndTimer());
     });
 
     runner.it('should start countdown when round is complete', () => {
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
-        // Complete round
+        // Complete round - triggers auto-end check via event subscription
         for (let i = 0; i < 5; i++) {
             context.eventStore.append(new PokPlacedEvent(`red-${i}`, PLAYERS.RED, 50, 10 + i));
             context.eventStore.append(new PokPlacedEvent(`blue-${i}`, PLAYERS.BLUE, 50, 25 + i));
         }
 
-        ui.checkRoundComplete();
-
-        assert.ok(ui.hasAutoEndTimer());
+        assert.ok(ui.managers.autoEnd.hasAutoEndTimer());
     });
 
-    runner.it('should clear countdown when clearAutoEndTimer is called', () => {
+    runner.it('should clear countdown when round ends', () => {
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
         // Complete round
@@ -522,11 +530,11 @@ runner.describe('UIProjection - Auto-End Countdown', () => {
             context.eventStore.append(new PokPlacedEvent(`blue-${i}`, PLAYERS.BLUE, 50, 25 + i));
         }
 
-        ui.checkRoundComplete();
-        assert.ok(ui.hasAutoEndTimer());
+        assert.ok(ui.managers.autoEnd.hasAutoEndTimer());
 
-        ui.clearAutoEndTimer();
-        assert.notOk(ui.hasAutoEndTimer());
+        // End round - should clear timer automatically
+        context.eventStore.append(new RoundEndedEvent(0));
+        assert.notOk(ui.managers.autoEnd.hasAutoEndTimer());
     });
 
     runner.it('should not start countdown for already ended round', () => {
@@ -539,18 +547,16 @@ runner.describe('UIProjection - Auto-End Countdown', () => {
         }
         context.eventStore.append(new RoundEndedEvent(0));
 
-        ui.checkRoundComplete();
-
-        // Should not start countdown for ended round
-        assert.notOk(ui.hasAutoEndTimer());
+        // Should not have auto-end timer for ended round
+        assert.notOk(ui.managers.autoEnd.hasAutoEndTimer());
     });
 });
 
 // ============================================
-// HELPER METHODS TESTS
+// PUBLIC API TESTS
 // ============================================
 
-runner.describe('UIProjection - Helper Methods', () => {
+runner.describe('UIProjection - Public API', () => {
     let context;
     let ui;
 
@@ -568,21 +574,22 @@ runner.describe('UIProjection - Helper Methods', () => {
         cleanupTestContext(context);
     });
 
-    runner.it('should find POK by ID', () => {
+    runner.it('should track POK components in renderer', () => {
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
         context.eventStore.append(new PokPlacedEvent('pok-1', PLAYERS.RED, 50, 50));
 
-        const pok = ui.findPok('pok-1');
-        assert.ok(pok);
-        assert.equal(pok.id, 'pok-1');
-        assert.equal(pok.playerId, PLAYERS.RED);
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        assert.ok(pokComponents.has('pok-1'));
+        const component = pokComponents.get('pok-1');
+        assert.ok(component);
+        assert.ok(component.el.classList.contains('red'));
     });
 
-    runner.it('should return null for non-existent POK', () => {
+    runner.it('should not have non-existent POK in components', () => {
         context.eventStore.append(new GameStartedEvent(PLAYERS.RED, 'Alice', 'Bob'));
 
-        const pok = ui.findPok('non-existent');
-        assert.notOk(pok); // Returns undefined when not found, which is falsy
+        const pokComponents = ui.managers.pokRenderer.getPokComponents();
+        assert.notOk(pokComponents.has('non-existent'));
     });
 
     runner.it('should get player names from start selector', () => {
