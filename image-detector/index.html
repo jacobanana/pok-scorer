@@ -88,11 +88,8 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 20px;
         }
 
         .main-panel {
@@ -557,13 +554,261 @@
             margin-top: 5px;
         }
 
-        @media (max-width: 900px) {
-            .container {
-                grid-template-columns: 1fr;
+        /* Collapsible Parameters Drawer */
+        .drawer-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: #2a2a4a;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+
+        .drawer-toggle:hover {
+            background: #3a3a5a;
+        }
+
+        .drawer-toggle h2 {
+            margin: 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drawer-toggle .toggle-icon {
+            transition: transform 0.3s;
+            font-size: 12px;
+        }
+
+        .drawer-toggle.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .param-source-mini {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: #444;
+            margin-left: 10px;
+        }
+
+        .param-source-mini.calibrated {
+            background: #2ecc71;
+            color: #111;
+        }
+
+        .param-source-mini.imported {
+            background: #4a90d9;
+            color: #fff;
+        }
+
+        .param-source-mini.custom {
+            background: #f39c12;
+            color: #111;
+        }
+
+        .params-drawer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #2a2a4a;
+            border-radius: 0 0 8px 8px;
+            margin-top: -8px;
+        }
+
+        .params-drawer.open {
+            max-height: 2000px;
+        }
+
+        .params-drawer-content {
+            padding: 15px;
+        }
+
+        /* Results Report Section */
+        .results-report {
+            background: #2a2a4a;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .results-report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #444;
+        }
+
+        .results-report-header h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .accuracy-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .accuracy-stat {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .accuracy-stat.good {
+            background: #2ecc71;
+            color: #111;
+        }
+
+        .accuracy-stat.medium {
+            background: #f39c12;
+            color: #111;
+        }
+
+        .accuracy-stat.poor {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .results-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            transition: background 0.2s;
+        }
+
+        .result-row:hover {
+            background: #333;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-index {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .result-index.red {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .result-index.blue {
+            background: #1976d2;
+            color: white;
+        }
+
+        .result-index.unknown {
+            background: #888;
+            color: white;
+        }
+
+        .result-info {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .result-info .coords {
+            color: #888;
+            font-size: 11px;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .result-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .result-btn.correct {
+            background: transparent;
+            border-color: #2ecc71;
+            color: #2ecc71;
+        }
+
+        .result-btn.correct:hover,
+        .result-btn.correct.active {
+            background: #2ecc71;
+            color: #111;
+        }
+
+        .result-btn.wrong {
+            background: transparent;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .result-btn.wrong:hover,
+        .result-btn.wrong.active {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .no-results {
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .results-footer {
+            padding: 15px;
+            border-top: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .results-footer button {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .results-bar {
+                flex-direction: column;
+                gap: 10px;
             }
 
-            .side-panel {
-                max-height: none;
+            .result-row {
+                flex-wrap: wrap;
+            }
+
+            .result-actions {
+                width: 100%;
+                justify-content: flex-end;
             }
         }
     </style>
@@ -637,13 +882,19 @@
             </div>
 
             <div class="status" id="status">Loading OpenCV.js...</div>
-        </div>
 
-        <div class="side-panel">
-            <h2>Detection Parameters</h2>
-
-            <!-- Algorithm Selector -->
-            <div class="algorithm-selector">
+            <!-- Collapsible Parameters Drawer -->
+            <div class="drawer-toggle" id="drawerToggle" onclick="toggleParamsDrawer()">
+                <h2>
+                    <span>Detection Parameters</span>
+                    <span class="param-source-mini" id="paramSourceMini"></span>
+                </h2>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="params-drawer" id="paramsDrawer">
+                <div class="params-drawer-content">
+                    <!-- Algorithm Selector -->
+                    <div class="algorithm-selector">
                 <label style="font-size: 12px; margin-bottom: 5px; display: block; color: #aaa;">Detection Algorithm</label>
                 <select id="algorithm">
                     <option value="hough">HoughCircles (edge-based)</option>
@@ -974,7 +1225,30 @@
                     <div class="no-versions">No saved versions yet</div>
                 </div>
             </div>
-        </div>
+                </div>
+            </div>
+
+            <!-- Results Report -->
+            <div class="results-report" id="resultsReport" style="display: none;">
+                <div class="results-report-header">
+                    <h2>Detection Results</h2>
+                    <div class="accuracy-badge">
+                        <span class="accuracy-stat" id="accuracyStat">--</span>
+                    </div>
+                </div>
+                <div class="results-list" id="resultsList">
+                    <div class="no-results">No detections yet. Upload an image and click Detect.</div>
+                </div>
+                <div class="results-footer">
+                    <div>
+                        <span id="annotatedCount">0</span> of <span id="totalCount">0</span> annotated
+                    </div>
+                    <div>
+                        <button class="btn-secondary" onclick="markAllCorrect()">Mark All Correct</button>
+                        <button class="btn-secondary" onclick="clearAnnotations()">Clear Annotations</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

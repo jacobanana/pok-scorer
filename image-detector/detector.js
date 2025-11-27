@@ -465,6 +465,7 @@ function runDetection() {
 
             drawResults(currentImage, results);
             updateCounts(results);
+            setDetectionResults(results);
             setStatus(`Found ${results.length} circles`, 'ready');
         } catch (err) {
             setStatus('Detection error: ' + err.message, 'error');
@@ -893,7 +894,172 @@ function initImportHandler() {
     }
 }
 
+// ==================== Results Report & Accuracy ====================
+
+// Store detection results with annotations
+let detectionResults = [];
+let resultAnnotations = {}; // { index: 'correct' | 'wrong' }
+
+/**
+ * Toggle parameters drawer open/closed
+ */
+function toggleParamsDrawer() {
+    const toggle = document.getElementById('drawerToggle');
+    const drawer = document.getElementById('paramsDrawer');
+
+    toggle.classList.toggle('open');
+    drawer.classList.toggle('open');
+}
+
+/**
+ * Store and display detection results
+ */
+function setDetectionResults(results) {
+    detectionResults = results;
+    resultAnnotations = {};
+    renderResultsList();
+    updateAccuracyDisplay();
+
+    // Show the results report
+    const report = document.getElementById('resultsReport');
+    if (report) {
+        report.style.display = results.length > 0 ? 'block' : 'none';
+    }
+}
+
+/**
+ * Render the results list
+ */
+function renderResultsList() {
+    const listEl = document.getElementById('resultsList');
+    if (!listEl) return;
+
+    if (detectionResults.length === 0) {
+        listEl.innerHTML = '<div class="no-results">No detections yet. Upload an image and click Detect.</div>';
+        return;
+    }
+
+    listEl.innerHTML = detectionResults.map((result, idx) => {
+        const annotation = resultAnnotations[idx];
+        const correctActive = annotation === 'correct' ? 'active' : '';
+        const wrongActive = annotation === 'wrong' ? 'active' : '';
+
+        return `
+            <div class="result-row" data-index="${idx}">
+                <div class="result-index ${result.color}">${idx + 1}</div>
+                <div class="result-info">
+                    <div><strong>${result.color.charAt(0).toUpperCase() + result.color.slice(1)}</strong> pok</div>
+                    <div class="coords">Position: (${Math.round(result.x)}, ${Math.round(result.y)}) · Radius: ${Math.round(result.radius)}px</div>
+                </div>
+                <div class="result-actions">
+                    <button class="result-btn correct ${correctActive}" onclick="annotateResult(${idx}, 'correct')">Correct</button>
+                    <button class="result-btn wrong ${wrongActive}" onclick="annotateResult(${idx}, 'wrong')">Wrong</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Annotate a result as correct or wrong
+ */
+function annotateResult(index, annotation) {
+    // Toggle off if clicking same annotation
+    if (resultAnnotations[index] === annotation) {
+        delete resultAnnotations[index];
+    } else {
+        resultAnnotations[index] = annotation;
+    }
+
+    renderResultsList();
+    updateAccuracyDisplay();
+}
+
+/**
+ * Update accuracy display
+ */
+function updateAccuracyDisplay() {
+    const annotatedCount = Object.keys(resultAnnotations).length;
+    const totalCount = detectionResults.length;
+    const correctCount = Object.values(resultAnnotations).filter(a => a === 'correct').length;
+    const wrongCount = Object.values(resultAnnotations).filter(a => a === 'wrong').length;
+
+    // Update counts
+    const annotatedEl = document.getElementById('annotatedCount');
+    const totalEl = document.getElementById('totalCount');
+    if (annotatedEl) annotatedEl.textContent = annotatedCount;
+    if (totalEl) totalEl.textContent = totalCount;
+
+    // Update accuracy badge
+    const accuracyEl = document.getElementById('accuracyStat');
+    if (accuracyEl) {
+        if (annotatedCount === 0) {
+            accuracyEl.textContent = '--';
+            accuracyEl.className = 'accuracy-stat';
+        } else {
+            const accuracy = Math.round((correctCount / annotatedCount) * 100);
+            accuracyEl.textContent = `${accuracy}% (${correctCount}/${annotatedCount})`;
+
+            // Color based on accuracy
+            if (accuracy >= 80) {
+                accuracyEl.className = 'accuracy-stat good';
+            } else if (accuracy >= 50) {
+                accuracyEl.className = 'accuracy-stat medium';
+            } else {
+                accuracyEl.className = 'accuracy-stat poor';
+            }
+        }
+    }
+}
+
+/**
+ * Mark all results as correct
+ */
+function markAllCorrect() {
+    detectionResults.forEach((_, idx) => {
+        resultAnnotations[idx] = 'correct';
+    });
+    renderResultsList();
+    updateAccuracyDisplay();
+}
+
+/**
+ * Clear all annotations
+ */
+function clearAnnotations() {
+    resultAnnotations = {};
+    renderResultsList();
+    updateAccuracyDisplay();
+}
+
+/**
+ * Update the mini source badge in drawer toggle
+ */
+function updateParamSourceMini() {
+    const miniEl = document.getElementById('paramSourceMini');
+    if (!miniEl) return;
+
+    const source = getParamSource();
+    miniEl.className = 'param-source-mini ' + source;
+
+    const labels = {
+        [PARAM_SOURCE.DEFAULT]: '',
+        [PARAM_SOURCE.CALIBRATED]: 'Calibrated',
+        [PARAM_SOURCE.IMPORTED]: 'Imported',
+        [PARAM_SOURCE.CUSTOM]: 'Custom'
+    };
+    miniEl.textContent = labels[source] || '';
+}
+
+// Override updateParamSourceDisplay to also update mini badge
+const originalUpdateParamSourceDisplay = updateParamSourceDisplay;
+updateParamSourceDisplay = function() {
+    originalUpdateParamSourceDisplay();
+    updateParamSourceMini();
+};
+
 // Initialize on load
 initParams();
 initImportHandler();
 updateParamSourceDisplay();
+updateParamSourceMini();
