@@ -5,12 +5,22 @@
 
 const Calibrator = {
     // Current state
+    // States: NOT_READY, READY, RUNNING, CALIBRATED, STOPPED
+    state: 'NOT_READY',
     dataset: null,
     loadedImages: [],
+    trainingSet: [],
+    validationSet: [],
     isRunning: false,
     shouldStop: false,
     bestParams: null,
     bestScore: -Infinity,
+
+    // Separate tracking for best detection and color params
+    bestDetectionParams: null,
+    bestDetectionScore: -Infinity,
+    bestColorParams: null,
+    bestColorScore: -Infinity,
 
     // Results history
     history: [],
@@ -220,6 +230,24 @@ const Calibrator = {
     },
 
     /**
+     * Split loaded images into training and validation sets
+     */
+    splitDataset(trainRatio = 0.7) {
+        const shuffled = [...this.loadedImages].sort(() => Math.random() - 0.5);
+        const trainCount = Math.floor(shuffled.length * trainRatio);
+
+        this.trainingSet = shuffled.slice(0, trainCount);
+        this.validationSet = shuffled.slice(trainCount);
+
+        console.log(`📊 Dataset split: ${this.trainingSet.length} training, ${this.validationSet.length} validation`);
+
+        return {
+            trainingCount: this.trainingSet.length,
+            validationCount: this.validationSet.length
+        };
+    },
+
+    /**
      * Calculate score for a set of detections vs annotations
      * Returns object with precision, recall, F1, color accuracy, avg position error
      */
@@ -279,6 +307,12 @@ const Calibrator = {
         // Score range: 0-100
         const combinedScore = (f1 * 50) + (colorAccuracy * 40) - (avgPositionError / threshold * 10);
 
+        // Detection score: focuses on F1 and position accuracy
+        const detectionScore = (f1 * 70) - (avgPositionError / threshold * 30);
+
+        // Color score: focuses on color classification accuracy
+        const colorScore = (colorAccuracy * 100);
+
         return {
             precision,
             recall,
@@ -288,29 +322,40 @@ const Calibrator = {
             truePositives,
             falsePositives,
             falseNegatives,
-            combinedScore
+            combinedScore,
+            detectionScore,
+            colorScore
         };
     },
 
     /**
-     * Evaluate parameters across all loaded images
+     * Evaluate parameters across a dataset (training or validation)
      */
-    evaluateParams(params) {
-        let totalScore = 0;
+    evaluateParams(params, dataset = null) {
+        const datasetToUse = dataset || this.trainingSet;
+        let totalCombinedScore = 0;
+        let totalDetectionScore = 0;
+        let totalColorScore = 0;
         const results = [];
 
-        for (const entry of this.loadedImages) {
+        for (const entry of datasetToUse) {
             const detections = this.detectWithParams(entry.image, params);
             const score = this.calculateScore(detections, entry.annotations);
             results.push({
                 filename: entry.filename,
                 ...score
             });
-            totalScore += score.combinedScore;
+            totalCombinedScore += score.combinedScore;
+            totalDetectionScore += score.detectionScore;
+            totalColorScore += score.colorScore;
         }
 
+        const count = datasetToUse.length;
+
         return {
-            avgScore: totalScore / this.loadedImages.length,
+            avgScore: totalCombinedScore / count,
+            avgDetectionScore: totalDetectionScore / count,
+            avgColorScore: totalColorScore / count,
             perImage: results
         };
     },
@@ -359,38 +404,105 @@ const Calibrator = {
 
     /**
      * Main optimization loop
-     * Uses random search followed by local refinement
+     * Uses random search followed by hybrid combination and local refinement
      */
     async optimize(options = {}) {
         const {
             randomIterations = 50,
             localIterations = 100,
+            trainRatio = 0.7,
+            startingParams = null,
             onProgress = () => {},
             onBestFound = () => {}
         } = options;
 
+        this.state = 'RUNNING';
         this.isRunning = true;
         this.shouldStop = false;
         this.history = [];
         this.bestScore = -Infinity;
         this.bestParams = null;
+        this.bestDetectionScore = -Infinity;
+        this.bestDetectionParams = null;
+        this.bestColorScore = -Infinity;
+        this.bestColorParams = null;
 
-        const totalIterations = randomIterations + localIterations;
+        // Split dataset into training and validation
+        this.splitDataset(trainRatio);
+
         let iteration = 0;
 
-        // Phase 1: Random search
-        onProgress({ phase: 'random', iteration: 0, total: randomIterations, bestScore: this.bestScore });
+        // Evaluate starting parameters if provided
+        if (startingParams) {
+            console.log('🎯 Starting from provided parameters...');
+            const result = this.evaluateParams(startingParams);
+            this.bestScore = result.avgScore;
+            this.bestParams = startingParams;
+            this.bestDetectionScore = result.avgDetectionScore;
+            this.bestDetectionParams = { ...startingParams };
+            this.bestColorScore = result.avgColorScore;
+            this.bestColorParams = { ...startingParams };
 
-        for (let i = 0; i < randomIterations && !this.shouldStop; i++) {
+            console.log(`   Initial score: ${result.avgScore.toFixed(2)}`);
+            console.log(`   Detection: ${result.avgDetectionScore.toFixed(2)}, Color: ${result.avgColorScore.toFixed(2)}\n`);
+
+            onBestFound({ params: startingParams, score: result.avgScore, details: result });
+        }
+
+        console.log('\n╔══════════════════════════════════════════════════════════════╗');
+        console.log('║              POK DETECTOR CALIBRATION PROCESS                ║');
+        console.log('╚══════════════════════════════════════════════════════════════╝\n');
+        console.log(`🔧 Configuration:`);
+        console.log(`   - Random iterations: ${startingParams ? 0 : randomIterations} ${startingParams ? '(skipped - using starting params)' : ''}`);
+        console.log(`   - Local iterations: ${localIterations}`);
+        console.log(`   - Train/Validation split: ${(trainRatio * 100).toFixed(0)}% / ${((1 - trainRatio) * 100).toFixed(0)}%`);
+        console.log(`   - Training set: ${this.trainingSet.length} images`);
+        console.log(`   - Validation set: ${this.validationSet.length} images\n`);
+
+        // Phase 1: Random search (skip if starting params provided)
+        if (!startingParams) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🎲 PHASE 1: Random Search');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+            onProgress({ phase: 'random', iteration: 0, total: randomIterations, bestScore: this.bestScore });
+
+            for (let i = 0; i < randomIterations && !this.shouldStop; i++) {
             const params = this.randomParams();
             const result = this.evaluateParams(params);
 
-            this.history.push({ params, score: result.avgScore, phase: 'random' });
+            this.history.push({
+                params,
+                score: result.avgScore,
+                detectionScore: result.avgDetectionScore,
+                colorScore: result.avgColorScore,
+                phase: 'random'
+            });
 
+            // Track best combined score
             if (result.avgScore > this.bestScore) {
                 this.bestScore = result.avgScore;
                 this.bestParams = params;
+                console.log(`✨ New best COMBINED: ${result.avgScore.toFixed(2)} (F1: ${(result.perImage[0]?.f1 * 100 || 0).toFixed(1)}%, Color: ${(result.perImage[0]?.colorAccuracy * 100 || 0).toFixed(1)}%)`);
                 onBestFound({ params, score: result.avgScore, details: result });
+            }
+
+            // Track best detection score
+            if (result.avgDetectionScore > this.bestDetectionScore) {
+                this.bestDetectionScore = result.avgDetectionScore;
+                this.bestDetectionParams = { ...params };
+                console.log(`🎯 New best DETECTION: ${result.avgDetectionScore.toFixed(2)}`);
+            }
+
+            // Track best color score
+            if (result.avgColorScore > this.bestColorScore) {
+                this.bestColorScore = result.avgColorScore;
+                this.bestColorParams = { ...params };
+                console.log(`🎨 New best COLOR: ${result.avgColorScore.toFixed(2)}`);
+            }
+
+            if ((i + 1) % 10 === 0) {
+                console.log(`   Progress: ${i + 1}/${randomIterations} | Best: ${this.bestScore.toFixed(2)}`);
             }
 
             iteration++;
@@ -399,35 +511,92 @@ const Calibrator = {
                 iteration: i + 1,
                 total: randomIterations,
                 bestScore: this.bestScore,
-                currentScore: result.avgScore
+                currentScore: result.avgScore,
+                currentResult: result
             });
 
-            // Yield to UI
+                // Yield to UI
+                await new Promise(r => setTimeout(r, 0));
+            }
+
+            console.log(`\n✅ Random search complete. Best combined: ${this.bestScore.toFixed(2)}\n`);
+        } else {
+            console.log('⏩ Skipping random search - using provided starting parameters\n');
+        }
+
+        // Phase 1.5: Test hybrid combination
+        if (!this.shouldStop && this.bestDetectionParams && this.bestColorParams) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🔬 PHASE 1.5: Hybrid Parameter Combination');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+            // Combine detection params with color params
+            const hybridParams = { ...this.bestDetectionParams };
+
+            // Replace color parameters with best color params
+            const colorKeys = ['redH1Low', 'redH1High', 'redH2Low', 'redH2High', 'redSMin', 'redVMin',
+                              'blueH1Low', 'blueH1High', 'blueH2Low', 'blueH2High', 'blueSMin', 'blueVMin'];
+            colorKeys.forEach(key => {
+                if (this.bestColorParams[key] !== undefined) {
+                    hybridParams[key] = this.bestColorParams[key];
+                }
+            });
+
+            console.log('🧬 Testing hybrid: Best detection params + Best color params');
+            const hybridResult = this.evaluateParams(hybridParams);
+
+            console.log(`   Hybrid score: ${hybridResult.avgScore.toFixed(2)}`);
+            console.log(`   Current best: ${this.bestScore.toFixed(2)}`);
+            console.log(`   Detection: ${hybridResult.avgDetectionScore.toFixed(2)}, Color: ${hybridResult.avgColorScore.toFixed(2)}`);
+
+            if (hybridResult.avgScore > this.bestScore) {
+                console.log('\n🎉 Hybrid combination is BETTER! Using as starting point for local search.\n');
+                this.bestScore = hybridResult.avgScore;
+                this.bestParams = hybridParams;
+                onBestFound({ params: hybridParams, score: hybridResult.avgScore, details: hybridResult });
+            } else {
+                console.log('\n📊 Hybrid not better. Continuing with original best.\n');
+            }
+
+            iteration++;
             await new Promise(r => setTimeout(r, 0));
         }
 
         // Phase 2: Local search (hill climbing from best found)
         if (!this.shouldStop && this.bestParams) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🔍 PHASE 2: Local Search (Hill Climbing)');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
             onProgress({ phase: 'local', iteration: 0, total: localIterations, bestScore: this.bestScore });
 
             let currentParams = { ...this.bestParams };
             let currentScore = this.bestScore;
             let noImprovementCount = 0;
+            let improvements = 0;
 
             for (let i = 0; i < localIterations && !this.shouldStop; i++) {
                 const neighborP = this.neighborParams(currentParams);
                 const result = this.evaluateParams(neighborP);
 
-                this.history.push({ params: neighborP, score: result.avgScore, phase: 'local' });
+                this.history.push({
+                    params: neighborP,
+                    score: result.avgScore,
+                    detectionScore: result.avgDetectionScore,
+                    colorScore: result.avgColorScore,
+                    phase: 'local'
+                });
 
                 if (result.avgScore > currentScore) {
                     currentScore = result.avgScore;
                     currentParams = neighborP;
                     noImprovementCount = 0;
+                    improvements++;
 
                     if (result.avgScore > this.bestScore) {
                         this.bestScore = result.avgScore;
                         this.bestParams = neighborP;
+                        console.log(`⬆️  Improvement #${improvements}: ${result.avgScore.toFixed(2)} (+${(result.avgScore - currentScore).toFixed(2)})`);
                         onBestFound({ params: neighborP, score: result.avgScore, details: result });
                     }
                 } else {
@@ -436,7 +605,12 @@ const Calibrator = {
                     if (noImprovementCount > 10) {
                         currentParams = this.neighborParams(this.bestParams);
                         noImprovementCount = 0;
+                        console.log(`   🔄 Stuck at local optimum, jumping to random neighbor...`);
                     }
+                }
+
+                if ((i + 1) % 20 === 0) {
+                    console.log(`   Progress: ${i + 1}/${localIterations} | Best: ${this.bestScore.toFixed(2)} | Improvements: ${improvements}`);
                 }
 
                 iteration++;
@@ -451,13 +625,73 @@ const Calibrator = {
                 // Yield to UI
                 await new Promise(r => setTimeout(r, 0));
             }
+
+            console.log(`\n✅ Local search complete. Total improvements: ${improvements}\n`);
         }
 
         this.isRunning = false;
 
+        // Check if stopped early
+        if (this.shouldStop) {
+            this.state = 'STOPPED';
+        }
+
+        // Phase 3: Validation
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ PHASE 3: Validation Set Testing');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+        let validationResult = null;
+        if (this.validationSet.length > 0 && this.bestParams) {
+            validationResult = this.evaluateParams(this.bestParams, this.validationSet);
+
+            console.log('📊 FINAL RESULTS:');
+            console.log('┌─────────────────────────────────────────────────────────────┐');
+            console.log(`│ Training Score:   ${this.bestScore.toFixed(2).padEnd(43)} │`);
+            console.log(`│ Validation Score: ${validationResult.avgScore.toFixed(2).padEnd(43)} │`);
+            console.log('├─────────────────────────────────────────────────────────────┤');
+
+            const avgF1 = validationResult.perImage.reduce((s, r) => s + r.f1, 0) / validationResult.perImage.length;
+            const avgColorAcc = validationResult.perImage.reduce((s, r) => s + r.colorAccuracy, 0) / validationResult.perImage.length;
+            const avgPrecision = validationResult.perImage.reduce((s, r) => s + r.precision, 0) / validationResult.perImage.length;
+            const avgRecall = validationResult.perImage.reduce((s, r) => s + r.recall, 0) / validationResult.perImage.length;
+            const avgPosError = validationResult.perImage.reduce((s, r) => s + r.avgPositionError, 0) / validationResult.perImage.length;
+
+            console.log(`│ F1 Score:         ${(avgF1 * 100).toFixed(1)}%`.padEnd(62) + '│');
+            console.log(`│ Color Accuracy:   ${(avgColorAcc * 100).toFixed(1)}%`.padEnd(62) + '│');
+            console.log(`│ Precision:        ${(avgPrecision * 100).toFixed(1)}%`.padEnd(62) + '│');
+            console.log(`│ Recall:           ${(avgRecall * 100).toFixed(1)}%`.padEnd(62) + '│');
+            console.log(`│ Avg Pos Error:    ${avgPosError.toFixed(1)}px`.padEnd(62) + '│');
+            console.log('└─────────────────────────────────────────────────────────────┘\n');
+
+            console.log('📋 Per-Image Validation Results:');
+            console.table(validationResult.perImage.map(img => ({
+                'File': img.filename,
+                'F1': (img.f1 * 100).toFixed(1) + '%',
+                'Color': (img.colorAccuracy * 100).toFixed(1) + '%',
+                'TP': img.truePositives,
+                'FP': img.falsePositives,
+                'FN': img.falseNegatives,
+                'Pos Err': img.avgPositionError.toFixed(1) + 'px'
+            })));
+        } else {
+            console.log('⚠️  No validation set available (need more images)\n');
+        }
+
+        console.log('\n╔══════════════════════════════════════════════════════════════╗');
+        console.log('║                    CALIBRATION COMPLETE                      ║');
+        console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
+        // Set final state
+        if (!this.shouldStop) {
+            this.state = 'CALIBRATED';
+        }
+
         return {
             bestParams: this.bestParams,
             bestScore: this.bestScore,
+            validationScore: validationResult?.avgScore,
+            validationResult: validationResult,
             iterations: iteration,
             history: this.history
         };
@@ -468,6 +702,7 @@ const Calibrator = {
      */
     stop() {
         this.shouldStop = true;
+        this.state = 'STOPPED';
     },
 
     /**
