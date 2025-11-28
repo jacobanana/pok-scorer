@@ -4,93 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pok Detector - OpenCV.js</title>
+    <link rel="stylesheet" href="shared-styles.css">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            min-height: 100vh;
-            padding: 0;
-        }
-
-        /* Main Navigation */
-        .main-nav {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding: 12px 20px;
-            background: #16162a;
-            border-bottom: 1px solid #333;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            color: #888;
-            transition: all 0.2s;
-        }
-
-        .nav-link:hover {
-            color: #ccc;
-            background: #2a2a4a;
-        }
-
-        .nav-link.active {
-            color: #fff;
-            background: #3a3a5a;
-        }
-
-        .nav-step {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: #444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .nav-link.active .nav-step {
-            background: #4a90d9;
-        }
-
-        .nav-label {
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .nav-arrow {
-            color: #444;
-            font-size: 14px;
-        }
-
-        .page-content {
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        /* Detector-specific styles */
 
         .main-panel {
             display: flex;
@@ -103,39 +19,6 @@
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: #4a90d9;
-            color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: #3a7bc8;
-        }
-
-        .btn-secondary {
-            background: #444;
-            color: white;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: #555;
         }
 
         .btn-detect {
@@ -154,10 +37,6 @@
 
         .btn-webcam.active {
             background: #c0392b;
-        }
-
-        input[type="file"] {
-            display: none;
         }
 
         .canvas-container {
@@ -205,13 +84,8 @@
         .result-dot {
             width: 20px;
             height: 20px;
-            border-radius: 50%;
             border: 2px solid #333;
         }
-
-        .result-dot.red { background: #d32f2f; }
-        .result-dot.blue { background: #1976d2; }
-        .result-dot.unknown { background: #888; }
 
         .side-panel {
             background: #2a2a4a;
@@ -267,24 +141,6 @@
             gap: 6px;
         }
 
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: #444;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #4a90d9;
-            cursor: pointer;
-        }
-
         .param-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -333,48 +189,6 @@
             height: 0;
         }
 
-        .help-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 14px;
-            height: 14px;
-            background: #555;
-            border-radius: 50%;
-            font-size: 10px;
-            color: #aaa;
-            cursor: help;
-            flex-shrink: 0;
-        }
-
-        .help-tooltip {
-            position: relative;
-        }
-
-        .help-tooltip .tooltip-text {
-            visibility: hidden;
-            background: #333;
-            color: #ddd;
-            font-size: 11px;
-            padding: 8px 10px;
-            border-radius: 4px;
-            position: absolute;
-            z-index: 100;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            text-align: left;
-            line-height: 1.4;
-            font-weight: normal;
-            text-transform: none;
-            letter-spacing: normal;
-        }
-
-        .help-tooltip:hover .tooltip-text {
-            visibility: visible;
-        }
-
         .btn-reset {
             width: 100%;
             margin-top: 10px;
@@ -383,25 +197,6 @@
 
         .btn-reset:hover {
             background: #666;
-        }
-
-        .status {
-            text-align: center;
-            padding: 10px;
-            font-size: 13px;
-            color: #888;
-        }
-
-        .status.loading {
-            color: #f39c12;
-        }
-
-        .status.ready {
-            color: #2ecc71;
-        }
-
-        .status.error {
-            color: #e74c3c;
         }
 
         /* Algorithm selector */

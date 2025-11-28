@@ -1,0 +1,382 @@
+/* Shared styles for POK Detector application */
+
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    padding: 0;
+}
+
+/* Main Navigation */
+.main-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 12px 20px;
+    background: #16162a;
+    border-bottom: 1px solid #333;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #888;
+    transition: all 0.2s;
+}
+
+.nav-link:hover {
+    color: #ccc;
+    background: #2a2a4a;
+}
+
+.nav-link.active {
+    color: #fff;
+    background: #3a3a5a;
+}
+
+.nav-step {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nav-link.active .nav-step {
+    background: #4a90d9;
+}
+
+.nav-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.nav-arrow {
+    color: #444;
+    font-size: 14px;
+}
+
+/* Page content */
+.page-content {
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Buttons */
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: #4a90d9;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #3a7bc8;
+}
+
+.btn-secondary {
+    background: #444;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #555;
+}
+
+.btn-success {
+    background: #2ecc71;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #27ae60;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+/* File inputs */
+input[type="file"] {
+    display: none;
+}
+
+/* Panels */
+.panel {
+    background: #2a2a4a;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.panel h2 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.panel-section {
+    padding: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.panel-section h3 {
+    font-size: 13px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+/* Form elements */
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #444;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #4a90d9;
+    cursor: pointer;
+}
+
+select,
+input[type="text"],
+input[type="number"] {
+    padding: 8px 12px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #eee;
+    font-size: 13px;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #4a90d9;
+}
+
+/* Color indicators */
+.color-dot,
+.result-dot,
+.stat-dot,
+.pok-color-dot {
+    border-radius: 50%;
+}
+
+.color-dot.red,
+.result-dot.red,
+.stat-dot.red,
+.pok-color-dot.red {
+    background: #d32f2f;
+}
+
+.color-dot.blue,
+.result-dot.blue,
+.stat-dot.blue,
+.pok-color-dot.blue {
+    background: #1976d2;
+}
+
+.color-dot.unknown,
+.result-dot.unknown {
+    background: #888;
+}
+
+/* Help tooltips */
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #555;
+    border-radius: 50%;
+    font-size: 10px;
+    color: #aaa;
+    cursor: help;
+    flex-shrink: 0;
+}
+
+.help-tooltip {
+    position: relative;
+}
+
+.help-tooltip .tooltip-text {
+    visibility: hidden;
+    background: #333;
+    color: #ddd;
+    font-size: 11px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    text-align: left;
+    line-height: 1.4;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.help-tooltip:hover .tooltip-text {
+    visibility: visible;
+}
+
+/* Status messages */
+.status {
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    color: #888;
+}
+
+.status.loading {
+    color: #f39c12;
+}
+
+.status.ready {
+    color: #2ecc71;
+}
+
+.status.error {
+    color: #e74c3c;
+}
+
+/* File status */
+.file-status {
+    font-size: 13px;
+    color: #888;
+}
+
+.file-status.success {
+    color: #2ecc71;
+}
+
+.file-status.error {
+    color: #e74c3c;
+}
+
+/* Info text */
+.info-text {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.5;
+}
+
+.info-box {
+    background: #333;
+    padding: 15px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #aaa;
+}
+
+.info-box code {
+    background: #222;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.info-box a {
+    color: #4a90d9;
+}
+
+/* Step indicators */
+.step-number {
+    background: #4a90d9;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.step-number.done {
+    background: #2ecc71;
+}
+
+/* Utility classes */
+.hidden {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .page-content {
+        padding: 10px;
+    }
+
+    button {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
