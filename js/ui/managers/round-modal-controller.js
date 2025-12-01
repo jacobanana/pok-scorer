@@ -17,6 +17,62 @@ export class RoundModalController {
         this.pokRenderer = pokRenderer;
         this.scoreDisplayManager = scoreDisplayManager;
         this.confettiActive = false;
+
+        // Event handlers
+        this.handlers = {
+            onEditBoard: null
+        };
+    }
+
+    /**
+     * Set event handlers
+     */
+    setHandlers(handlers) {
+        Object.assign(this.handlers, handlers);
+    }
+
+    /**
+     * Initialize the edit board button
+     */
+    initEditBoardButton() {
+        const editBoardButton = document.getElementById('editBoardButton');
+        if (editBoardButton) {
+            editBoardButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._handleEditBoardClick();
+            });
+        }
+    }
+
+    /**
+     * Handle edit board button click
+     * @private
+     */
+    _handleEditBoardClick() {
+        this.hideRoundModal();
+        this.handlers.onEditBoard?.();
+    }
+
+    /**
+     * Show the edit board button
+     * @private
+     */
+    _showEditBoardButton() {
+        const editBoardButton = document.getElementById('editBoardButton');
+        if (editBoardButton) {
+            editBoardButton.classList.add('show');
+        }
+    }
+
+    /**
+     * Hide the edit board button
+     * @private
+     */
+    _hideEditBoardButton() {
+        const editBoardButton = document.getElementById('editBoardButton');
+        if (editBoardButton) {
+            editBoardButton.classList.remove('show');
+        }
     }
 
     /**
@@ -106,6 +162,10 @@ export class RoundModalController {
         // Apply game winner styling (gold celebration theme)
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg');
         modal.addClass('game-winner');
+
+        // Hide edit board button for game winner modal
+        this._hideEditBoardButton();
+
         modal.open();
 
         // Start the confetti celebration!
@@ -174,6 +234,10 @@ export class RoundModalController {
         // Set background and show
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg', 'game-winner');
         modal.addClass(bgClass);
+
+        // Show edit board button for regular round ends
+        this._showEditBoardButton();
+
         modal.open();
     }
 
@@ -183,6 +247,9 @@ export class RoundModalController {
     hideRoundModal() {
         // Stop confetti if active
         this._stopConfetti();
+
+        // Hide edit board button
+        this._hideEditBoardButton();
 
         const modal = this.components.roundModal;
         if (modal) {

@@ -61,6 +61,9 @@ export class PokScorerApp {
                     this.commands.startNextRound();
                 }
             },
+            onEditBoard: () => {
+                this.commands.undoRoundEnd();
+            },
             onPlacePok: (x, y) => {
                 const nextPlayer = this.gameState.getNextPlayer();
                 try {

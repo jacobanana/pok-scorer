@@ -62,6 +62,7 @@ export class UIProjection {
             onExportMatch: null,
             onAutoEndRound: null,
             onAdvanceGame: null,
+            onEditBoard: null,
             onPlacePok: null,
             onMovePok: null,
             onRemovePok: null
@@ -396,12 +397,22 @@ export class UIProjection {
             this.managers.pokRenderer,
             this.managers.scoreDisplay
         );
+        this.managers.roundModal.setHandlers({
+            onEditBoard: () => {
+                // First undo the round end (this triggers rebuild which resets edit mode)
+                this.handlers.onEditBoard?.();
+                // Then enter edit mode AFTER the rebuild completes
+                this.managers.autoEnd?.enterEditMode();
+            }
+        });
+        this.managers.roundModal.initEditBoardButton();
 
         // Auto-End Manager
         this.managers.autoEnd = new AutoEndManager(this.eventStore, this.gameState, this.components);
         this.managers.autoEnd.setHandlers({
             onAutoEndRound: () => this.handlers.onAutoEndRound?.()
         });
+        this.managers.autoEnd.initEndRoundButton();
         this.managers.autoEnd.subscribeToEvents();
     }
 
