@@ -3,18 +3,27 @@
 // ============================================
 
 import { DOMHelper } from '../../js/utils/dom-helper.js';
+import { createTestContainer, cleanupTestContainer } from '../lib/fixtures.js';
 
 const { assert } = window;
 const runner = window.testRunner;
 
+// Test container for DOM tests
+let testContainer;
+
 runner.describe('DOMHelper - Element Selection', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = `
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = `
                 <div id="test-element" class="test-class">Test Content</div>
                 <div id="another-element">Another</div>
                 <div class="shared-class">Shared 1</div>
                 <div class="shared-class">Shared 2</div>
             `;
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should get element by ID', () => {
@@ -42,7 +51,12 @@ runner.describe('DOMHelper - Element Selection', () => {
 
     runner.describe('DOMHelper - Class Manipulation', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = '<div id="test-element" class="initial-class"></div>';
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = '<div id="test-element" class="initial-class"></div>';
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should add class', () => {
@@ -105,7 +119,12 @@ runner.describe('DOMHelper - Element Selection', () => {
 
     runner.describe('DOMHelper - Content Manipulation', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = '<div id="test-element">Initial</div>';
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = '<div id="test-element">Initial</div>';
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should set text content', () => {
@@ -129,7 +148,12 @@ runner.describe('DOMHelper - Element Selection', () => {
 
     runner.describe('DOMHelper - Visibility Helpers', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = '<div id="test-element"></div>';
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = '<div id="test-element"></div>';
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should show element by adding show class', () => {
@@ -166,7 +190,12 @@ runner.describe('DOMHelper - Element Selection', () => {
 
     runner.describe('DOMHelper - Event Handling', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = '<div id="test-element"></div>';
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = '<div id="test-element"></div>';
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should add event listener', () => {
@@ -196,7 +225,7 @@ runner.describe('DOMHelper - Element Selection', () => {
             let parentClicked = false;
             let childClicked = false;
 
-            document.body.innerHTML = `
+            testContainer.innerHTML = `
                 <div id="parent">
                     <div id="child"></div>
                 </div>
@@ -220,7 +249,7 @@ runner.describe('DOMHelper - Element Selection', () => {
             let parentClicked = false;
             let childClicked = false;
 
-            document.body.innerHTML = `
+            testContainer.innerHTML = `
                 <div id="parent">
                     <div id="child"></div>
                 </div>
@@ -243,7 +272,12 @@ runner.describe('DOMHelper - Element Selection', () => {
 
     runner.describe('DOMHelper - Attribute Manipulation', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = '<div id="test-element" data-value="initial"></div>';
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = '<div id="test-element" data-value="initial"></div>';
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should get attribute value', () => {
@@ -275,7 +309,12 @@ runner.describe('DOMHelper - Element Selection', () => {
 
     runner.describe('DOMHelper - Chaining and Return Values', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = '<div id="test-element"></div>';
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = '<div id="test-element"></div>';
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should return element for chaining', () => {
@@ -305,7 +344,12 @@ runner.describe('DOMHelper - Element Selection', () => {
 
     runner.describe('DOMHelper - Edge Cases', () => {
         runner.beforeEach(() => {
-            document.body.innerHTML = '<div id="test-element"></div>';
+            testContainer = createTestContainer('dom-test-container');
+            testContainer.innerHTML = '<div id="test-element"></div>';
+        });
+
+        runner.afterEach(() => {
+            cleanupTestContainer('dom-test-container');
         });
 
         runner.it('should handle adding empty class gracefully', () => {
