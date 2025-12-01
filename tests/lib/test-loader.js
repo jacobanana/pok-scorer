@@ -106,7 +106,7 @@ export function createTestResults() {
 }
 
 /**
- * Standard test module paths (relative to tests/ directory)
+ * Standard test module paths (relative to tests/lib/ directory where this file is loaded from)
  */
 export const TEST_MODULES = {
     unit: [
