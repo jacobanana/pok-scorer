@@ -1326,6 +1326,35 @@ h2 {
     display: none !important;
 }
 
+/* Save Game Button (in champion modal) */
+.save-game-button {
+    display: none;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(76, 175, 80, 0.5);
+    border: 2px solid rgba(76, 175, 80, 0.7);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.save-game-button.show {
+    display: inline-block;
+}
+
+.save-game-button:hover {
+    background: rgba(76, 175, 80, 0.7);
+    border-color: rgba(76, 175, 80, 0.9);
+}
+
+.save-game-button:active {
+    transform: scale(0.95);
+}
+
 /* ============================================ */
 /* SCORE VISUALIZER (21 Ball Scoreboard)      */
 /* ============================================ */

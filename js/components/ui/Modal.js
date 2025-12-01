@@ -145,6 +145,7 @@ export class RoundEndModal extends Modal {
                         <div class="modal-blue-markers"></div>
                     </div>
                     <button class="edit-board-button" id="editBoardButton">Edit Board</button>
+                    <button class="save-game-button" id="saveGameButton">Save Game</button>
                 </div>
             </div>
         `.trim();

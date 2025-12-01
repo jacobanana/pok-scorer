@@ -20,7 +20,8 @@ export class RoundModalController {
 
         // Event handlers
         this.handlers = {
-            onEditBoard: null
+            onEditBoard: null,
+            onSaveGame: null
         };
     }
 
@@ -45,12 +46,33 @@ export class RoundModalController {
     }
 
     /**
+     * Initialize the save game button
+     */
+    initSaveGameButton() {
+        const saveGameButton = document.getElementById('saveGameButton');
+        if (saveGameButton) {
+            saveGameButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._handleSaveGameClick();
+            });
+        }
+    }
+
+    /**
      * Handle edit board button click
      * @private
      */
     _handleEditBoardClick() {
         this.hideRoundModal();
         this.handlers.onEditBoard?.();
+    }
+
+    /**
+     * Handle save game button click
+     * @private
+     */
+    _handleSaveGameClick() {
+        this.handlers.onSaveGame?.();
     }
 
     /**
@@ -72,6 +94,28 @@ export class RoundModalController {
         const editBoardButton = document.getElementById('editBoardButton');
         if (editBoardButton) {
             editBoardButton.classList.remove('show');
+        }
+    }
+
+    /**
+     * Show the save game button
+     * @private
+     */
+    _showSaveGameButton() {
+        const saveGameButton = document.getElementById('saveGameButton');
+        if (saveGameButton) {
+            saveGameButton.classList.add('show');
+        }
+    }
+
+    /**
+     * Hide the save game button
+     * @private
+     */
+    _hideSaveGameButton() {
+        const saveGameButton = document.getElementById('saveGameButton');
+        if (saveGameButton) {
+            saveGameButton.classList.remove('show');
         }
     }
 
@@ -163,8 +207,9 @@ export class RoundModalController {
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg');
         modal.addClass('game-winner');
 
-        // Hide edit board button for game winner modal
+        // Hide edit board button and show save game button for game winner modal
         this._hideEditBoardButton();
+        this._showSaveGameButton();
 
         modal.open();
 
@@ -235,8 +280,9 @@ export class RoundModalController {
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg', 'game-winner');
         modal.addClass(bgClass);
 
-        // Show edit board button for regular round ends
+        // Show edit board button and hide save button for regular round ends
         this._showEditBoardButton();
+        this._hideSaveGameButton();
 
         modal.open();
     }
@@ -248,8 +294,9 @@ export class RoundModalController {
         // Stop confetti if active
         this._stopConfetti();
 
-        // Hide edit board button
+        // Hide both buttons
         this._hideEditBoardButton();
+        this._hideSaveGameButton();
 
         const modal = this.components.roundModal;
         if (modal) {

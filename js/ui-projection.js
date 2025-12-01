@@ -363,7 +363,15 @@ export class UIProjection {
         if (roundEndModal) {
             roundEndModal.addEventListener('click', () => {
                 this.managers.autoEnd?.clearAutoEndTimer();
-                this.handlers.onAdvanceGame?.();
+
+                // If there's a winner, just close the modal (don't reset the game)
+                // User must explicitly choose to save or start new game
+                if (this.gameState.hasWinner()) {
+                    this.managers.roundModal?.hideRoundModal();
+                } else {
+                    // For regular round ends, advance to next round
+                    this.handlers.onAdvanceGame?.();
+                }
             });
         }
     }
@@ -403,9 +411,11 @@ export class UIProjection {
                 this.handlers.onEditBoard?.();
                 // Then enter edit mode AFTER the rebuild completes
                 this.managers.autoEnd?.enterEditMode();
-            }
+            },
+            onSaveGame: () => this.handlers.onExportMatch?.()
         });
         this.managers.roundModal.initEditBoardButton();
+        this.managers.roundModal.initSaveGameButton();
 
         // Auto-End Manager
         this.managers.autoEnd = new AutoEndManager(this.eventStore, this.gameState, this.components);
