@@ -20,6 +20,9 @@ export class AutoEndManager {
         // Loading state (to prevent auto-end timers during event replay)
         this.isLoading = false;
 
+        // DOM reference for end round button
+        this.endRoundButton = null;
+
         // Event handler
         this.handlers = {
             onAutoEndRound: null
@@ -31,6 +34,50 @@ export class AutoEndManager {
      */
     setHandlers(handlers) {
         Object.assign(this.handlers, handlers);
+    }
+
+    /**
+     * Initialize the end round button
+     */
+    initEndRoundButton() {
+        this.endRoundButton = document.getElementById('endRoundButton');
+        if (this.endRoundButton) {
+            this.endRoundButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._handleEndRoundClick();
+            });
+        }
+    }
+
+    /**
+     * Handle end round button click
+     * @private
+     */
+    _handleEndRoundClick() {
+        if (this.hasAutoEndTimer()) {
+            this.clearAutoEndTimer();
+            this.handlers.onAutoEndRound?.();
+        }
+    }
+
+    /**
+     * Show the end round button
+     * @private
+     */
+    _showEndRoundButton() {
+        if (this.endRoundButton) {
+            this.endRoundButton.classList.add('show');
+        }
+    }
+
+    /**
+     * Hide the end round button
+     * @private
+     */
+    _hideEndRoundButton() {
+        if (this.endRoundButton) {
+            this.endRoundButton.classList.remove('show');
+        }
     }
 
     /**
@@ -106,6 +153,9 @@ export class AutoEndManager {
         const winnerClass = scores.red > scores.blue ? 'red-winner' :
                            scores.blue > scores.red ? 'blue-winner' : 'tie-game';
 
+        // Show end round button
+        this._showEndRoundButton();
+
         // Start loading bar animation
         const loadingBar = this.components.loadingBar;
         if (loadingBar) {
@@ -114,6 +164,7 @@ export class AutoEndManager {
             loadingBar.start(() => {
                 // Animation complete - trigger auto-end
                 this._autoEndTimer = null;
+                this._hideEndRoundButton();
                 this.handlers.onAutoEndRound?.();
             });
             // Track that we've started (the LoadingBar handles its own timeout)
@@ -128,6 +179,7 @@ export class AutoEndManager {
         if (this._autoEndTimer) {
             this._autoEndTimer = null;
         }
+        this._hideEndRoundButton();
         this.components.loadingBar?.reset();
     }
 

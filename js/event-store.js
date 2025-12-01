@@ -100,6 +100,55 @@ export class EventStore {
         }
     }
 
+    /**
+     * Remove the last event of a specific type and rebuild projections
+     * @param {string} eventType - The type of event to remove
+     * @returns {boolean} - Whether an event was removed
+     */
+    removeLastEventOfType(eventType) {
+        // Find the last event of this type
+        let lastIndex = -1;
+        for (let i = this.events.length - 1; i >= 0; i--) {
+            if (this.events[i].type === eventType) {
+                lastIndex = i;
+                break;
+            }
+        }
+
+        if (lastIndex === -1) {
+            return false;
+        }
+
+        // Remove the event
+        const removedEvent = this.events.splice(lastIndex, 1)[0];
+
+        if (this.enableLogging) {
+            console.log(`%c[EventStore] Removed last ${eventType} event`,
+                'color: #FF5722; font-weight: bold',
+                removedEvent.data);
+        }
+
+        // Rebuild projections by replaying all events
+        this._rebuildProjections();
+
+        return true;
+    }
+
+    /**
+     * Rebuild all projections by publishing reset and replaying events
+     * @private
+     */
+    _rebuildProjections() {
+        // Publish reset to clear projection state
+        this.publish(new GameResetEvent());
+
+        // Replay all events
+        this.events.forEach(event => this.publish(event));
+
+        // Publish a GAME_LOADED event to signal rebuild complete
+        this.publish(new GameLoadedEvent(this.events.length));
+    }
+
     // Debug helpers
     printEventLog() {
         console.group(`%c📜 Event Log (${this.events.length} events)`,

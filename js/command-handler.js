@@ -155,4 +155,12 @@ export class CommandHandler {
         // This allows projections to reset their state properly
         this.eventStore.publish(new GameResetEvent());
     }
+
+    /**
+     * Undo the last round end, allowing the user to edit the board again
+     * @returns {boolean} - Whether the undo was successful
+     */
+    undoRoundEnd() {
+        return this.eventStore.removeLastEventOfType('ROUND_ENDED');
+    }
 }
