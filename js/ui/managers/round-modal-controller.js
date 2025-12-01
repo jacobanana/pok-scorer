@@ -5,6 +5,7 @@
 
 import { PLAYERS, CONFIG } from '../../config.js';
 import { startConfetti, destroyConfetti } from '../../effects/index.js';
+import { DOMHelper } from '../../utils/dom-helper.js';
 
 /**
  * Controls modal displays: round end, round preview, history
@@ -36,26 +37,14 @@ export class RoundModalController {
      * Initialize the edit board button
      */
     initEditBoardButton() {
-        const editBoardButton = document.getElementById('editBoardButton');
-        if (editBoardButton) {
-            editBoardButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this._handleEditBoardClick();
-            });
-        }
+        DOMHelper.on('editBoardButton', 'click', () => this._handleEditBoardClick(), true);
     }
 
     /**
      * Initialize the save game button
      */
     initSaveGameButton() {
-        const saveGameButton = document.getElementById('saveGameButton');
-        if (saveGameButton) {
-            saveGameButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this._handleSaveGameClick();
-            });
-        }
+        DOMHelper.on('saveGameButton', 'click', () => this._handleSaveGameClick(), true);
     }
 
     /**
@@ -80,10 +69,7 @@ export class RoundModalController {
      * @private
      */
     _showEditBoardButton() {
-        const editBoardButton = document.getElementById('editBoardButton');
-        if (editBoardButton) {
-            editBoardButton.classList.add('show');
-        }
+        DOMHelper.show('editBoardButton');
     }
 
     /**
@@ -91,10 +77,7 @@ export class RoundModalController {
      * @private
      */
     _hideEditBoardButton() {
-        const editBoardButton = document.getElementById('editBoardButton');
-        if (editBoardButton) {
-            editBoardButton.classList.remove('show');
-        }
+        DOMHelper.hide('editBoardButton');
     }
 
     /**
@@ -102,10 +85,7 @@ export class RoundModalController {
      * @private
      */
     _showSaveGameButton() {
-        const saveGameButton = document.getElementById('saveGameButton');
-        if (saveGameButton) {
-            saveGameButton.classList.add('show');
-        }
+        DOMHelper.show('saveGameButton');
     }
 
     /**
@@ -113,10 +93,7 @@ export class RoundModalController {
      * @private
      */
     _hideSaveGameButton() {
-        const saveGameButton = document.getElementById('saveGameButton');
-        if (saveGameButton) {
-            saveGameButton.classList.remove('show');
-        }
+        DOMHelper.hide('saveGameButton');
     }
 
     /**

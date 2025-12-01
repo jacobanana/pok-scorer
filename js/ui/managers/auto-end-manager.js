@@ -4,6 +4,7 @@
 // ============================================
 
 import { CONFIG } from '../../config.js';
+import { DOMHelper } from '../../utils/dom-helper.js';
 
 /**
  * Manages the auto-end countdown timer for rounds

@@ -4,6 +4,7 @@
 
 import { CONFIG, PLAYERS } from './config.js';
 import { GameLoadedEvent, GameImportedEvent, GameExportedEvent, GameResetEvent } from './events.js';
+import { StorageService } from './utils/storage-service.js';
 
 export class EventStore {
     constructor(storageKey = 'pok-event-store') {
@@ -179,10 +180,10 @@ export class EventStore {
 
     // Persistence
     save() {
-        localStorage.setItem(this.storageKey, JSON.stringify({
+        StorageService.save(this.storageKey, {
             events: this.events,
             version: this.version
-        }));
+        });
 
         if (this.enableLogging) {
             console.log(`%c[EventStore] Saved ${this.events.length} events to LocalStorage`,
@@ -191,10 +192,8 @@ export class EventStore {
     }
 
     load() {
-        const saved = localStorage.getItem(this.storageKey);
-        if (!saved) return false;
-
-        const data = JSON.parse(saved);
+        const data = StorageService.load(this.storageKey);
+        if (!data) return false;
 
         if (this.enableLogging) {
             console.log(`%c[EventStore] Loading ${data.events.length} events from LocalStorage`,

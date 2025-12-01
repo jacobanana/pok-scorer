@@ -6,6 +6,7 @@ import { EventStore } from './event-store.js';
 import { GameService } from './game-service.js';
 import { UIProjection } from './ui-projection.js';
 import { CommandHandler } from './command-handler.js';
+import { StorageService } from './utils/storage-service.js';
 
 export class PokScorerApp {
     constructor() {
@@ -47,13 +48,12 @@ export class PokScorerApp {
                 // If the in-memory store is empty (e.g., after page refresh),
                 // load from localStorage first, then export
                 if (this.eventStore.getAllEvents().length === 0) {
-                    const saved = localStorage.getItem('pok-event-store');
-                    if (!saved) {
+                    const data = StorageService.load('pok-event-store');
+                    if (!data) {
                         alert('No saved game found');
                         return;
                     }
                     // Temporarily load into memory just for export
-                    const data = JSON.parse(saved);
                     this.eventStore.events = data.events;
                     this.eventStore.version = data.version;
                 }
@@ -119,7 +119,7 @@ export class PokScorerApp {
         });
 
         // Check if there's a saved game and show appropriate UI
-        const hasSavedGame = localStorage.getItem('pok-event-store');
+        const hasSavedGame = StorageService.exists('pok-event-store');
 
         if (hasSavedGame) {
             // Show start selector with Resume button visible

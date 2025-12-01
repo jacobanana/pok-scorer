@@ -111,11 +111,13 @@ async function runTests() {
 
         // Collect console messages
         const consoleMessages = [];
+        const consoleErrors = [];
         page.on('console', msg => {
             const text = msg.text();
             consoleMessages.push({ type: msg.type(), text });
-            // Print errors to help debug
-            if (msg.type() === 'error') {
+            // Track console errors (except 404s which we handle separately)
+            if (msg.type() === 'error' && !text.includes('404')) {
+                consoleErrors.push(text);
                 console.error(`${colors.red}Browser error: ${text}${colors.reset}`);
             }
         });
@@ -195,8 +197,9 @@ async function runTests() {
 
         const hasImportErrors = results.importErrors && results.importErrors.length > 0;
         const has404Errors = resourceErrors.length > 0;
+        const hasConsoleErrors = consoleErrors.length > 0;
 
-        if (results.failed === 0 && !hasImportErrors && !has404Errors) {
+        if (results.failed === 0 && !hasImportErrors && !has404Errors && !hasConsoleErrors) {
             console.log(`${colors.green}${colors.bright}✓ All tests passed!${colors.reset}`);
         } else {
             console.log(`${colors.red}${colors.bright}✗ Some tests failed${colors.reset}`);
@@ -211,6 +214,9 @@ async function runTests() {
         }
         if (has404Errors) {
             console.log(`  ${colors.red}404 Errors:${colors.reset} ${resourceErrors.length}`);
+        }
+        if (hasConsoleErrors) {
+            console.log(`  ${colors.red}Console Errors:${colors.reset} ${consoleErrors.length}`);
         }
         console.log(`  ${colors.yellow}Skipped:${colors.reset} ${results.skipped}`);
         console.log(`  Total:   ${totalTests}`);

@@ -3,6 +3,7 @@
 // ============================================
 
 import { CONFIG, PLAYERS } from './config.js';
+import { StorageService } from './utils/storage-service.js';
 import {
     FlipButton,
     HistoryButton,
@@ -544,7 +545,7 @@ export class UIProjection {
     showStartSelector() {
         this.components.startSelector?.show();
 
-        const savedData = localStorage.getItem('pok-event-store');
+        const savedData = StorageService.load('pok-event-store');
         if (savedData) {
             this.components.startSelector?.showContinueButton();
             this.components.startSelector?.showSaveLatestButton();
@@ -580,9 +581,8 @@ export class UIProjection {
 
     _prefillPlayerNames(savedData) {
         try {
-            const data = JSON.parse(savedData);
-            if (data && data.events) {
-                const gameStartedEvents = data.events.filter(e => e.type === 'GAME_STARTED');
+            if (savedData && savedData.events) {
+                const gameStartedEvents = savedData.events.filter(e => e.type === 'GAME_STARTED');
                 if (gameStartedEvents.length > 0) {
                     const lastGameStarted = gameStartedEvents[gameStartedEvents.length - 1];
                     const redName = lastGameStarted.data.redName;
