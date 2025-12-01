@@ -3,6 +3,7 @@
 // ============================================
 
 import { CONFIG, PLAYERS } from './config.js';
+import { StorageService } from './utils/storage-service.js';
 import {
     FlipButton,
     HistoryButton,
@@ -62,6 +63,7 @@ export class UIProjection {
             onExportMatch: null,
             onAutoEndRound: null,
             onAdvanceGame: null,
+            onEditBoard: null,
             onPlacePok: null,
             onMovePok: null,
             onRemovePok: null
@@ -362,7 +364,15 @@ export class UIProjection {
         if (roundEndModal) {
             roundEndModal.addEventListener('click', () => {
                 this.managers.autoEnd?.clearAutoEndTimer();
-                this.handlers.onAdvanceGame?.();
+
+                // If there's a winner, just close the modal (don't reset the game)
+                // User must explicitly choose to save or start new game
+                if (this.gameState.hasWinner()) {
+                    this.managers.roundModal?.hideRoundModal();
+                } else {
+                    // For regular round ends, advance to next round
+                    this.handlers.onAdvanceGame?.();
+                }
             });
         }
     }
@@ -396,12 +406,24 @@ export class UIProjection {
             this.managers.pokRenderer,
             this.managers.scoreDisplay
         );
+        this.managers.roundModal.setHandlers({
+            onEditBoard: () => {
+                // First undo the round end (this triggers rebuild which resets edit mode)
+                this.handlers.onEditBoard?.();
+                // Then enter edit mode AFTER the rebuild completes
+                this.managers.autoEnd?.enterEditMode();
+            },
+            onSaveGame: () => this.handlers.onExportMatch?.()
+        });
+        this.managers.roundModal.initEditBoardButton();
+        this.managers.roundModal.initSaveGameButton();
 
         // Auto-End Manager
         this.managers.autoEnd = new AutoEndManager(this.eventStore, this.gameState, this.components);
         this.managers.autoEnd.setHandlers({
             onAutoEndRound: () => this.handlers.onAutoEndRound?.()
         });
+        this.managers.autoEnd.initEndRoundButton();
         this.managers.autoEnd.subscribeToEvents();
     }
 
@@ -523,7 +545,7 @@ export class UIProjection {
     showStartSelector() {
         this.components.startSelector?.show();
 
-        const savedData = localStorage.getItem('pok-event-store');
+        const savedData = StorageService.load('pok-event-store');
         if (savedData) {
             this.components.startSelector?.showContinueButton();
             this.components.startSelector?.showSaveLatestButton();
@@ -559,9 +581,8 @@ export class UIProjection {
 
     _prefillPlayerNames(savedData) {
         try {
-            const data = JSON.parse(savedData);
-            if (data && data.events) {
-                const gameStartedEvents = data.events.filter(e => e.type === 'GAME_STARTED');
+            if (savedData && savedData.events) {
+                const gameStartedEvents = savedData.events.filter(e => e.type === 'GAME_STARTED');
                 if (gameStartedEvents.length > 0) {
                     const lastGameStarted = gameStartedEvents[gameStartedEvents.length - 1];
                     const redName = lastGameStarted.data.redName;

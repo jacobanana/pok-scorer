@@ -106,7 +106,7 @@ export function createTestResults() {
 }
 
 /**
- * Standard test module paths (relative to tests/ directory)
+ * Standard test module paths (relative to tests/lib/ directory where this file is loaded from)
  */
 export const TEST_MODULES = {
     unit: [
@@ -114,7 +114,9 @@ export const TEST_MODULES = {
         '../unit/game-service.test.js',
         '../unit/event-store.test.js',
         '../unit/component.test.js',
-        '../unit/ui-projection.test.js'
+        '../unit/ui-projection.test.js',
+        '../unit/storage-service.test.js',
+        '../unit/dom-helper.test.js'
     ],
     integration: [
         '../integration/game-flow.test.js',

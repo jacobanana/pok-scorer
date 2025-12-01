@@ -5,6 +5,7 @@
 
 import { PLAYERS, CONFIG } from '../../config.js';
 import { startConfetti, destroyConfetti } from '../../effects/index.js';
+import { DOMHelper } from '../../utils/dom-helper.js';
 
 /**
  * Controls modal displays: round end, round preview, history
@@ -17,6 +18,82 @@ export class RoundModalController {
         this.pokRenderer = pokRenderer;
         this.scoreDisplayManager = scoreDisplayManager;
         this.confettiActive = false;
+
+        // Event handlers
+        this.handlers = {
+            onEditBoard: null,
+            onSaveGame: null
+        };
+    }
+
+    /**
+     * Set event handlers
+     */
+    setHandlers(handlers) {
+        Object.assign(this.handlers, handlers);
+    }
+
+    /**
+     * Initialize the edit board button
+     */
+    initEditBoardButton() {
+        DOMHelper.on('editBoardButton', 'click', () => this._handleEditBoardClick(), true);
+    }
+
+    /**
+     * Initialize the save game button
+     */
+    initSaveGameButton() {
+        DOMHelper.on('saveGameButton', 'click', () => this._handleSaveGameClick(), true);
+    }
+
+    /**
+     * Handle edit board button click
+     * @private
+     */
+    _handleEditBoardClick() {
+        this.hideRoundModal();
+        this.handlers.onEditBoard?.();
+    }
+
+    /**
+     * Handle save game button click
+     * @private
+     */
+    _handleSaveGameClick() {
+        this.handlers.onSaveGame?.();
+    }
+
+    /**
+     * Show the edit board button
+     * @private
+     */
+    _showEditBoardButton() {
+        DOMHelper.show('editBoardButton');
+    }
+
+    /**
+     * Hide the edit board button
+     * @private
+     */
+    _hideEditBoardButton() {
+        DOMHelper.hide('editBoardButton');
+    }
+
+    /**
+     * Show the save game button
+     * @private
+     */
+    _showSaveGameButton() {
+        DOMHelper.show('saveGameButton');
+    }
+
+    /**
+     * Hide the save game button
+     * @private
+     */
+    _hideSaveGameButton() {
+        DOMHelper.hide('saveGameButton');
     }
 
     /**
@@ -106,6 +183,11 @@ export class RoundModalController {
         // Apply game winner styling (gold celebration theme)
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg');
         modal.addClass('game-winner');
+
+        // Hide edit board button and show save game button for game winner modal
+        this._hideEditBoardButton();
+        this._showSaveGameButton();
+
         modal.open();
 
         // Start the confetti celebration!
@@ -174,6 +256,11 @@ export class RoundModalController {
         // Set background and show
         modal.removeClass('red-bg', 'blue-bg', 'tie-bg', 'game-winner');
         modal.addClass(bgClass);
+
+        // Show edit board button and hide save button for regular round ends
+        this._showEditBoardButton();
+        this._hideSaveGameButton();
+
         modal.open();
     }
 
@@ -183,6 +270,10 @@ export class RoundModalController {
     hideRoundModal() {
         // Stop confetti if active
         this._stopConfetti();
+
+        // Hide both buttons
+        this._hideEditBoardButton();
+        this._hideSaveGameButton();
 
         const modal = this.components.roundModal;
         if (modal) {

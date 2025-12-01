@@ -346,6 +346,10 @@ export class HTMLReporter {
         // Add all suites
         suites.forEach((suite, index) => {
             const suiteName = suite.dataset.suiteName;
+
+            // Skip suites without names (like error sections)
+            if (!suiteName) return;
+
             const tests = suite.querySelectorAll('.test');
 
             output += `${suiteName}\n`;

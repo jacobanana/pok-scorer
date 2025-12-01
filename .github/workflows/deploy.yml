@@ -69,6 +69,8 @@ jobs:
           cp -r dist deploy/
           cp -r css deploy/
           cp -r assets deploy/
+          cp -r js deploy/
+          cp -r tests deploy/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

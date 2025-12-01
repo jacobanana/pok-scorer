@@ -4,6 +4,7 @@
 // ============================================
 
 import { CONFIG } from '../../config.js';
+import { DOMHelper } from '../../utils/dom-helper.js';
 
 /**
  * Manages the auto-end countdown timer for rounds
@@ -20,6 +21,12 @@ export class AutoEndManager {
         // Loading state (to prevent auto-end timers during event replay)
         this.isLoading = false;
 
+        // Edit mode (allows free editing without auto-countdown)
+        this.isEditMode = false;
+
+        // DOM reference for end round button
+        this.endRoundButton = null;
+
         // Event handler
         this.handlers = {
             onAutoEndRound: null
@@ -31,6 +38,57 @@ export class AutoEndManager {
      */
     setHandlers(handlers) {
         Object.assign(this.handlers, handlers);
+    }
+
+    /**
+     * Initialize the end round button
+     */
+    initEndRoundButton() {
+        this.endRoundButton = document.getElementById('endRoundButton');
+        if (this.endRoundButton) {
+            this.endRoundButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._handleEndRoundClick();
+            });
+        }
+    }
+
+    /**
+     * Handle end round button click
+     * @private
+     */
+    _handleEndRoundClick() {
+        // In edit mode, clicking End Round exits edit mode and ends the round
+        if (this.isEditMode) {
+            this.exitEditMode();
+            this.handlers.onAutoEndRound?.();
+            return;
+        }
+
+        if (this.hasAutoEndTimer()) {
+            this.clearAutoEndTimer();
+            this.handlers.onAutoEndRound?.();
+        }
+    }
+
+    /**
+     * Show the end round button
+     * @private
+     */
+    _showEndRoundButton() {
+        if (this.endRoundButton) {
+            this.endRoundButton.classList.add('show');
+        }
+    }
+
+    /**
+     * Hide the end round button
+     * @private
+     */
+    _hideEndRoundButton() {
+        if (this.endRoundButton) {
+            this.endRoundButton.classList.remove('show');
+        }
     }
 
     /**
@@ -53,8 +111,9 @@ export class AutoEndManager {
             }
         });
 
-        // Handle game reset to clear auto-end timer and loading state
+        // Handle game reset to clear auto-end timer, edit mode, and loading state
         this.eventStore.subscribe('GAME_RESET', () => {
+            this.exitEditMode();
             this.clearAutoEndTimer();
             this.isLoading = false;
         });
@@ -66,6 +125,12 @@ export class AutoEndManager {
             // Now that loading is complete, check if we need to start countdown
             this.checkRoundComplete();
         });
+
+        // Handle round started to clear edit mode
+        this.eventStore.subscribe('ROUND_STARTED', () => {
+            this.exitEditMode();
+            this.clearAutoEndTimer();
+        });
     }
 
     /**
@@ -75,6 +140,15 @@ export class AutoEndManager {
         const round = this.gameState.getCurrentRound();
         if (!round || !this.gameState.isRoundComplete(round)) {
             this.clearAutoEndTimer();
+            // Exit edit mode if round is no longer complete (pok removed)
+            if (this.isEditMode) {
+                this.exitEditMode();
+            }
+            return;
+        }
+
+        // In edit mode, don't start auto-countdown (but keep End Round button visible)
+        if (this.isEditMode) {
             return;
         }
 
@@ -106,6 +180,9 @@ export class AutoEndManager {
         const winnerClass = scores.red > scores.blue ? 'red-winner' :
                            scores.blue > scores.red ? 'blue-winner' : 'tie-game';
 
+        // Show end round button
+        this._showEndRoundButton();
+
         // Start loading bar animation
         const loadingBar = this.components.loadingBar;
         if (loadingBar) {
@@ -114,6 +191,7 @@ export class AutoEndManager {
             loadingBar.start(() => {
                 // Animation complete - trigger auto-end
                 this._autoEndTimer = null;
+                this._hideEndRoundButton();
                 this.handlers.onAutoEndRound?.();
             });
             // Track that we've started (the LoadingBar handles its own timeout)
@@ -128,6 +206,9 @@ export class AutoEndManager {
         if (this._autoEndTimer) {
             this._autoEndTimer = null;
         }
+        if (!this.isEditMode) {
+            this._hideEndRoundButton();
+        }
         this.components.loadingBar?.reset();
     }
 
@@ -137,6 +218,24 @@ export class AutoEndManager {
      */
     hasAutoEndTimer() {
         return !!this._autoEndTimer;
+    }
+
+    /**
+     * Enter edit mode - disables auto-countdown and keeps End Round button visible
+     */
+    enterEditMode() {
+        this.isEditMode = true;
+        this.clearAutoEndTimer();
+        // Show End Round button so user can manually end when done editing
+        this._showEndRoundButton();
+    }
+
+    /**
+     * Exit edit mode - allows auto-countdown to resume
+     */
+    exitEditMode() {
+        this.isEditMode = false;
+        this._hideEndRoundButton();
     }
 
     /**

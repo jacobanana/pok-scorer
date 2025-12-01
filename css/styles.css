@@ -1257,6 +1257,104 @@ h2 {
     box-shadow: 0 2px 8px rgba(117, 117, 117, 0.4);
 }
 
+/* End Round Button (shown during countdown) */
+.end-round-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: white;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease, background 0.2s ease;
+    z-index: 170;
+}
+
+.end-round-button.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.end-round-button:hover {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.end-round-button:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* Edit Board Button (in round end modal) */
+.edit-board-button {
+    display: none;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.edit-board-button.show {
+    display: inline-block;
+}
+
+.edit-board-button:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.edit-board-button:active {
+    transform: scale(0.95);
+}
+
+/* Hide edit board button for game winner modal */
+.modal.game-winner .edit-board-button {
+    display: none !important;
+}
+
+/* Save Game Button (in champion modal) */
+.save-game-button {
+    display: none;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(76, 175, 80, 0.5);
+    border: 2px solid rgba(76, 175, 80, 0.7);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.save-game-button.show {
+    display: inline-block;
+}
+
+.save-game-button:hover {
+    background: rgba(76, 175, 80, 0.7);
+    border-color: rgba(76, 175, 80, 0.9);
+}
+
+.save-game-button:active {
+    transform: scale(0.95);
+}
+
 /* ============================================ */
 /* SCORE VISUALIZER (21 Ball Scoreboard)      */
 /* ============================================ */

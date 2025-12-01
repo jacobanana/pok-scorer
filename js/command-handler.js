@@ -12,6 +12,7 @@ import {
     TableFlippedEvent,
     GameResetEvent
 } from './events.js';
+import { StorageService } from './utils/storage-service.js';
 import { PLAYERS } from './config.js';
 import { ScoringService } from './scoring-service.js';
 
@@ -149,10 +150,18 @@ export class CommandHandler {
     resetGame() {
         // Clear all events and localStorage to completely reset the game
         this.eventStore.clear();
-        localStorage.removeItem('pok-event-store');
+        StorageService.remove('pok-event-store');
 
         // Manually trigger a special reset event that won't be stored
         // This allows projections to reset their state properly
         this.eventStore.publish(new GameResetEvent());
+    }
+
+    /**
+     * Undo the last round end, allowing the user to edit the board again
+     * @returns {boolean} - Whether the undo was successful
+     */
+    undoRoundEnd() {
+        return this.eventStore.removeLastEventOfType('ROUND_ENDED');
     }
 }

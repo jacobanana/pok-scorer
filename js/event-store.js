@@ -4,6 +4,7 @@
 
 import { CONFIG, PLAYERS } from './config.js';
 import { GameLoadedEvent, GameImportedEvent, GameExportedEvent, GameResetEvent } from './events.js';
+import { StorageService } from './utils/storage-service.js';
 
 export class EventStore {
     constructor(storageKey = 'pok-event-store') {
@@ -100,6 +101,55 @@ export class EventStore {
         }
     }
 
+    /**
+     * Remove the last event of a specific type and rebuild projections
+     * @param {string} eventType - The type of event to remove
+     * @returns {boolean} - Whether an event was removed
+     */
+    removeLastEventOfType(eventType) {
+        // Find the last event of this type
+        let lastIndex = -1;
+        for (let i = this.events.length - 1; i >= 0; i--) {
+            if (this.events[i].type === eventType) {
+                lastIndex = i;
+                break;
+            }
+        }
+
+        if (lastIndex === -1) {
+            return false;
+        }
+
+        // Remove the event
+        const removedEvent = this.events.splice(lastIndex, 1)[0];
+
+        if (this.enableLogging) {
+            console.log(`%c[EventStore] Removed last ${eventType} event`,
+                'color: #FF5722; font-weight: bold',
+                removedEvent.data);
+        }
+
+        // Rebuild projections by replaying all events
+        this._rebuildProjections();
+
+        return true;
+    }
+
+    /**
+     * Rebuild all projections by publishing reset and replaying events
+     * @private
+     */
+    _rebuildProjections() {
+        // Publish reset to clear projection state
+        this.publish(new GameResetEvent());
+
+        // Replay all events
+        this.events.forEach(event => this.publish(event));
+
+        // Publish a GAME_LOADED event to signal rebuild complete
+        this.publish(new GameLoadedEvent(this.events.length));
+    }
+
     // Debug helpers
     printEventLog() {
         console.group(`%c📜 Event Log (${this.events.length} events)`,
@@ -130,10 +180,10 @@ export class EventStore {
 
     // Persistence
     save() {
-        localStorage.setItem(this.storageKey, JSON.stringify({
+        StorageService.save(this.storageKey, {
             events: this.events,
             version: this.version
-        }));
+        });
 
         if (this.enableLogging) {
             console.log(`%c[EventStore] Saved ${this.events.length} events to LocalStorage`,
@@ -142,10 +192,8 @@ export class EventStore {
     }
 
     load() {
-        const saved = localStorage.getItem(this.storageKey);
-        if (!saved) return false;
-
-        const data = JSON.parse(saved);
+        const data = StorageService.load(this.storageKey);
+        if (!data) return false;
 
         if (this.enableLogging) {
             console.log(`%c[EventStore] Loading ${data.events.length} events from LocalStorage`,

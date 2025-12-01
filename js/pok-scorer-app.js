@@ -6,6 +6,7 @@ import { EventStore } from './event-store.js';
 import { GameService } from './game-service.js';
 import { UIProjection } from './ui-projection.js';
 import { CommandHandler } from './command-handler.js';
+import { StorageService } from './utils/storage-service.js';
 
 export class PokScorerApp {
     constructor() {
@@ -21,6 +22,18 @@ export class PokScorerApp {
         // Set up all UI handlers
         this.ui.setHandlers({
             onGameStart: (playerId) => {
+                // Only allow starting a new game if no game is currently active
+                // If there's an active game, we need to reset first
+                const state = this.gameState.getState();
+                if (state.isStarted) {
+                    // There's already a game in progress
+                    if (!confirm('A game is already in progress. Start a new game? Current progress will be lost.')) {
+                        return;
+                    }
+                    // User confirmed - reset first
+                    this.commands.resetGame();
+                }
+
                 const names = this.ui.getPlayerNames();
                 this.commands.startGame(playerId, names.red, names.blue);
             },
@@ -32,6 +45,20 @@ export class PokScorerApp {
                 }
             },
             onSaveLatest: () => {
+                // If the in-memory store is empty (e.g., after page refresh),
+                // load from localStorage first, then export
+                if (this.eventStore.getAllEvents().length === 0) {
+                    const data = StorageService.load('pok-event-store');
+                    if (!data) {
+                        alert('No saved game found');
+                        return;
+                    }
+                    // Temporarily load into memory just for export
+                    this.eventStore.events = data.events;
+                    this.eventStore.version = data.version;
+                }
+
+                // Use the standard export method
                 this.eventStore.exportToFile();
             },
             onImportFile: async (file) => {
@@ -55,11 +82,16 @@ export class PokScorerApp {
             },
             onAutoEndRound: () => this.commands.endRound(),
             onAdvanceGame: () => {
-                if (this.gameState.hasWinner()) {
-                    this.commands.resetGame();
-                } else {
+                // Only auto-advance if the game is NOT finished
+                // When there's a winner, the user must explicitly click "New Game" to reset
+                if (!this.gameState.hasWinner()) {
                     this.commands.startNextRound();
                 }
+                // If there's a winner, do nothing - keep the modal open
+                // User can save the game or start a new game via the menu
+            },
+            onEditBoard: () => {
+                this.commands.undoRoundEnd();
             },
             onPlacePok: (x, y) => {
                 const nextPlayer = this.gameState.getNextPlayer();
@@ -87,7 +119,7 @@ export class PokScorerApp {
         });
 
         // Check if there's a saved game and show appropriate UI
-        const hasSavedGame = localStorage.getItem('pok-event-store');
+        const hasSavedGame = StorageService.exists('pok-event-store');
 
         if (hasSavedGame) {
             // Show start selector with Resume button visible

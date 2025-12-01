@@ -1,422 +1,304 @@
-# POK Score Counter - Test Suite
+# POK Score Counter - Test Framework
 
-Vanilla JavaScript testing framework with zero dependencies.
+A lightweight, zero-dependency testing framework built from scratch for vanilla JavaScript. Inspired by Mocha/Jest but designed to run natively in browsers without build tooling.
 
-## Quick Start
+## Overview
 
-1. Open `test-runner.html` in your browser:
-   ```
-   open tests/test-runner.html
-   ```
-   or
-   ```
-   http://localhost:8000/tests/test-runner.html
-   ```
+**Two execution modes:**
+- **Web UI**: Interactive browser test runner at `http://localhost:3000/tests/`
+- **CLI**: Headless Playwright tests via `npm test`
 
-2. Click "▶️ Run All Tests" to execute the test suite
+**Stats**: ~600 lines of code, 150+ tests run in <100ms, zero dependencies.
 
-That's it! No build tools, no npm install, no setup required.
+## Architecture
 
-## Test Structure
+### Core Components
 
+**TestRunner** - Test orchestration engine. Manages suites, executes tests, handles lifecycle hooks, coordinates reporters.
+
+**Assertion Library** - Expressive assertions that throw `AssertionError` on failure. Supports equality, truthiness, comparisons, arrays, and error handling.
+
+**Reporters** - Transform results to output:
+- `HTMLReporter`: Interactive browser UI with expandable tests and copy functionality
+- `ConsoleReporter`: Structured console output
+
+**Test Loader** - Dynamic module importing with cache-busting. Handles import errors, categorizes unit vs integration tests.
+
+**Fixtures** - Factory functions for isolated test objects. Creates fresh instances of services, manages localStorage, provides DOM containers.
+
+**CLI Runner** - Node script that launches headless Chromium, serves files, executes tests, reports with color output.
+
+### Philosophy
+
+**Zero Dependencies**: No npm packages needed. Runs in any modern browser.
+
+**Browser-Native**: ES6 modules, native Promises, standard DOM APIs.
+
+**Minimal**: Simple, readable code. Entire framework is a few hundred lines.
+
+**Flexible**: Same tests run in browser and CI without modification.
+
+## Running Tests
+
+### Web UI
+
+```bash
+python serve.py 3000
+# Navigate to: http://localhost:3000/tests/
 ```
-tests/
-├── lib/
-│   └── mini-test.js           # Test framework (~250 lines)
-├── test-runner.html            # Visual test UI
-├── unit/
-│   ├── scoring-service.test.js         # 40+ tests
-│   ├── game-state-projection.test.js   # 60+ tests
-│   └── event-store.test.js             # 30+ tests
-└── integration/
-    └── game-flow.test.js               # 20+ tests
+
+Features: Run all/unit/integration tests, view test source on click, copy results to clipboard.
+
+**Also deployed to GitHub Pages** at `/tests/` path.
+
+### CLI
+
+```bash
+npm run test:install  # First time only
+npm test              # Run all tests
 ```
 
-**Total: 150+ tests**
+Exits with code 0 (pass) or 1 (fail) for CI integration.
 
-## Test Framework API
+### CI/CD
 
-### Defining Tests
+GitHub Actions runs tests on every push. Deployment only happens if tests pass.
+
+## API Reference
+
+### Test Structure
 
 ```javascript
-import { TestRunner, assert } from './lib/mini-test.js';
-
-const runner = window.testRunner;
-
-runner.describe('My Test Suite', () => {
-    runner.it('should do something', () => {
-        assert.equal(1 + 1, 2);
+runner.describe('Feature', () => {
+    runner.it('does something', () => {
+        assert.equal(result, expected);
     });
 
-    runner.skip('should skip this test', () => {
-        // This won't run
-    });
+    runner.skip('not ready', () => { /* ... */ });
 });
 ```
 
 ### Lifecycle Hooks
 
 ```javascript
-runner.describe('With Hooks', () => {
-    runner.beforeEach(() => {
-        // Runs before each test
-    });
+runner.beforeEach(() => {
+    // Setup before each test
+});
 
-    runner.afterEach(() => {
-        // Runs after each test
-    });
-
-    runner.it('test 1', () => { ... });
-    runner.it('test 2', () => { ... });
+runner.afterEach(() => {
+    // Cleanup after each test
 });
 ```
 
 ### Assertions
 
-```javascript
-// Equality
-assert.equal(actual, expected, message);
-assert.notEqual(actual, expected, message);
-assert.deepEqual(obj1, obj2, message);
+**Equality**: `equal()`, `notEqual()`, `deepEqual()`
 
-// Truthiness
-assert.ok(value, message);
-assert.notOk(value, message);
+**Truthiness**: `ok()`, `notOk()`
 
-// Comparisons
-assert.greaterThan(actual, expected, message);
-assert.lessThan(actual, expected, message);
+**Comparisons**: `greaterThan()`, `lessThan()`
 
-// Arrays
-assert.lengthOf(array, length, message);
-assert.includes(array, value, message);
+**Arrays**: `lengthOf()`, `includes()`
 
-// Errors
-assert.throws(() => { throw new Error(); });
-await assert.asyncThrows(async () => { ... });
-```
+**Errors**: `throws()`, `asyncThrows()`
 
-## Test Categories
+All accept optional message parameter.
 
-### Unit Tests
+### Fixtures
 
-**ScoringService** - `unit/scoring-service.test.js`
-- Zone detection (rectangular and circular)
-- Boundary detection
-- Table flip logic
-- Score calculation
+Import from `lib/fixtures.js`:
 
-**GameStateProjection** - `unit/game-state-projection.test.js`
-- State initialization
-- Event handling (all event types)
-- Calculated state (vs cached)
-- Score calculations
-- Immutability
+**`createTestContext(options)`** - Returns `{ eventStore, gameState, commands, storageKey }`
 
-**EventStore** - `unit/event-store.test.js`
-- Event appending and versioning
-- Pub/Sub system
-- Event querying
-- LocalStorage persistence
+**`createStartedGameContext(player, options)`** - Context with game already started
 
-### Integration Tests
+**`cleanupTestContext(context)`** - Cleanup for afterEach
 
-**Game Flow** - `integration/game-flow.test.js`
-- Full game scenarios
-- Multi-round games
-- Event sourcing consistency
-- Save/load functionality
-- Complex operation sequences
+**`createTestContainer(id)`** - DOM container for component tests
 
-## Running Tests
+**`cleanupTestContainer(id)`** - Remove test DOM
 
-### All Tests
-```javascript
-// Click "Run All Tests" button
-// or in console:
-await runTests();
-```
+**Utilities**: `disableLogging()`, `restoreLogging()`, `clearTestStorage()`
 
-### Unit Tests Only
-```javascript
-// Click "Run Unit Tests" button
-// or in console:
-await runTests('unit');
-```
+## Writing Tests
 
-### Integration Tests Only
-```javascript
-// Click "Run Integration Tests" button
-// or in console:
-await runTests('integration');
-```
-
-### From Console
-
-The test runner exposes global variables:
+### Basic Structure
 
 ```javascript
-// Access test runner
-window.testRunner
+import { assert } from '../lib/mini-test.js';
 
-// Access assertion library
-window.assert
-
-// Run specific test manually
-window.assert.equal(1 + 1, 2);
-```
-
-## Performance
-
-The test framework is lightweight and fast:
-
-- **Framework size:** ~250 lines of vanilla JS
-- **Total test execution:** < 100ms for all 150+ tests
-- **No dependencies:** Zero npm packages
-- **Load time:** Instant (no build step)
-
-## Writing New Tests
-
-### 1. Create Test File
-
-```javascript
-// tests/unit/my-feature.test.js
-import { MyFeature } from '../../js/my-feature.js';
-
-const { describe, it, assert } = window;
 const runner = window.testRunner;
 
-runner.describe('MyFeature', () => {
-    runner.it('should work correctly', () => {
-        const result = MyFeature.doSomething();
-        assert.equal(result, 'expected');
+runner.describe('Feature', () => {
+    runner.it('works correctly', () => {
+        assert.equal(doSomething(), expected);
     });
 });
 ```
 
-### 2. Import in test-runner.html
+### With Fixtures
 
 ```javascript
-const testModules = [
-    './unit/scoring-service.test.js',
-    './unit/game-state-projection.test.js',
-    './unit/event-store.test.js',
-    './unit/my-feature.test.js',  // Add your test
-    './integration/game-flow.test.js'
-];
-```
+import { createTestContext, cleanupTestContext } from '../lib/fixtures.js';
 
-### 3. Run Tests
+runner.describe('Game', () => {
+    let context;
 
-Refresh `test-runner.html` and click "Run All Tests".
+    runner.beforeEach(() => {
+        context = createTestContext();
+    });
 
-## Debugging Tests
+    runner.afterEach(() => {
+        cleanupTestContext(context);
+    });
 
-### Browser DevTools
-
-1. Open DevTools (F12)
-2. Set breakpoints in test files
-3. Run tests
-4. Step through test execution
-
-### Console Logging
-
-```javascript
-runner.it('debug test', () => {
-    const value = someFunction();
-    console.log('Debug:', value);
-    assert.equal(value, expected);
+    runner.it('starts game', () => {
+        context.commands.startGame('Red');
+        assert.ok(context.gameState.isGameInProgress());
+    });
 });
 ```
 
-### Console Reporter
-
-Tests automatically log to console:
-
-```
-🧪 Running tests...
-
-📦 ScoringService - Zone Detection
-  ✅ should return zone 3 for x < 20
-  ✅ should return zone 2 for 20 <= x < 40
-  ...
-
-📊 Test Results:
-  ✅ Passed: 150
-  ❌ Failed: 0
-  ⏭️  Skipped: 0
-  ⏱️  Duration: 45.23ms
-```
-
-## CI/CD Integration (Optional)
-
-While designed for browser testing, you can add Playwright for automation:
-
-```bash
-npm install -D @playwright/test
-```
+### Async Tests
 
 ```javascript
-// playwright.config.js
-export default {
-  testDir: './tests-playwright',
-  use: {
-    baseURL: 'http://localhost:8000',
-  },
+runner.it('handles async', async () => {
+    const result = await fetchData();
+    assert.ok(result);
+});
+
+runner.it('handles errors', async () => {
+    await assert.asyncThrows(() => failingOperation());
+});
+```
+
+### DOM Tests
+
+```javascript
+import { createTestContainer, cleanupTestContainer } from '../lib/fixtures.js';
+
+runner.describe('UI', () => {
+    let container;
+
+    runner.beforeEach(() => {
+        container = createTestContainer();
+    });
+
+    runner.afterEach(() => {
+        cleanupTestContainer();
+    });
+
+    runner.it('renders', () => {
+        container.innerHTML = '<div>Test</div>';
+        assert.equal(container.textContent, 'Test');
+    });
+});
+```
+
+## Test Strategy
+
+### Unit Tests (`unit/`)
+- Test individual functions/classes in isolation
+- Focus on input/output behavior
+- Test edge cases and error conditions
+- Mock external dependencies
+
+### Integration Tests (`integration/`)
+- Test component interactions
+- End-to-end workflows
+- State consistency across operations
+- Event sourcing patterns
+
+### Test Isolation
+- Each test runs independently
+- Use fixtures for fresh state
+- Clean up localStorage, DOM, subscriptions
+- No shared state between tests
+
+### Test Quality
+- **Focused**: One behavior per test
+- **Readable**: Clear descriptive names
+- **Fast**: Execute in milliseconds
+- **Deterministic**: Same result every time
+- **Maintainable**: Easy to update
+
+## Debugging
+
+### Browser DevTools
+1. Open tests at `http://localhost:3000/tests/`
+2. Open DevTools (F12) → Sources
+3. Set breakpoints in test files
+4. Click "Run All Tests"
+
+### Console Access
+```javascript
+window.testRunner  // Test runner instance
+window.assert      // Assertion library
+```
+
+### View Test Code
+Click any test in the Web UI to view its source inline.
+
+### Skip Tests
+```javascript
+runner.skip('not ready', () => { /* ... */ });
+```
+
+## Adding Tests
+
+**1. Create file** in `tests/unit/` or `tests/integration/`
+
+**2. Register** in `tests/lib/test-loader.js`:
+```javascript
+export const TEST_MODULES = {
+    unit: ['./unit/my-test.test.js', /* ... */],
+    integration: [/* ... */]
 };
 ```
 
-```javascript
-// tests-playwright/e2e.spec.js
-import { test, expect } from '@playwright/test';
-
-test('all tests pass', async ({ page }) => {
-  await page.goto('/tests/test-runner.html');
-
-  await page.click('#runAll');
-
-  await page.waitForSelector('.summary');
-
-  const failed = await page.textContent('.stat.fail strong');
-  expect(failed).toBe('0');
-});
-```
-
-## Best Practices
-
-### ✅ DO
-
-- Write descriptive test names
-- Test one thing per test
-- Use `beforeEach` for setup
-- Keep tests isolated (no shared state)
-- Test edge cases
-- Test error conditions
-
-### ❌ DON'T
-
-- Test implementation details
-- Use magic numbers (use constants)
-- Write dependent tests
-- Mock unnecessarily (test real behavior)
-- Skip tests without good reason
-
-## Examples
-
-### Testing Pure Functions
-
-```javascript
-runner.describe('Pure Function', () => {
-    runner.it('should calculate correctly', () => {
-        const result = calculate(2, 3);
-        assert.equal(result, 5);
-    });
-});
-```
-
-### Testing with Setup
-
-```javascript
-runner.describe('With Setup', () => {
-    let instance;
-
-    runner.beforeEach(() => {
-        instance = new MyClass();
-    });
-
-    runner.it('should work', () => {
-        assert.ok(instance.method());
-    });
-});
-```
-
-### Testing Async Code
-
-```javascript
-runner.describe('Async Tests', () => {
-    runner.it('should handle promises', async () => {
-        const result = await asyncFunction();
-        assert.equal(result, 'done');
-    });
-});
-```
-
-### Testing Errors
-
-```javascript
-runner.describe('Error Handling', () => {
-    runner.it('should throw error', () => {
-        assert.throws(() => {
-            riskyFunction();
-        });
-    });
-});
-```
-
-## Test Coverage
-
-While this framework doesn't generate coverage reports, you can manually verify coverage:
-
-**Current Coverage:**
-- ✅ ScoringService: ~100% (all public methods)
-- ✅ GameStateProjection: ~95% (all event handlers)
-- ✅ EventStore: ~90% (core functionality)
-- ✅ Game Flow: ~80% (main scenarios)
-
-**Areas to Expand:**
-- Command validation edge cases
-- UI interaction testing (would require Playwright)
-- Performance testing with large event counts
+**3. Run** via browser or `npm test`
 
 ## Troubleshooting
 
-### Tests Don't Run
+**Tests don't run**: Check console for import errors, ensure HTTP serving (not `file://`), verify registration in test-loader.js
 
-- Check browser console for import errors
-- Verify all test files are in correct locations
-- Ensure test-runner.html is served from web server (not file://)
+**Import errors**: Use `type="module"` in scripts, serve over HTTP, include `.js` extensions
 
-### Import Errors
+**Browser/CLI differences**: Check timing (use `await`), verify cleanup in `afterEach`, avoid manual setup
 
-```
-Failed to load module script: Expected a JavaScript module script
-```
+**LocalStorage conflicts**: Use test-specific keys (fixtures handle this), clear in hooks
 
-**Solution:** Serve via HTTP server:
-```bash
-python3 serve.py
-```
+**Slow execution**: Disable logging with `CONFIG.ENABLE_LOGGING = false`, use fixtures, minimize DOM operations
 
-### Tests Timeout
+## Extending
 
-```javascript
-// Disable logging for performance
-CONFIG.ENABLE_LOGGING = false;
-```
+**Add assertions**: Edit `assert` object in `lib/mini-test.js`
 
-### LocalStorage Tests Fail
+**Custom reporters**: Implement reporter interface (onStart, onSuiteStart, onTestPass, etc.)
 
-```javascript
-runner.beforeEach(() => {
-    localStorage.clear(); // Clear before each test
-});
-```
+**New fixtures**: Add factory functions to `lib/fixtures.js`
+
+**Test categories**: Edit `TEST_MODULES` in `lib/test-loader.js`
+
+## Current Test Suite
+
+- `unit/scoring-service.test.js` - Zone detection, scores (~40 tests)
+- `unit/game-state-projection.test.js` - Event handling (~60 tests)
+- `unit/event-store.test.js` - Persistence, pub/sub (~30 tests)
+- `unit/storage-service.test.js` - LocalStorage (~5 tests)
+- `unit/dom-helper.test.js` - DOM utilities (~5 tests)
+- `integration/game-flow.test.js` - End-to-end scenarios (~20 tests)
+
+**Total**: 150+ tests, ~50-80ms execution, 100% pass rate (CI enforced)
 
 ## Resources
 
-- [Mini-Test Framework](lib/mini-test.js) - Source code with inline docs
-- [Test Strategy](../TESTING-STRATEGY.md) - Full testing strategy document
-- [Calculated State Tests](../test-calculated-state.html) - Example test file
-
-## Contributing
-
-When adding new features to POK Score Counter:
-
-1. Write tests first (TDD)
-2. Run existing tests to ensure nothing breaks
-3. Add new test file if needed
-4. Update this README if adding new test patterns
+- [mini-test.js](lib/mini-test.js) - Framework source
+- [fixtures.js](lib/fixtures.js) - Test fixtures
+- [test-loader.js](lib/test-loader.js) - Module loader
+- [run-tests.js](run-tests.js) - CLI runner
+- [index.html](index.html) - Web UI runner
 
 ---
 
-**Happy Testing! 🧪**
+**Happy Testing!** 🧪

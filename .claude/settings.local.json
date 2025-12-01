@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node --check:*)",
-      "Bash(node tests/run-tests.js:*)"
+      "Bash(node tests/run-tests.js:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []
