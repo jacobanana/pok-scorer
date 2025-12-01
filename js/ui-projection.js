@@ -398,7 +398,12 @@ export class UIProjection {
             this.managers.scoreDisplay
         );
         this.managers.roundModal.setHandlers({
-            onEditBoard: () => this.handlers.onEditBoard?.()
+            onEditBoard: () => {
+                // First undo the round end (this triggers rebuild which resets edit mode)
+                this.handlers.onEditBoard?.();
+                // Then enter edit mode AFTER the rebuild completes
+                this.managers.autoEnd?.enterEditMode();
+            }
         });
         this.managers.roundModal.initEditBoardButton();
 
