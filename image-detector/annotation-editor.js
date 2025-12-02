@@ -13,6 +13,8 @@ let isDragging = false;
 let dragPokIndex = -1;
 let dragStartX = 0;
 let dragStartY = 0;
+let isResizing = false;
+let resizeStartRadius = 0;
 
 // DOM elements
 const canvas = document.getElementById('annotationCanvas');
@@ -210,7 +212,10 @@ function drawPok(context, pok, index) {
 
 // Handle canvas click
 function handleCanvasClick(e) {
-    if (currentImageIndex < 0 || isDragging) return;
+    if (currentImageIndex < 0 || isDragging || isResizing) return;
+
+    // Skip if Shift or Ctrl was pressed (dragging/resizing operations)
+    if (e.shiftKey || e.ctrlKey) return;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -267,7 +272,7 @@ function findPokAtPosition(x, y) {
 
 // Mouse handlers for dragging
 function handleMouseDown(e) {
-    if (currentImageIndex < 0 || !e.shiftKey) return;
+    if (currentImageIndex < 0) return;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -276,7 +281,21 @@ function handleMouseDown(e) {
     const y = (e.clientY - rect.top) * scaleY;
 
     const pokIndex = findPokAtPosition(x, y);
-    if (pokIndex !== -1) {
+
+    // Ctrl+drag for resizing
+    if (e.ctrlKey && pokIndex !== -1) {
+        isResizing = true;
+        dragPokIndex = pokIndex;
+        dragStartY = y;
+        const pok = images[currentImageIndex].poks[pokIndex];
+        resizeStartRadius = pok.radius;
+        canvas.style.cursor = 'ns-resize';
+        e.preventDefault();
+        return;
+    }
+
+    // Shift+drag for moving
+    if (e.shiftKey && pokIndex !== -1) {
         isDragging = true;
         dragPokIndex = pokIndex;
         dragStartX = x;
@@ -287,7 +306,7 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-    if (!isDragging || dragPokIndex === -1) return;
+    if ((!isDragging && !isResizing) || dragPokIndex === -1) return;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -296,16 +315,28 @@ function handleMouseMove(e) {
     const y = (e.clientY - rect.top) * scaleY;
 
     const pok = images[currentImageIndex].poks[dragPokIndex];
-    pok.x = Math.round(Math.max(0, Math.min(canvas.width, x)));
-    pok.y = Math.round(Math.max(0, Math.min(canvas.height, y)));
+
+    if (isResizing) {
+        // Calculate new radius based on vertical drag
+        // Drag up (y decreases) = increase radius
+        // Drag down (y increases) = decrease radius
+        const deltaY = dragStartY - y;  // Positive when dragging up
+        const newRadius = Math.round(Math.max(5, Math.min(100, resizeStartRadius + deltaY)));
+        pok.radius = newRadius;
+    } else if (isDragging) {
+        // Position dragging
+        pok.x = Math.round(Math.max(0, Math.min(canvas.width, x)));
+        pok.y = Math.round(Math.max(0, Math.min(canvas.height, y)));
+    }
 
     renderCanvas();
     renderPokList();
 }
 
 function handleMouseUp() {
-    if (isDragging) {
+    if (isDragging || isResizing) {
         isDragging = false;
+        isResizing = false;
         dragPokIndex = -1;
         canvas.style.cursor = 'crosshair';
     }

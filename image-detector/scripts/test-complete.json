@@ -1,0 +1,30 @@
+{
+  "algorithm": "hough",
+  "dp": 1.0198974417398,
+  "minDist": 242,
+  "param1": 126,
+  "param2": 29,
+  "minRadius": 19,
+  "maxRadius": 121,
+  "redH1Low": 2,
+  "redH1High": 15,
+  "redH2Low": 165,
+  "redH2High": 178,
+  "redSMin": 73,
+  "redVMin": 101,
+  "blueH1Low": 95,
+  "blueH1High": 134,
+  "blueH2Low": 0,
+  "blueH2High": 0,
+  "blueSMin": 105,
+  "blueVMin": 77,
+  "_metadata": {
+    "training_score": 4.583830062256623,
+    "validation_score": 22.211996088713835,
+    "dataset": "..\\datasets\\pok-dataset.json",
+    "iterations": 25,
+    "train_images": 13,
+    "val_images": 6,
+    "param_source": "Optimizer Best"
+  }
+}

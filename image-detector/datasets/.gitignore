@@ -1,0 +1,18 @@
+# Ignore large image files locally (use Git LFS if needed)
+# Uncomment to prevent accidental commits of large datasets:
+# images/*.jpg
+# images/*.jpeg
+# images/*.png
+
+# Keep the .gitkeep file
+!images/.gitkeep
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/

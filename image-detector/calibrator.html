@@ -4,88 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pok Detector Calibrator</title>
+    <link rel="stylesheet" href="shared-styles.css">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            min-height: 100vh;
-            padding: 0;
-        }
-
-        /* Main Navigation */
-        .main-nav {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding: 12px 20px;
-            background: #16162a;
-            border-bottom: 1px solid #333;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            color: #888;
-            transition: all 0.2s;
-        }
-
-        .nav-link:hover {
-            color: #ccc;
-            background: #2a2a4a;
-        }
-
-        .nav-link.active {
-            color: #fff;
-            background: #3a3a5a;
-        }
-
-        .nav-step {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: #444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .nav-link.active .nav-step {
-            background: #4a90d9;
-        }
-
-        .nav-label {
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .nav-arrow {
-            color: #444;
-            font-size: 14px;
-        }
-
-        .page-content {
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 10px;
-            color: #fff;
-        }
+        /* Calibrator-specific styles */
 
         .subtitle {
             text-align: center;
@@ -94,98 +15,10 @@
             font-size: 14px;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .panel {
-            background: #2a2a4a;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
         .panel h2 {
-            font-size: 16px;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #444;
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .step-number {
-            background: #4a90d9;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .step-number.done {
-            background: #2ecc71;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: #4a90d9;
-            color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: #3a7bc8;
-        }
-
-        .btn-success {
-            background: #2ecc71;
-            color: white;
-        }
-
-        .btn-success:hover:not(:disabled) {
-            background: #27ae60;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            background: #c0392b;
-        }
-
-        .btn-secondary {
-            background: #555;
-            color: white;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: #666;
-        }
-
-        input[type="file"] {
-            display: none;
         }
 
         .file-input-group {
@@ -195,18 +28,6 @@
             flex-wrap: wrap;
         }
 
-        .file-status {
-            font-size: 13px;
-            color: #888;
-        }
-
-        .file-status.success {
-            color: #2ecc71;
-        }
-
-        .file-status.error {
-            color: #e74c3c;
-        }
 
         .settings-grid {
             display: grid;
@@ -225,14 +46,6 @@
             color: #aaa;
         }
 
-        .setting-group input {
-            padding: 8px 12px;
-            background: #333;
-            border: 1px solid #555;
-            border-radius: 4px;
-            color: #eee;
-            font-size: 14px;
-        }
 
         .progress-section {
             margin-top: 15px;
@@ -356,29 +169,6 @@
             flex-wrap: wrap;
         }
 
-        .info-box {
-            background: #333;
-            padding: 15px;
-            border-radius: 6px;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #aaa;
-        }
-
-        .info-box code {
-            background: #222;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-
-        .info-box a {
-            color: #4a90d9;
-        }
-
-        .hidden {
-            display: none !important;
-        }
 
         .log-output {
             background: #1a1a2e;
@@ -399,6 +189,174 @@
         .log-entry.best {
             color: #2ecc71;
             font-weight: bold;
+        }
+
+        .validation-image-card {
+            background: #333;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .validation-image-card h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .validation-canvas-container {
+            position: relative;
+            background: #1a1a2e;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .validation-canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .validation-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .validation-metric {
+            background: #2a2a4a;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .validation-metric-label {
+            color: #888;
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+
+        .validation-metric-value {
+            color: #4a90d9;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .validation-metric-value.good {
+            color: #2ecc71;
+        }
+
+        .validation-metric-value.bad {
+            color: #e74c3c;
+        }
+
+        .dataset-status-table {
+            font-size: 12px;
+        }
+
+        .dataset-status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid #444;
+            gap: 10px;
+        }
+
+        .dataset-status-row:last-child {
+            border-bottom: none;
+        }
+
+        .dataset-status-filename {
+            flex: 1;
+            color: #ccc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .dataset-status-icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .dataset-status-icon.loaded {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .dataset-status-icon.missing {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .dataset-status-summary {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .dataset-status-summary-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a90d9;
+            margin-bottom: 3px;
+        }
+
+        .dataset-status-summary-value.complete {
+            color: #2ecc71;
+        }
+
+        .dataset-status-summary-label {
+            color: #888;
+            font-size: 11px;
+        }
+
+        #iterationResultsTable th {
+            color: #aaa;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        #iterationResultsTable tbody tr {
+            border-bottom: 1px solid #333;
+        }
+
+        #iterationResultsTable tbody tr:hover {
+            background: #2a2a3a;
+        }
+
+        #iterationResultsTable tbody td {
+            padding: 6px 4px;
+            text-align: center;
+            color: #ccc;
+        }
+
+        .iteration-row-best-combined {
+            background: rgba(46, 204, 113, 0.15) !important;
+        }
+
+        .iteration-row-best-combined td:nth-child(2) {
+            font-weight: bold;
+            color: #2ecc71;
+        }
+
+        .iteration-cell-best {
+            font-weight: bold;
+            color: #4a90d9;
         }
     </style>
 </head>
@@ -425,7 +383,8 @@
         <h1>Pok Detector Calibrator</h1>
         <p class="subtitle">Auto-tune detection parameters using annotated images</p>
 
-        <div class="container">
+        <div class="container" style="display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start;">
+        <div>
         <!-- Step 1: Load Dataset -->
         <div class="panel">
             <h2><span class="step-number" id="step1">1</span> Load Dataset</h2>
@@ -463,6 +422,21 @@
                 </button>
                 <span class="file-status" id="imagesStatus"></span>
             </div>
+
+            <!-- Dataset Split Summary -->
+            <div id="datasetSplitSummary" class="hidden" style="margin-top: 15px;">
+                <h3 style="font-size: 14px; margin-bottom: 10px; color: #aaa;">Dataset Split Preview</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: #333; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 12px; color: #888; margin-bottom: 5px;">Training Set</div>
+                        <div id="trainingSummary" style="font-size: 11px; color: #aaa;"></div>
+                    </div>
+                    <div style="background: #333; padding: 12px; border-radius: 6px;">
+                        <div style="font-size: 12px; color: #888; margin-bottom: 5px;">Validation Set</div>
+                        <div id="validationSummary" style="font-size: 11px; color: #aaa;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Step 3: Configure & Run -->
@@ -481,6 +455,21 @@
                 <div class="setting-group">
                     <label>Match Distance Threshold (px)</label>
                     <input type="number" id="matchThreshold" value="50" min="10" max="200">
+                </div>
+                <div class="setting-group">
+                    <label>Training Set Ratio (%)</label>
+                    <input type="number" id="trainRatio" value="70" min="50" max="90" step="5">
+                </div>
+            </div>
+
+            <div class="info-box" style="margin-bottom: 15px;">
+                <strong>Optional:</strong> Load existing parameters to use as starting point for optimization
+                <div class="file-input-group" style="margin-top: 10px;">
+                    <input type="file" id="startingParamsInput" accept=".json" style="display: none;">
+                    <button class="btn-secondary" onclick="document.getElementById('startingParamsInput').click()">
+                        Load Starting Parameters
+                    </button>
+                    <span class="file-status" id="startingParamsStatus"></span>
                 </div>
             </div>
 
@@ -501,6 +490,29 @@
                     <span id="phaseLabel">Phase: Random Search</span>
                     <span id="iterationLabel">Iteration: 0/0</span>
                     <span id="bestScoreLabel">Best Score: --</span>
+                </div>
+
+                <!-- Iteration Results Table -->
+                <div id="iterationResultsContainer" class="hidden" style="margin-top: 15px;">
+                    <h3 style="font-size: 13px; margin-bottom: 10px; color: #aaa;">Random Search Iterations</h3>
+                    <div style="max-height: 400px; overflow-y: auto; background: #1a1a2e; border-radius: 4px; padding: 10px;">
+                        <table id="iterationResultsTable" style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: #2a2a4a; z-index: 1;">
+                                <tr>
+                                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #444;">#</th>
+                                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #444;">Combined</th>
+                                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #444;">Detection</th>
+                                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #444;">Color</th>
+                                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #444;">F1</th>
+                                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #444;">Precision</th>
+                                    <th style="padding: 8px 4px; text-align: center; border-bottom: 2px solid #444;">Recall</th>
+                                </tr>
+                            </thead>
+                            <tbody id="iterationResultsBody">
+                                <!-- Filled dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -531,10 +543,37 @@
                 <button class="btn-secondary" onclick="downloadParams()">Download JSON</button>
             </div>
         </div>
+
+        <!-- Validation Results Visualization -->
+        <div class="panel hidden" id="validationVisualization">
+            <h2>Validation Results Visualization</h2>
+
+            <p style="font-size: 13px; color: #888; margin-bottom: 15px;">
+                Detection results on validation set (images not used during training)
+            </p>
+
+            <div id="validationImagesContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+                <!-- Filled dynamically with validation images -->
+            </div>
+        </div>
+        </div>
+
+        <!-- Dataset Status Sidebar -->
+        <div>
+            <div class="panel" style="position: sticky; top: 20px;">
+                <h2 style="font-size: 14px; margin-bottom: 15px;">Dataset Status</h2>
+
+                <div id="datasetStatusTable" class="dataset-status-empty">
+                    <div style="text-align: center; padding: 20px; color: #666; font-size: 13px;">
+                        Load a dataset to see status
+                    </div>
+                </div>
+            </div>
+        </div>
+
         </div>
     </div>
 
-    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()" type="text/javascript"></script>
     <script src="color-classifier.js"></script>
     <script src="calibrator.js"></script>
     <script>
@@ -543,6 +582,16 @@
         let datasetLoaded = false;
         let imagesLoaded = false;
         let lastResults = null;
+        let iterationResults = [];
+        let startingParams = null; // Optional starting parameters for optimization
+        let bestScores = {
+            combined: -Infinity,
+            detection: -Infinity,
+            color: -Infinity,
+            f1: -Infinity,
+            precision: -Infinity,
+            recall: -Infinity
+        };
 
         // DOM elements
         const datasetInput = document.getElementById('datasetInput');
@@ -570,14 +619,79 @@
             };
         }
 
+        // Update dataset status table
+        function updateDatasetStatusTable() {
+            const table = document.getElementById('datasetStatusTable');
+
+            if (!Calibrator.dataset || !Calibrator.dataset.images) {
+                table.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #666; font-size: 13px;">
+                        Load a dataset to see status
+                    </div>
+                `;
+                return;
+            }
+
+            const loadedCount = Calibrator.loadedImages.length;
+            const totalCount = Calibrator.dataset.images.length;
+            const allLoaded = loadedCount === totalCount;
+
+            let html = `
+                <div class="dataset-status-summary">
+                    <div class="dataset-status-summary-value ${allLoaded ? 'complete' : ''}">${loadedCount} / ${totalCount}</div>
+                    <div class="dataset-status-summary-label">Images Loaded</div>
+                </div>
+                <div class="dataset-status-table">
+            `;
+
+            Calibrator.dataset.images.forEach(img => {
+                const isLoaded = Calibrator.loadedImages.some(loaded => loaded.filename === img.filename);
+                const icon = isLoaded ?
+                    '<div class="dataset-status-icon loaded">✓</div>' :
+                    '<div class="dataset-status-icon missing">✗</div>';
+
+                html += `
+                    <div class="dataset-status-row">
+                        <div class="dataset-status-filename" title="${img.filename}">${img.filename}</div>
+                        ${icon}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            table.innerHTML = html;
+        }
+
         function updateButtons() {
+            // Get current state: NOT_READY, READY, RUNNING, CALIBRATED, STOPPED
+            const state = Calibrator.state;
+
+            // Check if all dataset images are loaded
+            const allImagesLoaded = Calibrator.dataset &&
+                                   Calibrator.dataset.images &&
+                                   Calibrator.loadedImages.length === Calibrator.dataset.images.length &&
+                                   Calibrator.loadedImages.length > 0;
+
+            // Update Calibrator state if needed
+            if (!cvReady || !datasetLoaded || !allImagesLoaded) {
+                Calibrator.state = 'NOT_READY';
+            } else if (state === 'NOT_READY') {
+                Calibrator.state = 'READY';
+            }
+
             loadImagesBtn.disabled = !datasetLoaded;
-            startBtn.disabled = !cvReady || !datasetLoaded || !imagesLoaded || Calibrator.isRunning;
-            stopBtn.disabled = !Calibrator.isRunning;
+            startBtn.disabled = (Calibrator.state !== 'READY' && Calibrator.state !== 'CALIBRATED' && Calibrator.state !== 'STOPPED');
+            stopBtn.disabled = (Calibrator.state !== 'RUNNING');
 
             // Update step indicators
             document.getElementById('step1').classList.toggle('done', datasetLoaded);
-            document.getElementById('step2').classList.toggle('done', imagesLoaded);
+            document.getElementById('step2').classList.toggle('done', allImagesLoaded);
+
+            // Mark images as loaded based on actual status
+            imagesLoaded = allImagesLoaded;
+
+            // Update status table
+            updateDatasetStatusTable();
         }
 
         // Load dataset JSON
@@ -673,6 +787,167 @@
             updateButtons();
         });
 
+        // Load starting parameters
+        const startingParamsInput = document.getElementById('startingParamsInput');
+        const startingParamsStatus = document.getElementById('startingParamsStatus');
+
+        startingParamsInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                startingParamsStatus.textContent = 'Loading parameters...';
+                startingParamsStatus.className = 'file-status';
+
+                const text = await file.text();
+                startingParams = JSON.parse(text);
+
+                startingParamsStatus.textContent = `Loaded: ${file.name}`;
+                startingParamsStatus.className = 'file-status success';
+
+                console.log('Loaded starting parameters:', startingParams);
+            } catch (err) {
+                startingParams = null;
+                startingParamsStatus.textContent = `Error: ${err.message}`;
+                startingParamsStatus.className = 'file-status error';
+            }
+        });
+
+        // Update dataset split summary display
+        function updateDatasetSplitSummary() {
+            if (Calibrator.trainingSet.length === 0 && Calibrator.validationSet.length === 0) {
+                return;
+            }
+
+            const trainRatio = Calibrator.trainingSet.length / (Calibrator.trainingSet.length + Calibrator.validationSet.length);
+
+            document.getElementById('datasetSplitSummary').classList.remove('hidden');
+
+            // Training set summary
+            const trainFilenames = Calibrator.trainingSet.map(img => img.filename).join(', ');
+            document.getElementById('trainingSummary').innerHTML =
+                `<strong>${Calibrator.trainingSet.length} image${Calibrator.trainingSet.length !== 1 ? 's' : ''}</strong> (${(trainRatio * 100).toFixed(0)}%)<br>` +
+                `<div style="margin-top: 5px; color: #666;">${trainFilenames}</div>`;
+
+            // Validation set summary
+            const valFilenames = Calibrator.validationSet.map(img => img.filename).join(', ');
+            document.getElementById('validationSummary').innerHTML =
+                `<strong>${Calibrator.validationSet.length} image${Calibrator.validationSet.length !== 1 ? 's' : ''}</strong> (${((1 - trainRatio) * 100).toFixed(0)}%)<br>` +
+                `<div style="margin-top: 5px; color: #666;">${valFilenames}</div>`;
+        }
+
+        // Add iteration result to table
+        function addIterationResult(iteration, result, isBestCombined) {
+            const tbody = document.getElementById('iterationResultsBody');
+            const container = document.getElementById('iterationResultsContainer');
+
+            // Show table on first iteration
+            if (iteration === 1) {
+                container.classList.remove('hidden');
+                iterationResults = [];
+                bestScores = {
+                    combined: -Infinity,
+                    detection: -Infinity,
+                    color: -Infinity,
+                    f1: -Infinity,
+                    precision: -Infinity,
+                    recall: -Infinity
+                };
+            }
+
+            // Calculate average metrics
+            const avgF1 = result.perImage.reduce((s, r) => s + r.f1, 0) / result.perImage.length;
+            const avgPrecision = result.perImage.reduce((s, r) => s + r.precision, 0) / result.perImage.length;
+            const avgRecall = result.perImage.reduce((s, r) => s + r.recall, 0) / result.perImage.length;
+
+            const rowData = {
+                iteration,
+                combined: result.avgScore,
+                detection: result.avgDetectionScore,
+                color: result.avgColorScore,
+                f1: avgF1,
+                precision: avgPrecision,
+                recall: avgRecall,
+                isBestCombined
+            };
+
+            iterationResults.push(rowData);
+
+            // Update best scores
+            if (rowData.combined > bestScores.combined) bestScores.combined = rowData.combined;
+            if (rowData.detection > bestScores.detection) bestScores.detection = rowData.detection;
+            if (rowData.color > bestScores.color) bestScores.color = rowData.color;
+            if (rowData.f1 > bestScores.f1) bestScores.f1 = rowData.f1;
+            if (rowData.precision > bestScores.precision) bestScores.precision = rowData.precision;
+            if (rowData.recall > bestScores.recall) bestScores.recall = rowData.recall;
+
+            // Rebuild entire table to update highlighting
+            updateIterationResultsTable();
+        }
+
+        // Update iteration results table with proper highlighting
+        function updateIterationResultsTable() {
+            const tbody = document.getElementById('iterationResultsBody');
+            tbody.innerHTML = '';
+
+            iterationResults.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                if (row.isBestCombined) {
+                    tr.className = 'iteration-row-best-combined';
+                }
+
+                const cells = [
+                    row.iteration,
+                    row.combined.toFixed(2),
+                    row.detection.toFixed(2),
+                    row.color.toFixed(2),
+                    (row.f1 * 100).toFixed(1) + '%',
+                    (row.precision * 100).toFixed(1) + '%',
+                    (row.recall * 100).toFixed(1) + '%'
+                ];
+
+                const scores = [
+                    null, // iteration number
+                    row.combined,
+                    row.detection,
+                    row.color,
+                    row.f1,
+                    row.precision,
+                    row.recall
+                ];
+
+                const bestValues = [
+                    null,
+                    bestScores.combined,
+                    bestScores.detection,
+                    bestScores.color,
+                    bestScores.f1,
+                    bestScores.precision,
+                    bestScores.recall
+                ];
+
+                cells.forEach((cell, i) => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+
+                    // Highlight if this is the best value in this column
+                    if (i > 0 && scores[i] !== null && Math.abs(scores[i] - bestValues[i]) < 0.001) {
+                        td.className = 'iteration-cell-best';
+                    }
+
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            // Auto-scroll to bottom
+            const container = tbody.closest('div[style*="overflow-y"]');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
         // Start calibration
         async function startCalibration() {
             if (!cvReady || !datasetLoaded || !imagesLoaded) return;
@@ -680,6 +955,7 @@
             const randomIter = parseInt(document.getElementById('randomIterations').value);
             const localIter = parseInt(document.getElementById('localIterations').value);
             const matchThreshold = parseInt(document.getElementById('matchThreshold').value);
+            const trainRatio = parseFloat(document.getElementById('trainRatio').value) / 100;
 
             Calibrator.matchDistanceThreshold = matchThreshold;
 
@@ -687,17 +963,42 @@
             logOutput.classList.remove('hidden');
             logOutput.innerHTML = '';
             resultsPanel.classList.add('hidden');
+            document.getElementById('validationVisualization').classList.add('hidden');
+            document.getElementById('iterationResultsContainer').classList.add('hidden');
 
+            // Reset iteration tracking
+            iterationResults = [];
+            bestScores = {
+                combined: -Infinity,
+                detection: -Infinity,
+                color: -Infinity,
+                f1: -Infinity,
+                precision: -Infinity,
+                recall: -Infinity
+            };
+
+            // Update buttons immediately to reflect running state
             updateButtons();
 
             try {
+                let lastBestCombined = -Infinity;
+
                 const results = await Calibrator.optimize({
                     randomIterations: randomIter,
                     localIterations: localIter,
+                    trainRatio: trainRatio,
+                    startingParams: startingParams,
                     onProgress: (progress) => {
+                        // Update split summary after dataset is split (first progress callback)
+                        if (progress.iteration === 0 && (progress.phase === 'random' || progress.phase === 'local')) {
+                            updateDatasetSplitSummary();
+                        }
+
+                        // If starting params provided, skip random search in progress calculation
+                        const effectiveRandomIter = startingParams ? 0 : randomIter;
                         const total = progress.phase === 'random' ? randomIter : localIter;
-                        const offset = progress.phase === 'local' ? randomIter : 0;
-                        const pct = Math.round(((offset + progress.iteration) / (randomIter + localIter)) * 100);
+                        const offset = progress.phase === 'local' ? effectiveRandomIter : 0;
+                        const pct = Math.round(((offset + progress.iteration) / (effectiveRandomIter + localIter)) * 100);
 
                         progressBar.style.width = pct + '%';
                         progressBar.textContent = pct + '%';
@@ -705,6 +1006,15 @@
                         phaseLabel.textContent = `Phase: ${progress.phase === 'random' ? 'Random Search' : 'Local Refinement'}`;
                         iterationLabel.textContent = `Iteration: ${progress.iteration}/${total}`;
                         bestScoreLabel.textContent = `Best Score: ${progress.bestScore.toFixed(2)}`;
+
+                        // Track iteration results during random search
+                        if (progress.phase === 'random' && progress.currentResult) {
+                            const isBestCombined = progress.currentScore > lastBestCombined;
+                            if (isBestCombined) {
+                                lastBestCombined = progress.currentScore;
+                            }
+                            addIterationResult(progress.iteration, progress.currentResult, isBestCombined);
+                        }
                     },
                     onBestFound: (best) => {
                         const logEntry = document.createElement('div');
@@ -720,14 +1030,122 @@
             } catch (err) {
                 console.error('Calibration error:', err);
                 alert('Calibration error: ' + err.message);
+            } finally {
+                // Ensure button state is updated when calibration finishes
+                updateButtons();
             }
-
-            updateButtons();
         }
 
         // Stop calibration
         function stopCalibration() {
             Calibrator.stop();
+            // Update buttons after stopping
+            setTimeout(() => updateButtons(), 100);
+        }
+
+        // Draw detections and annotations on canvas
+        function drawValidationResult(canvas, image, detections, annotations, metrics) {
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const ctx = canvas.getContext('2d');
+
+            // Draw image
+            ctx.drawImage(image, 0, 0);
+
+            // Draw annotations (ground truth) - green circles
+            ctx.strokeStyle = '#2ecc71';
+            ctx.lineWidth = 2;
+            annotations.forEach(ann => {
+                ctx.beginPath();
+                ctx.arc(ann.x, ann.y, 15, 0, 2 * Math.PI);
+                ctx.stroke();
+
+                // Small label
+                ctx.fillStyle = '#2ecc71';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillText('GT', ann.x - 8, ann.y - 20);
+            });
+
+            // Draw detections - colored by match status
+            detections.forEach((det, idx) => {
+                const color = det.color === 'red' ? 'rgba(231, 76, 60, 0.3)' :
+                             det.color === 'blue' ? 'rgba(74, 144, 217, 0.3)' :
+                             'rgba(149, 165, 166, 0.3)';
+
+                // Semi-transparent fill
+                ctx.beginPath();
+                ctx.arc(det.x, det.y, det.radius, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                // Border - use different color if matched correctly
+                const borderColor = det.color === 'red' ? '#e74c3c' :
+                                   det.color === 'blue' ? '#4a90d9' : '#95a5a6';
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+
+        // Show validation visualization
+        function showValidationVisualization(results) {
+            if (!results.validationResult || Calibrator.validationSet.length === 0) {
+                return;
+            }
+
+            const container = document.getElementById('validationImagesContainer');
+            container.innerHTML = '';
+
+            Calibrator.validationSet.forEach((entry, idx) => {
+                const detections = Calibrator.detectWithParams(entry.image, results.bestParams);
+                const score = Calibrator.calculateScore(detections, entry.annotations);
+
+                const card = document.createElement('div');
+                card.className = 'validation-image-card';
+
+                const canvas = document.createElement('canvas');
+                canvas.className = 'validation-canvas';
+                drawValidationResult(canvas, entry.image, detections, entry.annotations, score);
+
+                const f1Class = score.f1 >= 0.8 ? 'good' : score.f1 < 0.5 ? 'bad' : '';
+                const colorClass = score.colorAccuracy >= 0.8 ? 'good' : score.colorAccuracy < 0.5 ? 'bad' : '';
+
+                card.innerHTML = `
+                    <h4>${entry.filename}</h4>
+                    <div class="validation-canvas-container"></div>
+                    <div class="validation-metrics">
+                        <div class="validation-metric">
+                            <div class="validation-metric-label">F1 Score</div>
+                            <div class="validation-metric-value ${f1Class}">${(score.f1 * 100).toFixed(1)}%</div>
+                        </div>
+                        <div class="validation-metric">
+                            <div class="validation-metric-label">Color Accuracy</div>
+                            <div class="validation-metric-value ${colorClass}">${(score.colorAccuracy * 100).toFixed(1)}%</div>
+                        </div>
+                        <div class="validation-metric">
+                            <div class="validation-metric-label">Detections</div>
+                            <div class="validation-metric-value">${score.truePositives} / ${entry.annotations.length}</div>
+                        </div>
+                        <div class="validation-metric">
+                            <div class="validation-metric-label">False Positives</div>
+                            <div class="validation-metric-value ${score.falsePositives > 0 ? 'bad' : ''}">${score.falsePositives}</div>
+                        </div>
+                        <div class="validation-metric">
+                            <div class="validation-metric-label">False Negatives</div>
+                            <div class="validation-metric-value ${score.falseNegatives > 0 ? 'bad' : ''}">${score.falseNegatives}</div>
+                        </div>
+                        <div class="validation-metric">
+                            <div class="validation-metric-label">Avg Pos Error</div>
+                            <div class="validation-metric-value">${score.avgPositionError.toFixed(1)}px</div>
+                        </div>
+                    </div>
+                `;
+
+                card.querySelector('.validation-canvas-container').appendChild(canvas);
+                container.appendChild(card);
+            });
+
+            document.getElementById('validationVisualization').classList.remove('hidden');
         }
 
         // Show results
@@ -798,6 +1216,9 @@
 
             // Parameters output
             paramsOutput.textContent = JSON.stringify(results.bestParams, null, 2);
+
+            // Show validation visualization
+            showValidationVisualization(results);
         }
 
         // Copy parameters to clipboard
@@ -828,5 +1249,6 @@
             URL.revokeObjectURL(url);
         }
     </script>
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()" type="text/javascript"></script>
 </body>
 </html>

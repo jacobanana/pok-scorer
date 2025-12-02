@@ -454,8 +454,15 @@ function runDetection() {
     // Use setTimeout to allow UI to update
     setTimeout(() => {
         try {
+            const startTime = performance.now();
             const params = getParams();
             let results;
+
+            console.log('\n╔══════════════════════════════════════════════════════════════╗');
+            console.log('║                    POK DETECTION STARTED                     ║');
+            console.log('╚══════════════════════════════════════════════════════════════╝\n');
+            console.log(`🔧 Algorithm: ${params.algorithm}`);
+            console.log(`📸 Image: ${currentImage.width}x${currentImage.height}px\n`);
 
             if (params.algorithm === 'blob') {
                 results = detectPoksBlob(currentImage, params);
@@ -463,13 +470,45 @@ function runDetection() {
                 results = detectPoksHough(currentImage, params);
             }
 
+            const detectionTime = performance.now() - startTime;
+
             drawResults(currentImage, results);
             updateCounts(results);
             setDetectionResults(results);
+
+            // Log results summary
+            const redCount = results.filter(r => r.color === 'red').length;
+            const blueCount = results.filter(r => r.color === 'blue').length;
+            const unknownCount = results.filter(r => r.color === 'unknown').length;
+
+            console.log('📊 DETECTION RESULTS:');
+            console.log('┌─────────────────────────────────────────────────────────────┐');
+            console.log(`│ Total Detected:   ${results.length.toString().padEnd(43)} │`);
+            console.log(`│ Red Poks:         ${redCount.toString().padEnd(43)} │`);
+            console.log(`│ Blue Poks:        ${blueCount.toString().padEnd(43)} │`);
+            console.log(`│ Unknown:          ${unknownCount.toString().padEnd(43)} │`);
+            console.log(`│ Detection Time:   ${detectionTime.toFixed(1)}ms`.padEnd(62) + '│');
+            console.log('└─────────────────────────────────────────────────────────────┘\n');
+
+            if (results.length > 0) {
+                console.log('📋 Detection Details:');
+                console.table(results.map((r, idx) => ({
+                    '#': idx + 1,
+                    'Color': r.color.charAt(0).toUpperCase() + r.color.slice(1),
+                    'X': Math.round(r.x),
+                    'Y': Math.round(r.y),
+                    'Radius': Math.round(r.radius) + 'px'
+                })));
+            }
+
+            console.log('\n╔══════════════════════════════════════════════════════════════╗');
+            console.log('║                   DETECTION COMPLETE                         ║');
+            console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
             setStatus(`Found ${results.length} circles`, 'ready');
         } catch (err) {
             setStatus('Detection error: ' + err.message, 'error');
-            console.error(err);
+            console.error('❌ Detection error:', err);
         }
     }, 50);
 }
@@ -618,7 +657,7 @@ function drawResults(img, results) {
     ctx.drawImage(img, 0, 0);
 
     // Draw each detected circle
-    results.forEach(circle => {
+    results.forEach((circle, idx) => {
         const displayColor = ColorClassifier.getDisplayColor(circle.color);
 
         // Semi-transparent fill
@@ -631,6 +670,19 @@ function drawResults(img, results) {
         ctx.strokeStyle = `rgb(${displayColor.r}, ${displayColor.g}, ${displayColor.b})`;
         ctx.lineWidth = 3;
         ctx.stroke();
+
+        // Draw index number on top of the circle
+        const number = (idx + 1).toString();
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // White text with black outline for visibility
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(number, circle.x, circle.y);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(number, circle.x, circle.y);
     });
 }
 
@@ -831,19 +883,30 @@ function importParamsFromJson(file) {
             const data = JSON.parse(e.target.result);
             let params;
 
-            // Handle both exported format and calibrator output format
-            if (data.parameters) {
-                params = data.parameters;
-            } else if (data.algorithm) {
-                // Direct params object (calibrator format)
-                params = data;
-            } else {
-                throw new Error('Invalid parameter file format');
+            // Python is the source of truth - expect format:
+            // {algorithm: 'hough', dp: 1.5, ..., _metadata: {...}}
+
+            if (!data.algorithm) {
+                throw new Error('Invalid parameter file format: missing algorithm field');
+            }
+
+            // Extract params (ignoring _metadata)
+            params = {...data};
+            delete params._metadata;
+
+            // Log metadata if present (useful for debugging)
+            if (data._metadata) {
+                console.log('Training metadata:', data._metadata);
             }
 
             applyParams(params);
             setParamSource(PARAM_SOURCE.IMPORTED);
-            setStatus('Parameters imported from JSON file', 'ready');
+
+            // Show metadata in status message if available
+            const metaInfo = data._metadata
+                ? ` (trained: ${data._metadata.param_source || 'unknown'})`
+                : '';
+            setStatus('Parameters imported from JSON file' + metaInfo, 'ready');
         } catch (err) {
             setStatus('Import error: ' + err.message, 'error');
             console.error('Import error:', err);
@@ -894,11 +957,50 @@ function initImportHandler() {
     }
 }
 
+/**
+ * Load parameters from localStorage
+ */
+function loadParamsFromStorage() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) {
+        setStatus('No parameters in storage', 'error');
+        return;
+    }
+
+    try {
+        const params = JSON.parse(saved);
+
+        // Set algorithm
+        algorithmSelect.value = params.algorithm || 'hough';
+        updateAlgorithmUI();
+
+        // Apply all parameters
+        allParamIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && params[id] !== undefined) {
+                el.value = params[id];
+                updateParamDisplay(id, params[id]);
+            }
+        });
+
+        updateColorPreviews();
+
+        // Check source
+        const source = getParamSource();
+        updateParamSourceDisplay();
+
+        setStatus(`Parameters loaded from storage (${source})`, 'ready');
+    } catch (err) {
+        setStatus(`Error loading parameters: ${err.message}`, 'error');
+    }
+}
+
 // ==================== Results Report & Accuracy ====================
 
 // Store detection results with annotations
 let detectionResults = [];
-let resultAnnotations = {}; // { index: 'correct' | 'wrong' }
+let resultAnnotations = {}; // { index: { detection: 'ungraded' | 'correct' | 'wrong', color: 'ungraded' | 'correct' | 'wrong' } }
 
 /**
  * Toggle parameters drawer open/closed
@@ -917,6 +1019,16 @@ function toggleParamsDrawer() {
 function setDetectionResults(results) {
     detectionResults = results;
     resultAnnotations = {};
+
+    // Auto-mark unknown colors as wrong color classification
+    results.forEach((result, idx) => {
+        if (result.color === 'unknown') {
+            resultAnnotations[idx] = { detection: 'ungraded', color: 'wrong' };
+        } else {
+            resultAnnotations[idx] = { detection: 'ungraded', color: 'ungraded' };
+        }
+    });
+
     renderResultsList();
     updateAccuracyDisplay();
 
@@ -940,9 +1052,17 @@ function renderResultsList() {
     }
 
     listEl.innerHTML = detectionResults.map((result, idx) => {
-        const annotation = resultAnnotations[idx];
-        const correctActive = annotation === 'correct' ? 'active' : '';
-        const wrongActive = annotation === 'wrong' ? 'active' : '';
+        const annotation = resultAnnotations[idx] || { detection: 'ungraded', color: 'ungraded' };
+
+        // Detection annotation states
+        const detUngradedActive = annotation.detection === 'ungraded' ? 'active' : '';
+        const detCorrectActive = annotation.detection === 'correct' ? 'active' : '';
+        const detWrongActive = annotation.detection === 'wrong' ? 'active' : '';
+
+        // Color annotation states
+        const colorUngradedActive = annotation.color === 'ungraded' ? 'active' : '';
+        const colorCorrectActive = annotation.color === 'correct' ? 'active' : '';
+        const colorWrongActive = annotation.color === 'wrong' ? 'active' : '';
 
         return `
             <div class="result-row" data-index="${idx}">
@@ -952,8 +1072,22 @@ function renderResultsList() {
                     <div class="coords">Position: (${Math.round(result.x)}, ${Math.round(result.y)}) · Radius: ${Math.round(result.radius)}px</div>
                 </div>
                 <div class="result-actions">
-                    <button class="result-btn correct ${correctActive}" onclick="annotateResult(${idx}, 'correct')">Correct</button>
-                    <button class="result-btn wrong ${wrongActive}" onclick="annotateResult(${idx}, 'wrong')">Wrong</button>
+                    <div class="annotation-section">
+                        <div class="annotation-label">Circle Detection:</div>
+                        <div class="annotation-buttons">
+                            <button class="result-btn ungraded ${detUngradedActive}" onclick="annotateResult(${idx}, 'detection', 'ungraded')">Ungraded</button>
+                            <button class="result-btn correct ${detCorrectActive}" onclick="annotateResult(${idx}, 'detection', 'correct')">Correct</button>
+                            <button class="result-btn wrong ${detWrongActive}" onclick="annotateResult(${idx}, 'detection', 'wrong')">Wrong</button>
+                        </div>
+                    </div>
+                    <div class="annotation-section">
+                        <div class="annotation-label">Color Classification:</div>
+                        <div class="annotation-buttons">
+                            <button class="result-btn ungraded ${colorUngradedActive}" onclick="annotateResult(${idx}, 'color', 'ungraded')">Ungraded</button>
+                            <button class="result-btn correct ${colorCorrectActive}" onclick="annotateResult(${idx}, 'color', 'correct')">Correct</button>
+                            <button class="result-btn wrong ${colorWrongActive}" onclick="annotateResult(${idx}, 'color', 'wrong')">Wrong</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -961,15 +1095,16 @@ function renderResultsList() {
 }
 
 /**
- * Annotate a result as correct or wrong
+ * Annotate a result for detection or color classification
  */
-function annotateResult(index, annotation) {
-    // Toggle off if clicking same annotation
-    if (resultAnnotations[index] === annotation) {
-        delete resultAnnotations[index];
-    } else {
-        resultAnnotations[index] = annotation;
+function annotateResult(index, type, value) {
+    // Initialize annotation object if not exists
+    if (!resultAnnotations[index]) {
+        resultAnnotations[index] = { detection: 'ungraded', color: 'ungraded' };
     }
+
+    // Update the specific annotation type
+    resultAnnotations[index][type] = value;
 
     renderResultsList();
     updateAccuracyDisplay();
@@ -979,31 +1114,48 @@ function annotateResult(index, annotation) {
  * Update accuracy display
  */
 function updateAccuracyDisplay() {
-    const annotatedCount = Object.keys(resultAnnotations).length;
     const totalCount = detectionResults.length;
-    const correctCount = Object.values(resultAnnotations).filter(a => a === 'correct').length;
-    const wrongCount = Object.values(resultAnnotations).filter(a => a === 'wrong').length;
+
+    // Count graded vs ungraded for each type
+    let detectionGraded = 0, detectionCorrect = 0;
+    let colorGraded = 0, colorCorrect = 0;
+
+    Object.values(resultAnnotations).forEach(ann => {
+        if (ann.detection !== 'ungraded') {
+            detectionGraded++;
+            if (ann.detection === 'correct') detectionCorrect++;
+        }
+        if (ann.color !== 'ungraded') {
+            colorGraded++;
+            if (ann.color === 'correct') colorCorrect++;
+        }
+    });
+
+    const totalGraded = Math.max(detectionGraded, colorGraded);
 
     // Update counts
     const annotatedEl = document.getElementById('annotatedCount');
     const totalEl = document.getElementById('totalCount');
-    if (annotatedEl) annotatedEl.textContent = annotatedCount;
+    if (annotatedEl) annotatedEl.textContent = totalGraded;
     if (totalEl) totalEl.textContent = totalCount;
 
-    // Update accuracy badge
+    // Update accuracy badge with combined info
     const accuracyEl = document.getElementById('accuracyStat');
     if (accuracyEl) {
-        if (annotatedCount === 0) {
+        if (detectionGraded === 0 && colorGraded === 0) {
             accuracyEl.textContent = '--';
             accuracyEl.className = 'accuracy-stat';
         } else {
-            const accuracy = Math.round((correctCount / annotatedCount) * 100);
-            accuracyEl.textContent = `${accuracy}% (${correctCount}/${annotatedCount})`;
+            const detAccuracy = detectionGraded > 0 ? Math.round((detectionCorrect / detectionGraded) * 100) : 0;
+            const colorAccuracy = colorGraded > 0 ? Math.round((colorCorrect / colorGraded) * 100) : 0;
 
-            // Color based on accuracy
-            if (accuracy >= 80) {
+            accuracyEl.textContent = `Det: ${detAccuracy}% (${detectionCorrect}/${detectionGraded}) · Color: ${colorAccuracy}% (${colorCorrect}/${colorGraded})`;
+
+            // Color based on average accuracy
+            const avgAccuracy = (detAccuracy + colorAccuracy) / 2;
+            if (avgAccuracy >= 80) {
                 accuracyEl.className = 'accuracy-stat good';
-            } else if (accuracy >= 50) {
+            } else if (avgAccuracy >= 50) {
                 accuracyEl.className = 'accuracy-stat medium';
             } else {
                 accuracyEl.className = 'accuracy-stat poor';
@@ -1013,21 +1165,29 @@ function updateAccuracyDisplay() {
 }
 
 /**
- * Mark all results as correct
+ * Mark all results as correct (both detection and color)
  */
 function markAllCorrect() {
-    detectionResults.forEach((_, idx) => {
-        resultAnnotations[idx] = 'correct';
+    detectionResults.forEach((result, idx) => {
+        resultAnnotations[idx] = {
+            detection: 'correct',
+            color: result.color === 'unknown' ? 'wrong' : 'correct'
+        };
     });
     renderResultsList();
     updateAccuracyDisplay();
 }
 
 /**
- * Clear all annotations
+ * Clear all annotations (reset to ungraded, keep unknown colors as wrong)
  */
 function clearAnnotations() {
-    resultAnnotations = {};
+    detectionResults.forEach((result, idx) => {
+        resultAnnotations[idx] = {
+            detection: 'ungraded',
+            color: result.color === 'unknown' ? 'wrong' : 'ungraded'
+        };
+    });
     renderResultsList();
     updateAccuracyDisplay();
 }

@@ -1,0 +1,153 @@
+name: Train POK Detector
+
+on:
+  workflow_dispatch:
+    inputs:
+      dataset_path:
+        description: 'Path to dataset JSON (relative to repo root)'
+        required: true
+        default: 'image-detector/datasets/pok-dataset.json'
+      iterations:
+        description: 'Number of optimization iterations'
+        required: false
+        default: '500'
+  push:
+    paths:
+      - 'image-detector/datasets/**'
+      - 'image-detector/scripts/**'
+    branches:
+      - main
+
+permissions:
+  contents: write  # Allow committing optimized parameters
+
+jobs:
+  train:
+    name: Train Detector Parameters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper git commits
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: image-detector/scripts
+        run: uv pip install --system -r pyproject.toml
+
+      - name: Check dataset exists
+        id: check_dataset
+        run: |
+          DATASET_PATH="${{ github.event.inputs.dataset_path || 'image-detector/datasets/pok-training.json' }}"
+          if [ ! -f "$DATASET_PATH" ]; then
+            echo "❌ Dataset not found at: $DATASET_PATH"
+            echo "Please create a dataset using the annotation editor first."
+            exit 1
+          fi
+          echo "✅ Dataset found: $DATASET_PATH"
+          echo "dataset_path=$DATASET_PATH" >> $GITHUB_OUTPUT
+
+      - name: Check images directory
+        id: check_images
+        run: |
+          IMAGES_DIR="$(dirname ${{ steps.check_dataset.outputs.dataset_path }})/images"
+          if [ ! -d "$IMAGES_DIR" ]; then
+            echo "❌ Images directory not found at: $IMAGES_DIR"
+            echo "Please ensure images are in: $IMAGES_DIR"
+            exit 1
+          fi
+          IMAGE_COUNT=$(find "$IMAGES_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | wc -l)
+          echo "✅ Found $IMAGE_COUNT images in: $IMAGES_DIR"
+          echo "images_dir=$IMAGES_DIR" >> $GITHUB_OUTPUT
+
+      - name: Run calibration
+        id: calibrate
+        run: |
+          ITERATIONS="${{ github.event.inputs.iterations || '500' }}"
+          echo "🚀 Starting calibration with $ITERATIONS iterations..."
+
+          python image-detector/scripts/calibrate.py \
+            --dataset "${{ steps.check_dataset.outputs.dataset_path }}" \
+            --images "${{ steps.check_images.outputs.images_dir }}" \
+            --output image-detector/models/detector-params.json \
+            --iterations "$ITERATIONS" \
+            --match-threshold 50
+
+      - name: Run validation
+        run: |
+          echo "🧪 Validating optimized parameters..."
+
+          python image-detector/scripts/validate.py \
+            --params image-detector/models/detector-params.json \
+            --dataset "${{ steps.check_dataset.outputs.dataset_path }}" \
+            --images "${{ steps.check_images.outputs.images_dir }}" \
+            --min-f1 0.6 \
+            --min-color-accuracy 0.6
+
+      - name: Upload parameters artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: detector-params
+          path: image-detector/models/detector-params.json
+          retention-days: 90
+
+      - name: Commit optimized parameters
+        run: |
+          git config user.name "POK Detector CI"
+          git config user.email "ci@pok-detector.local"
+
+          # Create models directory if it doesn't exist
+          mkdir -p image-detector/models
+
+          # Add the optimized parameters
+          git add image-detector/models/detector-params.json
+
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update detector parameters [skip ci]
+
+          Training results:
+          - Dataset: ${{ steps.check_dataset.outputs.dataset_path }}
+          - Iterations: ${{ github.event.inputs.iterations || '500' }}
+          - Triggered by: ${{ github.event_name }}
+          - Commit: ${{ github.sha }}"
+
+            git push
+            echo "✅ Parameters committed successfully"
+          fi
+
+      - name: Create release tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Create a tag for this model version
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          TAG="detector-params-${TIMESTAMP}"
+
+          git tag -a "$TAG" -m "Detector parameters trained on $(date)"
+          git push origin "$TAG"
+
+          echo "✅ Created tag: $TAG"
+
+  # Optional: Deploy updated detector to GitHub Pages
+  deploy:
+    name: Deploy Updated Detector
+    needs: train
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
