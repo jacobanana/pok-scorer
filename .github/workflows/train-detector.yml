@@ -8,9 +8,13 @@ on:
         required: true
         default: 'image-detector/datasets/pok-dataset.json'
       iterations:
-        description: 'Number of optimization iterations'
+        description: 'Number of Bayesian optimization iterations'
         required: false
-        default: '500'
+        default: '100'
+      local_iterations:
+        description: 'Number of local hill-climbing refinement iterations (0 to disable)'
+        required: false
+        default: '100'
   push:
     paths:
       - 'image-detector/datasets/**'
@@ -74,14 +78,16 @@ jobs:
       - name: Run calibration
         id: calibrate
         run: |
-          ITERATIONS="${{ github.event.inputs.iterations || '500' }}"
-          echo "🚀 Starting calibration with $ITERATIONS iterations..."
+          ITERATIONS="${{ github.event.inputs.iterations || '100' }}"
+          LOCAL_ITERATIONS="${{ github.event.inputs.local_iterations || '100' }}"
+          echo "🚀 Starting calibration with $ITERATIONS Bayesian iterations + $LOCAL_ITERATIONS local refinement iterations..."
 
           python image-detector/scripts/calibrate.py \
             --dataset "${{ steps.check_dataset.outputs.dataset_path }}" \
             --images "${{ steps.check_images.outputs.images_dir }}" \
             --output image-detector/models/detector-params.json \
             --iterations "$ITERATIONS" \
+            --local-iterations "$LOCAL_ITERATIONS" \
             --match-threshold 50
 
       - name: Run validation
@@ -121,7 +127,8 @@ jobs:
 
           Training results:
           - Dataset: ${{ steps.check_dataset.outputs.dataset_path }}
-          - Iterations: ${{ github.event.inputs.iterations || '500' }}
+          - Bayesian iterations: ${{ github.event.inputs.iterations || '100' }}
+          - Local refinement: ${{ github.event.inputs.local_iterations || '100' }} iterations
           - Triggered by: ${{ github.event_name }}
           - Commit: ${{ github.sha }}"
 
@@ -142,12 +149,12 @@ jobs:
           echo "✅ Created tag: $TAG"
 
   # Optional: Deploy updated detector to GitHub Pages
-  deploy:
-    name: Deploy Updated Detector
-    needs: train
-    if: github.ref == 'refs/heads/main'
-    uses: ./.github/workflows/deploy.yml
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
+  # deploy:
+  #   name: Deploy Updated Detector
+  #   needs: train
+  #   if: github.ref == 'refs/heads/main'
+  #   uses: ./.github/workflows/deploy.yml
+  #   permissions:
+  #     contents: read
+  #     pages: write
+  #     id-token: write
