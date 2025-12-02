@@ -53,7 +53,7 @@ jobs:
       - name: Check dataset exists
         id: check_dataset
         run: |
-          DATASET_PATH="${{ github.event.inputs.dataset_path || 'image-detector/datasets/pok-training.json' }}"
+          DATASET_PATH="${{ github.event.inputs.dataset_path || 'image-detector/datasets/pok-dataset.json' }}"
           if [ ! -f "$DATASET_PATH" ]; then
             echo "❌ Dataset not found at: $DATASET_PATH"
             echo "Please create a dataset using the annotation editor first."
