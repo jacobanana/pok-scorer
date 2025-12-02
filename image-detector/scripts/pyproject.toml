@@ -1,0 +1,12 @@
+[project]
+name = "pok-detector-training"
+version = "0.1.0"
+description = "Training pipeline for POK detector parameter optimization"
+requires-python = ">=3.11"
+dependencies = [
+    "opencv-python>=4.9.0.80",
+    "numpy>=1.26.4",
+    "scikit-optimize>=0.10.1",
+    "pydantic>=2.0.0",
+    "tqdm>=4.66.2",
+]

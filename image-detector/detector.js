@@ -883,19 +883,30 @@ function importParamsFromJson(file) {
             const data = JSON.parse(e.target.result);
             let params;
 
-            // Handle both exported format and calibrator output format
-            if (data.parameters) {
-                params = data.parameters;
-            } else if (data.algorithm) {
-                // Direct params object (calibrator format)
-                params = data;
-            } else {
-                throw new Error('Invalid parameter file format');
+            // Python is the source of truth - expect format:
+            // {algorithm: 'hough', dp: 1.5, ..., _metadata: {...}}
+
+            if (!data.algorithm) {
+                throw new Error('Invalid parameter file format: missing algorithm field');
+            }
+
+            // Extract params (ignoring _metadata)
+            params = {...data};
+            delete params._metadata;
+
+            // Log metadata if present (useful for debugging)
+            if (data._metadata) {
+                console.log('Training metadata:', data._metadata);
             }
 
             applyParams(params);
             setParamSource(PARAM_SOURCE.IMPORTED);
-            setStatus('Parameters imported from JSON file', 'ready');
+
+            // Show metadata in status message if available
+            const metaInfo = data._metadata
+                ? ` (trained: ${data._metadata.param_source || 'unknown'})`
+                : '';
+            setStatus('Parameters imported from JSON file' + metaInfo, 'ready');
         } catch (err) {
             setStatus('Import error: ' + err.message, 'error');
             console.error('Import error:', err);

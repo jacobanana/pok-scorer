@@ -1,0 +1,1010 @@
+{
+  "version": "1.0",
+  "name": "Pok Dataset",
+  "createdAt": "2025-12-01T23:14:58.958Z",
+  "images": [
+    {
+      "filename": "20251126_123224.jpg",
+      "width": 2296,
+      "height": 4080,
+      "poks": [
+        {
+          "x": 1068,
+          "y": 1647,
+          "radius": 39,
+          "color": "blue"
+        },
+        {
+          "x": 903,
+          "y": 2165,
+          "radius": 33,
+          "color": "red"
+        },
+        {
+          "x": 761,
+          "y": 2609,
+          "radius": 39,
+          "color": "red"
+        },
+        {
+          "x": 829,
+          "y": 2785,
+          "radius": 39,
+          "color": "red"
+        },
+        {
+          "x": 1273,
+          "y": 2979,
+          "radius": 39,
+          "color": "red"
+        },
+        {
+          "x": 1330,
+          "y": 2569,
+          "radius": 39,
+          "color": "red"
+        },
+        {
+          "x": 1211,
+          "y": 2148,
+          "radius": 39,
+          "color": "blue"
+        },
+        {
+          "x": 1598,
+          "y": 2177,
+          "radius": 39,
+          "color": "blue"
+        },
+        {
+          "x": 1552,
+          "y": 2734,
+          "radius": 39,
+          "color": "blue"
+        },
+        {
+          "x": 573,
+          "y": 2615,
+          "radius": 39,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251126_123230.jpg",
+      "width": 2296,
+      "height": 4080,
+      "poks": [
+        {
+          "x": 1029,
+          "y": 1738,
+          "radius": 39,
+          "color": "blue"
+        },
+        {
+          "x": 1216,
+          "y": 2290,
+          "radius": 39,
+          "color": "blue"
+        },
+        {
+          "x": 1655,
+          "y": 2296,
+          "radius": 39,
+          "color": "blue"
+        },
+        {
+          "x": 875,
+          "y": 2324,
+          "radius": 44,
+          "color": "red"
+        },
+        {
+          "x": 1376,
+          "y": 2757,
+          "radius": 44,
+          "color": "red"
+        },
+        {
+          "x": 738,
+          "y": 2831,
+          "radius": 39,
+          "color": "red"
+        },
+        {
+          "x": 824,
+          "y": 3024,
+          "radius": 44,
+          "color": "red"
+        },
+        {
+          "x": 533,
+          "y": 2848,
+          "radius": 44,
+          "color": "blue"
+        },
+        {
+          "x": 1637,
+          "y": 2933,
+          "radius": 44,
+          "color": "blue"
+        },
+        {
+          "x": 1336,
+          "y": 3229,
+          "radius": 44,
+          "color": "red"
+        }
+      ]
+    },
+    {
+      "filename": "20251126_123233.jpg",
+      "width": 2296,
+      "height": 4080,
+      "poks": [
+        {
+          "x": 704,
+          "y": 1084,
+          "radius": 61,
+          "color": "blue"
+        },
+        {
+          "x": 1581,
+          "y": 1477,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 1194,
+          "y": 1659,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 864,
+          "y": 1864,
+          "radius": 50,
+          "color": "red"
+        },
+        {
+          "x": 1535,
+          "y": 2074,
+          "radius": 50,
+          "color": "red"
+        },
+        {
+          "x": 1814,
+          "y": 2108,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 1689,
+          "y": 2535,
+          "radius": 50,
+          "color": "red"
+        },
+        {
+          "x": 1165,
+          "y": 2637,
+          "radius": 56,
+          "color": "red"
+        },
+        {
+          "x": 994,
+          "y": 2490,
+          "radius": 50,
+          "color": "red"
+        },
+        {
+          "x": 784,
+          "y": 2643,
+          "radius": 56,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251126_123236.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 1342,
+          "y": 770,
+          "radius": 53,
+          "color": "blue"
+        },
+        {
+          "x": 999,
+          "y": 1676,
+          "radius": 76,
+          "color": "blue"
+        },
+        {
+          "x": 2812,
+          "y": 1324,
+          "radius": 63,
+          "color": "blue"
+        },
+        {
+          "x": 1925,
+          "y": 1369,
+          "radius": 60,
+          "color": "red"
+        },
+        {
+          "x": 2588,
+          "y": 1158,
+          "radius": 60,
+          "color": "red"
+        },
+        {
+          "x": 2693,
+          "y": 978,
+          "radius": 60,
+          "color": "red"
+        },
+        {
+          "x": 2002,
+          "y": 738,
+          "radius": 53,
+          "color": "red"
+        },
+        {
+          "x": 2447,
+          "y": 559,
+          "radius": 50,
+          "color": "red"
+        },
+        {
+          "x": 1986,
+          "y": 508,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 1617,
+          "y": 1100,
+          "radius": 60,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251126_123249.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 1083,
+          "y": 1481,
+          "radius": 66,
+          "color": "blue"
+        },
+        {
+          "x": 1669,
+          "y": 882,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 1560,
+          "y": 700,
+          "radius": 49,
+          "color": "blue"
+        },
+        {
+          "x": 2661,
+          "y": 1036,
+          "radius": 54,
+          "color": "blue"
+        },
+        {
+          "x": 2367,
+          "y": 1353,
+          "radius": 60,
+          "color": "red"
+        },
+        {
+          "x": 2056,
+          "y": 834,
+          "radius": 51,
+          "color": "red"
+        },
+        {
+          "x": 2194,
+          "y": 427,
+          "radius": 44,
+          "color": "red"
+        },
+        {
+          "x": 2405,
+          "y": 760,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 2767,
+          "y": 636,
+          "radius": 47,
+          "color": "red"
+        },
+        {
+          "x": 3106,
+          "y": 876,
+          "radius": 54,
+          "color": "red"
+        }
+      ]
+    },
+    {
+      "filename": "20251126_123253.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2335,
+          "y": 495,
+          "radius": 46,
+          "color": "red"
+        },
+        {
+          "x": 2729,
+          "y": 969,
+          "radius": 49,
+          "color": "red"
+        },
+        {
+          "x": 2873,
+          "y": 1353,
+          "radius": 49,
+          "color": "red"
+        },
+        {
+          "x": 2021,
+          "y": 1628,
+          "radius": 49,
+          "color": "red"
+        },
+        {
+          "x": 1998,
+          "y": 985,
+          "radius": 46,
+          "color": "red"
+        },
+        {
+          "x": 1630,
+          "y": 680,
+          "radius": 42,
+          "color": "blue"
+        },
+        {
+          "x": 1653,
+          "y": 933,
+          "radius": 46,
+          "color": "blue"
+        },
+        {
+          "x": 1031,
+          "y": 1411,
+          "radius": 52,
+          "color": "blue"
+        },
+        {
+          "x": 2335,
+          "y": 1001,
+          "radius": 43,
+          "color": "blue"
+        },
+        {
+          "x": 2399,
+          "y": 1395,
+          "radius": 46,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251126_123255.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 1608,
+          "y": 799,
+          "radius": 52,
+          "color": "blue"
+        },
+        {
+          "x": 1726,
+          "y": 1062,
+          "radius": 52,
+          "color": "blue"
+        },
+        {
+          "x": 1166,
+          "y": 1840,
+          "radius": 61,
+          "color": "blue"
+        },
+        {
+          "x": 2440,
+          "y": 1715,
+          "radius": 62,
+          "color": "red"
+        },
+        {
+          "x": 2139,
+          "y": 997,
+          "radius": 52,
+          "color": "red"
+        },
+        {
+          "x": 2312,
+          "y": 376,
+          "radius": 49,
+          "color": "red"
+        },
+        {
+          "x": 2943,
+          "y": 722,
+          "radius": 52,
+          "color": "red"
+        },
+        {
+          "x": 3279,
+          "y": 1087,
+          "radius": 58,
+          "color": "red"
+        },
+        {
+          "x": 2773,
+          "y": 1308,
+          "radius": 58,
+          "color": "blue"
+        },
+        {
+          "x": 2520,
+          "y": 895,
+          "radius": 52,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_124523.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 1774,
+          "y": 1242,
+          "radius": 28,
+          "color": "blue"
+        },
+        {
+          "x": 1598,
+          "y": 1326,
+          "radius": 28,
+          "color": "red"
+        },
+        {
+          "x": 1400,
+          "y": 1050,
+          "radius": 22,
+          "color": "red"
+        },
+        {
+          "x": 1371,
+          "y": 1015,
+          "radius": 22,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_124526.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2380,
+          "y": 1162,
+          "radius": 44,
+          "color": "blue"
+        },
+        {
+          "x": 2210,
+          "y": 1495,
+          "radius": 47,
+          "color": "red"
+        },
+        {
+          "x": 1403,
+          "y": 692,
+          "radius": 44,
+          "color": "red"
+        },
+        {
+          "x": 1284,
+          "y": 573,
+          "radius": 47,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_124533.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2665,
+          "y": 1175,
+          "radius": 57,
+          "color": "blue"
+        },
+        {
+          "x": 2469,
+          "y": 1511,
+          "radius": 57,
+          "color": "red"
+        },
+        {
+          "x": 634,
+          "y": 1441,
+          "radius": 60,
+          "color": "blue"
+        },
+        {
+          "x": 1348,
+          "y": 391,
+          "radius": 47,
+          "color": "red"
+        },
+        {
+          "x": 1627,
+          "y": 676,
+          "radius": 47,
+          "color": "red"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_124547.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2392,
+          "y": 1723,
+          "radius": 66,
+          "color": "blue"
+        },
+        {
+          "x": 1928,
+          "y": 1909,
+          "radius": 69,
+          "color": "red"
+        },
+        {
+          "x": 1867,
+          "y": 656,
+          "radius": 50,
+          "color": "red"
+        },
+        {
+          "x": 1803,
+          "y": 419,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 1848,
+          "y": 282,
+          "radius": 44,
+          "color": "red"
+        },
+        {
+          "x": 647,
+          "y": 823,
+          "radius": 56,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125204.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2460,
+          "y": 1355,
+          "radius": 47,
+          "color": "blue"
+        },
+        {
+          "x": 1502,
+          "y": 720,
+          "radius": 31,
+          "color": "red"
+        },
+        {
+          "x": 1345,
+          "y": 704,
+          "radius": 31,
+          "color": "blue"
+        },
+        {
+          "x": 1358,
+          "y": 650,
+          "radius": 31,
+          "color": "blue"
+        },
+        {
+          "x": 1400,
+          "y": 608,
+          "radius": 28,
+          "color": "red"
+        },
+        {
+          "x": 1499,
+          "y": 525,
+          "radius": 28,
+          "color": "blue"
+        },
+        {
+          "x": 1051,
+          "y": 660,
+          "radius": 28,
+          "color": "blue"
+        },
+        {
+          "x": 1553,
+          "y": 919,
+          "radius": 34,
+          "color": "red"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125206.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2485,
+          "y": 1467,
+          "radius": 47,
+          "color": "blue"
+        },
+        {
+          "x": 1579,
+          "y": 833,
+          "radius": 28,
+          "color": "red"
+        },
+        {
+          "x": 1435,
+          "y": 740,
+          "radius": 25,
+          "color": "blue"
+        },
+        {
+          "x": 1454,
+          "y": 778,
+          "radius": 28,
+          "color": "blue"
+        },
+        {
+          "x": 1483,
+          "y": 720,
+          "radius": 25,
+          "color": "red"
+        },
+        {
+          "x": 1585,
+          "y": 644,
+          "radius": 28,
+          "color": "blue"
+        },
+        {
+          "x": 1140,
+          "y": 762,
+          "radius": 31,
+          "color": "blue"
+        },
+        {
+          "x": 996,
+          "y": 810,
+          "radius": 31,
+          "color": "red"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125452.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2716,
+          "y": 708,
+          "radius": 21,
+          "color": "red"
+        },
+        {
+          "x": 2684,
+          "y": 740,
+          "radius": 28,
+          "color": "red"
+        },
+        {
+          "x": 2242,
+          "y": 698,
+          "radius": 31,
+          "color": "red"
+        },
+        {
+          "x": 1986,
+          "y": 698,
+          "radius": 31,
+          "color": "blue"
+        },
+        {
+          "x": 1771,
+          "y": 538,
+          "radius": 28,
+          "color": "blue"
+        },
+        {
+          "x": 1717,
+          "y": 541,
+          "radius": 25,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125456.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 3443,
+          "y": 1217,
+          "radius": 63,
+          "color": "red"
+        },
+        {
+          "x": 3359,
+          "y": 1290,
+          "radius": 63,
+          "color": "red"
+        },
+        {
+          "x": 2616,
+          "y": 849,
+          "radius": 53,
+          "color": "red"
+        },
+        {
+          "x": 2533,
+          "y": 957,
+          "radius": 53,
+          "color": "blue"
+        },
+        {
+          "x": 2066,
+          "y": 842,
+          "radius": 50,
+          "color": "blue"
+        },
+        {
+          "x": 1954,
+          "y": 176,
+          "radius": 44,
+          "color": "blue"
+        },
+        {
+          "x": 1870,
+          "y": 163,
+          "radius": 41,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125503.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2860,
+          "y": 608,
+          "radius": 25,
+          "color": "red"
+        },
+        {
+          "x": 2837,
+          "y": 644,
+          "radius": 28,
+          "color": "red"
+        },
+        {
+          "x": 2376,
+          "y": 576,
+          "radius": 28,
+          "color": "red"
+        },
+        {
+          "x": 2367,
+          "y": 618,
+          "radius": 31,
+          "color": "blue"
+        },
+        {
+          "x": 2088,
+          "y": 631,
+          "radius": 31,
+          "color": "blue"
+        },
+        {
+          "x": 1749,
+          "y": 448,
+          "radius": 25,
+          "color": "blue"
+        },
+        {
+          "x": 1694,
+          "y": 451,
+          "radius": 25,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125507.jpg",
+      "width": 4080,
+      "height": 2296,
+      "poks": [
+        {
+          "x": 2514,
+          "y": 775,
+          "radius": 41,
+          "color": "blue"
+        },
+        {
+          "x": 2546,
+          "y": 688,
+          "radius": 41,
+          "color": "red"
+        },
+        {
+          "x": 2043,
+          "y": 813,
+          "radius": 37,
+          "color": "red"
+        },
+        {
+          "x": 2152,
+          "y": 772,
+          "radius": 41,
+          "color": "blue"
+        },
+        {
+          "x": 3138,
+          "y": 868,
+          "radius": 44,
+          "color": "red"
+        },
+        {
+          "x": 3180,
+          "y": 804,
+          "radius": 41,
+          "color": "red"
+        },
+        {
+          "x": 1874,
+          "y": 295,
+          "radius": 34,
+          "color": "blue"
+        },
+        {
+          "x": 1810,
+          "y": 307,
+          "radius": 37,
+          "color": "blue"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125524.jpg",
+      "width": 2296,
+      "height": 4080,
+      "poks": [
+        {
+          "x": 1546,
+          "y": 1275,
+          "radius": 74,
+          "color": "blue"
+        },
+        {
+          "x": 1478,
+          "y": 1172,
+          "radius": 69,
+          "color": "blue"
+        },
+        {
+          "x": 1381,
+          "y": 1110,
+          "radius": 63,
+          "color": "red"
+        },
+        {
+          "x": 1330,
+          "y": 1354,
+          "radius": 69,
+          "color": "red"
+        },
+        {
+          "x": 966,
+          "y": 1417,
+          "radius": 69,
+          "color": "blue"
+        },
+        {
+          "x": 619,
+          "y": 1667,
+          "radius": 80,
+          "color": "red"
+        }
+      ]
+    },
+    {
+      "filename": "20251201_125526.jpg",
+      "width": 2296,
+      "height": 4080,
+      "poks": [
+        {
+          "x": 568,
+          "y": 1929,
+          "radius": 100,
+          "color": "red"
+        },
+        {
+          "x": 1080,
+          "y": 1576,
+          "radius": 97,
+          "color": "blue"
+        },
+        {
+          "x": 1598,
+          "y": 1491,
+          "radius": 100,
+          "color": "red"
+        },
+        {
+          "x": 1888,
+          "y": 1371,
+          "radius": 100,
+          "color": "blue"
+        },
+        {
+          "x": 1803,
+          "y": 1240,
+          "radius": 86,
+          "color": "blue"
+        },
+        {
+          "x": 1660,
+          "y": 1161,
+          "radius": 91,
+          "color": "red"
+        }
+      ]
+    }
+  ]
+}
