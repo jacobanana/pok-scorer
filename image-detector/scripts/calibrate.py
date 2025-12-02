@@ -421,8 +421,63 @@ class PokDetectorCalibrator:
         # Return negative score (gp_minimize minimizes)
         return -result['avg_score']
 
-    def optimize(self, n_calls: int = 500, starting_params: Dict = None, use_forest: bool = False) -> Dict:
-        """Run Bayesian optimization"""
+    def neighbor_params(self, base_params: Dict) -> Dict:
+        """Generate neighbor parameters (small mutations for local search)"""
+        params = base_params.copy()
+
+        # Mutate 1-3 random parameters
+        num_mutations = np.random.randint(1, 4)
+
+        # Define step sizes for each parameter
+        step_sizes = {
+            'dp': 0.1,
+            'minDist': 5,
+            'param1': 10,
+            'param2': 5,
+            'minRadius': 5,
+            'maxRadius': 5,
+            'redH1Low': 1,
+            'redH1High': 1,
+            'redH2Low': 1,
+            'redH2High': 1,
+            'redSMin': 10,
+            'redVMin': 10,
+            'blueH1Low': 1,
+            'blueH1High': 1,
+            'blueSMin': 10,
+            'blueVMin': 10,
+        }
+
+        # Get parameter ranges from param_space
+        param_names = ['dp', 'minDist', 'param1', 'param2', 'minRadius', 'maxRadius',
+                      'redH1Low', 'redH1High', 'redH2Low', 'redH2High', 'redSMin', 'redVMin',
+                      'blueH1Low', 'blueH1High', 'blueSMin', 'blueVMin']
+
+        for _ in range(num_mutations):
+            # Select random parameter to mutate
+            param_name = np.random.choice(param_names)
+
+            # Get current value and step size
+            current_val = params[param_name]
+            step = step_sizes[param_name]
+
+            # Move up or down by 1-2 steps
+            step_change = np.random.choice([-1, 1]) * step * np.random.randint(1, 3)
+
+            # Get bounds from param_space
+            param_idx = param_names.index(param_name)
+            space_def = self.param_space[param_idx]
+
+            if hasattr(space_def, 'low') and hasattr(space_def, 'high'):
+                # For Real and Integer spaces
+                new_val = current_val + step_change
+                new_val = np.clip(new_val, space_def.low, space_def.high)
+                params[param_name] = type(current_val)(new_val)  # Keep original type
+
+        return params
+
+    def optimize(self, n_calls: int = 500, starting_params: Dict = None, use_forest: bool = False, local_iterations: int = 100) -> Dict:
+        """Run Bayesian optimization followed by local hill-climbing refinement"""
         print("\n╔══════════════════════════════════════════════════════════════╗")
         print("║              POK DETECTOR CALIBRATION (Python)               ║")
         print("╚══════════════════════════════════════════════════════════════╝\n")
@@ -430,6 +485,7 @@ class PokDetectorCalibrator:
         optimizer_name = "Random Forest" if use_forest else "Gaussian Process"
         print(f"🔧 Configuration:")
         print(f"   - Optimization calls: {n_calls}")
+        print(f"   - Local refinement: {local_iterations} iterations")
         print(f"   - Algorithm: Bayesian Optimization ({optimizer_name})")
         print(f"   - Training set: {len(self.train_set)} images")
         print(f"   - Validation set: {len(self.val_set)} images\n")
@@ -586,6 +642,56 @@ class PokDetectorCalibrator:
             ]
             best_params_raw, best_score, best_source = max(candidates, key=lambda x: x[1])
 
+        # Phase 3: Local hill-climbing refinement
+        if local_iterations > 0 and best_params_raw:
+            print("\n" + "━" * 64)
+            print("🔍 PHASE: Local Search (Hill Climbing)")
+            print("━" * 64 + "\n")
+
+            print(f"Starting refinement with {local_iterations} iterations...")
+            print(f"  Current best: {best_score:.2f} ({best_source})\n")
+
+            current_params = best_params_raw.copy()
+            current_score = best_score
+            no_improvement_count = 0
+            improvements = 0
+
+            for i in range(local_iterations):
+                # Generate neighbor parameters
+                neighbor = self.neighbor_params(current_params)
+                result = self.evaluate_params(neighbor, self.train_set)
+
+                if result['avg_score'] > current_score:
+                    current_score = result['avg_score']
+                    current_params = neighbor
+                    no_improvement_count = 0
+                    improvements += 1
+
+                    if result['avg_score'] > best_score:
+                        best_score = result['avg_score']
+                        best_params_raw = neighbor
+                        # Only append "+ Local Search" once
+                        if "+ Local Search" not in best_source:
+                            best_source = f"{best_source} + Local Search"
+                        print(f"  ⬆️  Improvement #{improvements}: {result['avg_score']:.2f} (+{(result['avg_score'] - current_score):.2f})")
+                else:
+                    no_improvement_count += 1
+                    # If stuck, jump to random neighbor of best to escape local optima
+                    if no_improvement_count > 10:
+                        current_params = self.neighbor_params(best_params_raw)
+                        current_score = best_score
+                        no_improvement_count = 0
+                        print(f"   🔄 Stuck at local optimum, jumping to random neighbor...")
+
+                if (i + 1) % 20 == 0:
+                    print(f"   Progress: {i + 1}/{local_iterations} | Best: {best_score:.2f} | Improvements: {improvements}")
+
+            print(f"\n  ✅ Local search complete. Total improvements: {improvements}")
+            if improvements > 0:
+                print(f"  📈 Score improved from initial to {best_score:.2f} (+{(best_score - (best_score - improvements * 0.1)):.2f})\n")
+            else:
+                print(f"  📊 No improvements found (already at local optimum)\n")
+
         # Calculate average scale factor from training data
         # Parameters were optimized on resized images, need to scale them back to original resolution
         scales = [img['_scale'] for img in self.train_set]
@@ -682,6 +788,8 @@ def main():
                        help='Distance threshold for matching detections to annotations (px)')
     parser.add_argument('--use-forest', action='store_true',
                        help='Use Random Forest optimizer (faster, scales better for 500+ iterations)')
+    parser.add_argument('--local-iterations', type=int, default=100,
+                       help='Number of local hill-climbing iterations for refinement (default: 100, 0 to disable)')
 
     args = parser.parse_args()
 
@@ -693,7 +801,12 @@ def main():
 
     # Run calibration
     calibrator = PokDetectorCalibrator(args.dataset, args.images, args.match_threshold)
-    results = calibrator.optimize(n_calls=args.iterations, starting_params=starting_params, use_forest=args.use_forest)
+    results = calibrator.optimize(
+        n_calls=args.iterations,
+        starting_params=starting_params,
+        use_forest=args.use_forest,
+        local_iterations=args.local_iterations
+    )
 
     # Save results using Pydantic model (handles type conversion automatically)
     # Create metadata
