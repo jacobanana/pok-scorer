@@ -5,6 +5,7 @@ on:
     branches:
       - '**'  # Run on all branches
   workflow_dispatch:
+  workflow_call:  # Allow this workflow to be called from other workflows
 
 permissions:
   contents: read
