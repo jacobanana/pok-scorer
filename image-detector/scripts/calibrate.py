@@ -194,6 +194,21 @@ class PokDetectorCalibrator:
 
             img_data['_image'] = img_resized
             img_data['_orig_size'] = (orig_width, orig_height)
+
+            # Scale pok annotations to match resized image coordinates
+            scale = img_data['_scale']
+            if scale != 1.0:
+                img_data['_poks_original'] = img_data['poks']  # Keep original for reference
+                img_data['poks'] = [
+                    {
+                        'x': int(pok['x'] * scale),
+                        'y': int(pok['y'] * scale),
+                        'radius': int(pok['radius'] * scale),
+                        'color': pok['color']
+                    }
+                    for pok in img_data['poks']
+                ]
+
             total_poks += len(img_data['poks'])
 
         if resized_count > 0:
@@ -211,17 +226,17 @@ class PokDetectorCalibrator:
         split_idx = int(len(images) * train_ratio)
         return images[:split_idx], images[split_idx:]
 
-    def detect_poks(self, image: np.ndarray, params: Dict, scale: float = 1.0, max_circles: int = 20) -> List[Dict]:
+    def detect_poks(self, image: np.ndarray, params: Dict, max_circles: int = 20) -> List[Dict]:
         """Run HoughCircles + color classification (image should be pre-resized)
 
         Args:
             image: Pre-resized image to detect poks in
             params: Detection parameters (optimized for resized images)
-            scale: Scale factor that was used to resize the image (resized_width / original_width)
             max_circles: Maximum number of circles to detect
 
-        Note: params['minRadius'] and params['maxRadius'] are already optimized for
-        the resized image scale, so we use them directly without scaling.
+        Note: All coordinates are returned in the resized image space.
+        Annotations are also scaled to resized image space during load,
+        so comparisons happen in a consistent coordinate system.
         """
         # Image is already resized during load, no need to resize again
         # Convert to grayscale
@@ -255,7 +270,7 @@ class PokDetectorCalibrator:
         # Convert image to HSV for color classification
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-        # Process detections and scale back to original coordinates
+        # Process detections (coordinates stay in resized image space)
         detections = []
         circles = np.round(circles[0, :]).astype(int)
 
@@ -263,11 +278,11 @@ class PokDetectorCalibrator:
             # Classify color on resized image
             color = ColorClassifier.classify_circle(hsv, x, y, radius, params)
 
-            # Scale coordinates back to original image size
+            # Keep coordinates in resized image space (annotations are also scaled)
             detections.append({
-                'x': int(x / scale),
-                'y': int(y / scale),
-                'radius': int(radius / scale),
+                'x': int(x),
+                'y': int(y),
+                'radius': int(radius),
                 'color': color
             })
 
@@ -343,7 +358,7 @@ class PokDetectorCalibrator:
         results = []
 
         for img_data in dataset:
-            detections = self.detect_poks(img_data['_image'], params, scale=img_data['_scale'])
+            detections = self.detect_poks(img_data['_image'], params)
             score = self.calculate_score(detections, img_data['poks'])
             results.append({
                 'filename': img_data['filename'],
@@ -692,45 +707,16 @@ class PokDetectorCalibrator:
             else:
                 print(f"  📊 No improvements found (already at local optimum)\n")
 
-        # Calculate average scale factor from training data
-        # Parameters were optimized on resized images, need to scale them back to original resolution
-        scales = [img['_scale'] for img in self.train_set]
-        avg_scale = np.mean(scales)
-
-        print(f"\n  📏 Scaling parameters to original resolution:")
-        print(f"     Average training scale: {avg_scale:.3f}")
-        print(f"     Scale factor to apply: {1/avg_scale:.3f}\n")
-
-        # Scale spatial parameters back to original image resolution
-        # These parameters are resolution-dependent: minDist, minRadius, maxRadius
-        best_params_scaled = best_params_raw.copy()
-        best_params_scaled['minDist'] = int(best_params_raw['minDist'] / avg_scale)
-        best_params_scaled['minRadius'] = int(best_params_raw['minRadius'] / avg_scale)
-        best_params_scaled['maxRadius'] = int(best_params_raw['maxRadius'] / avg_scale)
-
-        print(f"     Original (resized):  minDist={best_params_raw['minDist']}, minRadius={best_params_raw['minRadius']}, maxRadius={best_params_raw['maxRadius']}")
-        print(f"     Scaled (original):   minDist={best_params_scaled['minDist']}, minRadius={best_params_scaled['minRadius']}, maxRadius={best_params_scaled['maxRadius']}\n")
-
-        # Convert numpy types to Python natives to avoid serialization warnings
-        best_params_native = {
-            k: (int(v) if isinstance(v, (np.integer, np.int64)) else
-                float(v) if isinstance(v, (np.floating, np.float64)) else v)
-            for k, v in best_params_scaled.items()
-        }
-
-        # Convert to Pydantic model, bypassing validation for scaled spatial parameters
-        # The validation ranges in models.py are for resized images, but we're exporting for original resolution
-        best_params = DetectorParams.model_construct(**best_params_native)
-
         print(f"  ✅ Selected: {best_source} (Score: {best_score:.2f})\n")
 
-        # Evaluate on training and validation sets
+        # Evaluate on training and validation sets using raw parameters
+        # (both images and annotations are in resized coordinate space)
         print("\n" + "━" * 64)
         print("✅ PHASE: Validation Set Testing")
         print("━" * 64 + "\n")
 
-        train_result = self.evaluate_params(best_params, self.train_set)
-        val_result = self.evaluate_params(best_params, self.val_set)
+        train_result = self.evaluate_params(best_params_raw, self.train_set)
+        val_result = self.evaluate_params(best_params_raw, self.val_set)
 
         print("📊 FINAL RESULTS:")
         print("┌─────────────────────────────────────────────────────────────┐")
@@ -759,6 +745,32 @@ class PokDetectorCalibrator:
         seconds = int(total_time % 60)
         print(f"⏱️  Total training time: {minutes}m {seconds}s ({total_time:.1f}s)")
         print(f"📊 Average time per iteration: {total_time/n_calls:.2f}s\n")
+
+        # Scale spatial parameters back to original image resolution for export
+        # These parameters are resolution-dependent: minDist, minRadius, maxRadius
+        scales = [img['_scale'] for img in self.train_set]
+        avg_scale = np.mean(scales)
+
+        print(f"📏 Scaling parameters for export (original resolution):")
+        print(f"   Average training scale: {avg_scale:.3f}")
+
+        best_params_scaled = best_params_raw.copy()
+        best_params_scaled['minDist'] = int(best_params_raw['minDist'] / avg_scale)
+        best_params_scaled['minRadius'] = int(best_params_raw['minRadius'] / avg_scale)
+        best_params_scaled['maxRadius'] = int(best_params_raw['maxRadius'] / avg_scale)
+
+        print(f"   Resized params:  minDist={best_params_raw['minDist']}, minRadius={best_params_raw['minRadius']}, maxRadius={best_params_raw['maxRadius']}")
+        print(f"   Scaled params:   minDist={best_params_scaled['minDist']}, minRadius={best_params_scaled['minRadius']}, maxRadius={best_params_scaled['maxRadius']}\n")
+
+        # Convert numpy types to Python natives to avoid serialization warnings
+        best_params_native = {
+            k: (int(v) if isinstance(v, (np.integer, np.int64)) else
+                float(v) if isinstance(v, (np.floating, np.float64)) else v)
+            for k, v in best_params_scaled.items()
+        }
+
+        # Convert to Pydantic model for export
+        best_params = DetectorParams.model_construct(**best_params_native)
 
         return {
             'best_params': best_params,
